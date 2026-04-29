@@ -7,9 +7,23 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fdf8f7">
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM2IiBmaWxsPSIjZjVlOGU2Ii8+CiAgPHRleHQgeD0iOTAiIHk9IjEzMCIgZm9udC1zaXplPSIxMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfkbY8L3RleHQ+Cjwvc3ZnPg==">
-<link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM2IiBmaWxsPSIjZjVlOGU2Ii8+CiAgPHRleHQgeD0iOTAiIHk9IjEzMCIgZm9udC1zaXplPSIxMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfkbY8L3RleHQ+Cjwvc3ZnPg==">
 <meta name="apple-mobile-web-app-title" content="Sofin's Menu">
+<script>
+// Generate apple-touch-icon from emoji at page load
+(function(){
+  try{
+    const c=document.createElement('canvas');c.width=180;c.height=180;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#f5e8e6';
+    const r=36;ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(180-r,0);ctx.quadraticCurveTo(180,0,180,r);ctx.lineTo(180,180-r);ctx.quadraticCurveTo(180,180,180-r,180);ctx.lineTo(r,180);ctx.quadraticCurveTo(0,180,0,180-r);ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();ctx.fill();
+    ctx.font='110px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('👶',90,95);
+    const png=c.toDataURL('image/png');
+    const link=document.createElement('link');link.rel='apple-touch-icon';link.sizes='180x180';link.href=png;document.head.appendChild(link);
+    // also set favicon
+    const fav=document.createElement('link');fav.rel='icon';fav.href=png;document.head.appendChild(fav);
+  }catch(e){}
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -145,15 +159,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .tl-b{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500}
 .tl-curr{background:var(--rose-light);color:var(--rose-dark)}.tl-past{background:#eaf3de;color:#3b6d11}.tl-fut{background:#E6F1FB;color:#185FA5}
 .tl-pills{display:flex;flex-wrap:wrap;gap:4px}
-.tl-pill{font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid var(--rose-mid);background:var(--card);color:var(--text);cursor:pointer}
+.tl-pill{font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid var(--rose-mid);background:var(--card);color:var(--text);cursor:pointer;display:inline-block}
 .tl-pill:active{opacity:.8}
-/* match list view colors */
-.tl-pill.done{background:#eaf3de;border-color:#c0dd97;color:#3b6d11}
-.tl-pill.done-warn{background:#faeeda;border-color:#e8b870;color:#854f0b}
-.tl-pill.done-no{background:#fcebeb;border-color:#f09595;color:#a32d2d}
-.tl-pill.overdue{background:#fcebeb;border-color:#f09595;color:#a32d2d}
-.tl-pill.curr{background:var(--rose-light);border-color:var(--rose-mid);color:var(--rose-dark);font-weight:500}
-.tl-pill.new-pill{background:#E6F1FB;border-color:#9ec5f0;color:#185FA5}
+/* match list view colors - explicit overrides */
+.tl-pills .tl-pill.done{background:#eaf3de!important;border-color:#c0dd97!important;color:#3b6d11!important}
+.tl-pills .tl-pill.done-warn{background:#faeeda!important;border-color:#e8b870!important;color:#854f0b!important}
+.tl-pills .tl-pill.done-no{background:#fcebeb!important;border-color:#f09595!important;color:#a32d2d!important}
+.tl-pills .tl-pill.overdue{background:#fcebeb!important;border-color:#f09595!important;color:#a32d2d!important}
+.tl-pills .tl-pill.curr{background:var(--rose-light)!important;border-color:var(--rose-mid)!important;color:var(--rose-dark)!important;font-weight:500}
+.tl-pills .tl-pill.new-pill{background:#E6F1FB!important;border-color:#9ec5f0!important;color:#185FA5!important}
 .sum-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:0 16px 10px}
 .scard{background:var(--card);border:.5px solid var(--rose-mid);border-radius:11px;padding:9px 10px;text-align:center}
 .sn{font-size:18px;font-weight:700;color:var(--text)}
@@ -346,6 +360,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <button class="nav-btn" onclick="navNext()">&#8594;</button>
         <button onclick="goToToday()" style="padding:4px 10px;border-radius:8px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:11px;font-weight:500;cursor:pointer;margin-left:4px">Dnes</button>
       </div>
+    </div>
+    <div class="scroll-area" id="planScroll">
       <div id="mHdr" style="display:none"><div class="cal-header" id="calHdr"></div></div>
       <div id="calGrid"></div>
       <div class="legend" id="calLeg" style="display:none">
@@ -354,13 +370,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <div class="li"><div class="ld" style="background:#7a8fa8"></div>spánek</div>
         <div class="li"><div class="ld" style="background:#e24b4a"></div>reakce</div>
       </div>
-    </div>
-    <div class="scroll-area" id="planScroll">
       <div id="planDetail" style="display:none">
         <div class="detail-back" onclick="closePlanDetail()"><span class="back-lbl">← Zpět</span><span class="detail-title" id="planDTitle"></span></div>
         <div id="planDContent"></div>
       </div>
       <button class="plan-clear-btn" id="planClearBtn" onclick="clearPlanHistory()" style="display:none">🗑 Smazat záznamy minulých dnů</button>
+      <div style="height:8px"></div>
     </div>
   </div>
 
@@ -810,6 +825,30 @@ window.addEventListener('storage', (e) => {
 });
 
 // Seed demo cal data
+function seedMissingCalData(){
+  for(let i=1;i<=14;i++){
+    const d=new Date(TODAY);d.setDate(d.getDate()+i);
+    const k=dateKey(d);
+    if(!state.calData[k]){
+      state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
+    }
+  }
+  // sync FDB eliminated foods + foodOverrides eliminated to allergens
+  syncEliminatedToAllergens();
+}
+
+function syncEliminatedToAllergens(){
+  // foods marked no in FDB that aren't allergen-flagged but should be in list
+  const overrides=state.foodOverrides||{};
+  Object.entries(overrides).forEach(([name,ov])=>{
+    if(ov.status==='no'){
+      if(!state.settings.allergens.some(a=>a.toLowerCase()===name.toLowerCase())){
+        state.settings.allergens.push(name);
+      }
+    }
+  });
+}
+
 function seedCalData() {
   const fl=['mrkev','batát','hruška','rýže','banán','cuketa','jablko','kuřecí','brokolice'];
   for(let i=-20;i<=14;i++){
@@ -910,20 +949,30 @@ function renderTodayList(){
     const lb=e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'';
     const clickFn=isReaction?`openReactionDetail('${e.id}')`:`openEntryDetail('${e.id}')`;
     const cardStyle=isReaction?'background:#fff5f5;border-color:#f09595;border-left:3px solid #e24b4a':'';
+
+    // Pro spánek: vlevo čas začátku, v sub jen délka (bez opakování času)
+    let subText=e.sub||'';
+    let timeLabel=fmtTime(e.ts);
+    if(e.type==='sleep'&&!e.live){
+      // sub format: "7:10 – 8:45 · 1h 35min" nebo "7:10 – 8:45 · 1h 35min · poznámka"
+      // extrahovat jen délku (za ·)
+      const parts=(e.sub||'').split('·');
+      subText=parts.slice(1).map(s=>s.trim()).filter(Boolean).join(' · ')||e.sub;
+    }
+
     return`<div class="eswipe-wrap" id="esw-${e.id}">
       <div class="eswipe-delete-bg">🗑 Smazat</div>
       <div class="ecard${cc}" id="ec-${e.id}" style="${cardStyle}" onclick="${clickFn}">
-        <span class="etime">${fmtTime(e.ts)}</span>
+        <span class="etime">${timeLabel}</span>
         <div class="eicon ${ic}">${em}</div>
         <div class="einfo">
           <div class="ename" style="${isReaction?'color:var(--red);font-weight:600':''}">${e.name}</div>
-          <div class="esub" ${e.live?'id="liveCardSub"':''}>${e.sub}</div>
+          <div class="esub" ${e.live?'id="liveCardSub"':''}>${subText}</div>
         </div>
         <div class="eright">${who}${rd}${lb}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
       </div>
     </div>`;
   }).join('');
-  // attach swipe-to-delete on each entry
   sorted.forEach(e=>initEntrySwipe(e.id));
 }
 
@@ -1091,9 +1140,40 @@ function openEditEntryModal(e){
     const noteParts=(e.sub||'').split('·').slice(2);
     html+=`<div class="mrow"><label>Poznámka</label><input type="text" id="editBreastNote" value="${noteParts.join('·').trim()}" placeholder="neklidná..."/></div>`;
   } else if(e.type==='sleep'){
-    html+=`<div class="mrow"><label>Poznámka</label><input type="text" id="editSleepNote" value="" placeholder="volitelně..."/></div>`;
+    // Parse existing sub: "7:10 – 8:45 · 1h 35min" 
+    const subParts=(e.sub||'').split('·');
+    const timePart=(subParts[0]||'').trim(); // "7:10 – 8:45"
+    const times=timePart.split('–').map(s=>s.trim());
+    const startVal=times[0]||fmtTime(e.ts);
+    const endVal=times[1]||'';
+    // compute duration from start/end if available
+    let durVal=60;
+    if(startVal&&endVal){
+      const [sh,sm]=startVal.split(':').map(Number);
+      const [eh,em]=endVal.split(':').map(Number);
+      durVal=Math.max(1,(eh*60+em)-(sh*60+sm));
+    }
+    html+=`
+    <div class="mrow" style="margin-bottom:8px">
+      <div style="display:flex;gap:0;border:.5px solid var(--rose-mid);border-radius:10px;overflow:hidden;background:var(--rose-light);margin-bottom:10px">
+        <button class="type-btn sel" id="sleepEditMode-times" style="flex:1;border-radius:0;border:none" onclick="switchSleepEditMode('times')">Čas od–do</button>
+        <button class="type-btn" id="sleepEditMode-dur" style="flex:1;border-radius:0;border:none" onclick="switchSleepEditMode('dur')">Začátek + délka</button>
+      </div>
+      <div id="sleepEditTimes">
+        <div class="mrow"><label>Začátek</label><input type="time" id="editSleepStart" value="${startVal}" oninput="recalcSleepDur()"/></div>
+        <div class="mrow"><label>Konec</label><input type="time" id="editSleepEnd" value="${endVal}" oninput="recalcSleepDur()"/></div>
+        <div id="sleepCalcDur" style="font-size:11px;color:var(--text-3);margin-top:-6px;margin-bottom:8px"></div>
+      </div>
+      <div id="sleepEditDur" style="display:none">
+        <div class="mrow"><label>Začátek</label><input type="time" id="editSleepStartDur" value="${startVal}"/></div>
+        <div class="mrow"><label>Délka (min)</label><input type="number" id="editSleepDurMin" value="${durVal}" min="1"/></div>
+      </div>
+      <div class="mrow"><label>Poznámka</label><input type="text" id="editSleepNote" value="" placeholder="volitelně..."/></div>
+    </div>`;
   }
-  html+=`<div class="mrow"><label>Čas</label><input type="time" id="editEntryTime" value="${timeVal}"/></div>`;
+  if(e.type!=='sleep'){
+    html+=`<div class="mrow"><label>Čas</label><input type="time" id="editEntryTime" value="${timeVal}"/></div>`;
+  }
   document.getElementById('editEntryBody').innerHTML=html;
   renderEditSelFoods();
   openModal('mEditEntry');
@@ -1114,24 +1194,71 @@ function showEditSuggest(val){
 function addEditFood(name){if(!editSelFoods.includes(name))editSelFoods.push(name);document.getElementById('editIngInput').value='';document.getElementById('editFoodSug').style.display='none';renderEditSelFoods();}
 function removeEditFood(name){editSelFoods=editSelFoods.filter(f=>f!==name);renderEditSelFoods();}
 
+function switchSleepEditMode(mode){
+  document.getElementById('sleepEditMode-times').classList.toggle('sel',mode==='times');
+  document.getElementById('sleepEditMode-dur').classList.toggle('sel',mode==='dur');
+  document.getElementById('sleepEditTimes').style.display=mode==='times'?'block':'none';
+  document.getElementById('sleepEditDur').style.display=mode==='dur'?'block':'none';
+}
+function recalcSleepDur(){
+  const s=document.getElementById('editSleepStart')?.value;
+  const en=document.getElementById('editSleepEnd')?.value;
+  const el=document.getElementById('sleepCalcDur');
+  if(!s||!en||!el)return;
+  const [sh,sm]=s.split(':').map(Number);
+  const [eh,em]=en.split(':').map(Number);
+  const mins=(eh*60+em)-(sh*60+sm);
+  if(mins>0){const h=Math.floor(mins/60),m=mins%60;el.textContent='Délka: '+(h>0?h+'h ':'')+m+'min';}
+  else el.textContent='';
+}
+
 function saveEditEntry(){
   const e=state.todayLog.find(x=>x.id===currentEntryId);
   if(!e){closeModal('mEditEntry');return;}
-  const timeInp=document.getElementById('editEntryTime');
-  if(timeInp)e.ts=parseTimeToTs(timeInp.value);
+
   if(e.type==='food'){
+    const timeInp=document.getElementById('editEntryTime');
+    if(timeInp)e.ts=parseTimeToTs(timeInp.value);
     const typeBtn=document.querySelector('#mEditEntry .type-btn.sel');
-    if(typeBtn)e.name=typeBtn.textContent;
+    if(typeBtn&&!typeBtn.id.startsWith('sleepEdit'))e.name=typeBtn.textContent;
     if(editSelFoods.length)e.sub=editSelFoods.join(', ');
     editSelFoods=[];
   } else if(e.type==='breast'){
+    const timeInp=document.getElementById('editEntryTime');
+    if(timeInp)e.ts=parseTimeToTs(timeInp.value);
     const side=document.querySelector('#mEditEntry .type-btn.sel');
     const dur=document.getElementById('editBreastDur')?.value||'15';
     const note=document.getElementById('editBreastNote')?.value||'';
     e.sub=(side?side.textContent:'')+' · '+dur+' min'+(note?' · '+note:'');
   } else if(e.type==='sleep'){
     const note=document.getElementById('editSleepNote')?.value||'';
-    if(note&&!e.sub.includes(note))e.sub=e.sub+' · '+note;
+    const isTimes=document.getElementById('sleepEditMode-times')?.classList.contains('sel');
+    if(isTimes){
+      const start=document.getElementById('editSleepStart')?.value||fmtTime(e.ts);
+      const end=document.getElementById('editSleepEnd')?.value||'';
+      e.ts=parseTimeToTs(start);
+      if(end){
+        const [sh,sm]=start.split(':').map(Number);
+        const [eh,em]=end.split(':').map(Number);
+        const mins=(eh*60+em)-(sh*60+sm);
+        const h=Math.floor(mins/60),m=mins%60;
+        const durStr=(h>0?h+'h ':'')+m+'min';
+        e.sub=start+' – '+end+' · '+durStr+(note?' · '+note:'');
+      } else {
+        e.sub=start+(note?' · '+note:'');
+      }
+    } else {
+      const start=document.getElementById('editSleepStartDur')?.value||fmtTime(e.ts);
+      const durMin=parseInt(document.getElementById('editSleepDurMin')?.value)||60;
+      e.ts=parseTimeToTs(start);
+      const [sh,sm]=start.split(':').map(Number);
+      const endMins=sh*60+sm+durMin;
+      const endH=Math.floor(endMins/60)%24,endM=endMins%60;
+      const end=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+      const h=Math.floor(durMin/60),m=durMin%60;
+      const durStr=(h>0?h+'h ':'')+m+'min';
+      e.sub=start+' – '+end+' · '+durStr+(note?' · '+note:'');
+    }
   }
   closeModal('mEditEntry');renderTodayList();renderStatus();saveAll();
 }
@@ -1564,12 +1691,26 @@ function getCurrentFoodDetailStatus(){
 function saveFoodDetail(){
   if(!currentFoodDetail)return;
   if(!state.foodOverrides)state.foodOverrides={};
+  const newStatus=getCurrentFoodDetailStatus();
+  const prevStatus=(state.foodOverrides[currentFoodDetail]||{}).status;
   state.foodOverrides[currentFoodDetail]={
-    status:getCurrentFoodDetailStatus(),
+    status:newStatus,
     lastUsed:document.getElementById('fdLastUsed').value||null,
     note:document.getElementById('fdNote').value
   };
-  closeModal('mFoodDetail');renderFoods();saveAll();
+  // Auto-sync do alergií — eliminováno = přidat, odebráno z eliminováno = odebrat
+  const name=currentFoodDetail;
+  const allergens=state.settings.allergens;
+  if(newStatus==='no'){
+    // přidat do alergií pokud tam ještě není
+    if(!allergens.some(a=>a.toLowerCase()===name.toLowerCase())){
+      state.settings.allergens.push(name);
+    }
+  } else if(prevStatus==='no'&&newStatus!=='no'){
+    // odebrat z alergií pokud byl předtím eliminovaný
+    state.settings.allergens=allergens.filter(a=>a.toLowerCase()!==name.toLowerCase());
+  }
+  closeModal('mFoodDetail');renderFoods();if(curScreen==='settings')renderSettings();saveAll();
 }
 function fmtDateShort(val){if(!val)return'';const d=new Date(typeof val==='number'?val:val);return d.getDate()+'.'+(d.getMonth()+1)+'.'+(d.getFullYear()%100);}
 
@@ -1679,11 +1820,39 @@ function updateClock(){const n=new Date();document.getElementById('clockEl').tex
 setInterval(updateClock,1000);updateClock();
 setInterval(renderStatus,30000);
 
-// Init
+// Init — localStorage má VŽDY přednost před DEFAULT_STATE
 if(myIdentity){document.getElementById('onboard').style.display='none';}
 const savedState=localStorage.getItem(STORAGE_KEY);
-if(savedState){try{const s=JSON.parse(savedState);Object.assign(state,s);lastRemoteTs=s.ts||0;}catch(e){}}
-seedCalData();
+if(savedState){
+  try{
+    const s=JSON.parse(savedState);
+    // deep merge — localStorage přepíše vše co tam je
+    if(s.todayLog!==undefined)state.todayLog=s.todayLog;
+    if(s.sleep!==undefined)state.sleep=s.sleep;
+    if(s.freezer!==undefined)state.freezer=s.freezer;
+    if(s.fzNextId!==undefined)state.fzNextId=s.fzNextId;
+    if(s.foodOverrides!==undefined)state.foodOverrides=s.foodOverrides;
+    // settings — merge jen co je uloženo, nepřepisovat výchozí pokud chybí
+    if(s.settings){
+      state.settings={...state.settings,...s.settings};
+      // alergie a lékaři — localStorage má absolutní přednost
+      if(s.settings.allergens!==undefined)state.settings.allergens=s.settings.allergens;
+      if(s.settings.doctors!==undefined)state.settings.doctors=s.settings.doctors;
+    }
+    // calData — načíst uložená, doplnit chybějící seedem
+    if(s.calData&&Object.keys(s.calData).length>0){
+      state.calData=s.calData;
+      // doplnit pouze chybějící dny (budoucí plánování)
+      seedMissingCalData();
+    } else {
+      seedCalData();
+    }
+    lastRemoteTs=s.ts||0;
+  }catch(e){seedCalData();}
+} else {
+  // první spuštění — seed demo data
+  seedCalData();
+}
 renderAll();
 </script>
 </body>
