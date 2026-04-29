@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sofin's Menu</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#fdf8f7">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --rose:#c9857a;--rose-light:#f5e8e6;--rose-mid:#e8c4be;--rose-dark:#8a4f47;--rose-btn:#d4948a;
+  --purple-light:#f3eef8;--purple-dark:#5c3d8a;
+  --slate-light:#edf0f5;--slate:#7a8fa8;--slate-dark:#3a5068;
+  --surface:#fdf8f7;--card:#fff;--text:#2c1a18;--text-2:#7a5c59;--text-3:#b89390;
+  --green:#3b6d11;--green-bg:#eaf3de;--amber:#854f0b;--amber-bg:#faeeda;
+  --red:#a32d2d;--red-bg:#fcebeb
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#e8d5d0;display:flex;align-items:center;justify-content:center}
+.phone{width:100%;max-width:430px;height:100%;max-height:932px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;position:relative}
+@media(min-width:500px){.phone{border-radius:44px;border:0.5px solid var(--rose-mid);box-shadow:0 32px 80px rgba(44,26,24,0.18)}}
+.statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;background:var(--surface)}
+.statusbar .time{font-size:15px;font-weight:600;color:var(--text)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#639922;display:inline-block;margin-right:4px;transition:background .3s}
+.sync-dot.syncing{background:#EF9F27;animation:pulse .8s infinite}
+.sync-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-bar{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-3)}
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden}
+.screen.active{display:flex}
+.sticky-top{flex-shrink:0;background:var(--surface)}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.header{padding:14px 20px 8px}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.header h1{font-size:26px;font-weight:700;letter-spacing:-0.5px;color:var(--text)}
+.subtitle{font-size:13px;color:var(--text-2)}
+.date-badge{background:var(--rose-light);color:var(--rose-dark);font-size:12px;padding:4px 10px;border-radius:20px;font-weight:500}
+.status-row{display:flex;gap:7px;margin:4px 0 6px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:4px;background:var(--card);border:0.5px solid var(--rose-mid);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--text-2)}
+.chip-val{font-weight:600;color:var(--text)}
+.chip.sleeping{background:#f2f5fa;border-color:#c5d2e0;color:var(--slate-dark)}
+.chip.warn{background:var(--amber-bg);border-color:#e8b870;color:var(--amber)}
+.action-row{padding:0 16px 8px;display:flex;flex-direction:column;gap:5px}
+.act-btn{width:100%;padding:9px 13px;border-radius:12px;border:0.5px solid transparent;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s}
+.act-btn:active{opacity:.8}
+.btn-food{background:var(--rose-light);color:var(--rose-dark);border-color:var(--rose-mid)}
+.btn-breast{background:#f3eef8;color:var(--purple-dark);border-color:#d9c8ee}
+.btn-sleep{background:var(--slate-light);color:var(--slate-dark);border-color:#c5d2e0}
+.btn-sleep.sleeping{background:#dde5f0;border-color:#a8bdd4}
+.act-icon{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-food .act-icon{background:var(--rose-btn);color:#fff;font-size:14px;font-weight:700}
+.btn-breast .act-icon{background:#c9aee0;font-size:13px}
+.sleep-icon{width:22px;height:22px;border-radius:7px;background:#a8bdd4;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sleep-icon svg{width:10px;height:10px;fill:#fff}
+.act-label{flex:1;font-size:13px}
+.act-sub{font-size:10px;opacity:.6;font-weight:400;display:block;margin-top:1px}
+.sleep-live{font-size:11px;font-weight:600;color:var(--slate-dark);min-width:44px;text-align:right}
+.reaction-strip{margin:0 16px 8px;background:var(--red-bg);border-radius:12px;border:0.5px solid #f09595;padding:9px 12px;display:flex;align-items:center;gap:9px;cursor:pointer}
+.ri{width:26px;height:26px;border-radius:8px;background:#f7c1c1;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.divider{height:.5px;background:var(--rose-mid);margin:0 16px}
+.sec-lbl{font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;padding:10px 20px 5px}
+.entry-list{padding:0 16px;display:flex;flex-direction:column;gap:6px}
+.ecard{background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer}
+.ecard:active{opacity:.8}
+.ecard.breast{background:#fdf5ff;border-color:#d9c8ee}
+.ecard.sleep-c{background:#f2f5fa;border-color:#c5d2e0}
+.ecard.live{border-color:var(--slate);border-width:1.5px}
+.etime{font-size:11px;color:var(--text-3);min-width:34px;flex-shrink:0}
+.eicon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.i-food{background:var(--rose-light)}.i-breast{background:#ede4f7}.i-sleep{background:#dde5f0}
+.einfo{flex:1;min-width:0}
+.ename{font-size:13px;font-weight:500;color:var(--text)}
+.esub{font-size:11px;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eright{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.rdot{width:18px;height:18px;border-radius:50%;background:var(--red-bg);border:.5px solid #f09595;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--red)}
+.livebadge{font-size:10px;font-weight:600;color:var(--slate-dark);background:#c5d2e0;padding:2px 7px;border-radius:8px}
+.ch{width:13px;height:13px;stroke:var(--text-3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.who{font-size:9px;padding:1px 5px;border-radius:6px;font-weight:600;flex-shrink:0}
+.who-mama{background:#f3eef8;color:var(--purple-dark)}
+.who-tata{background:#edf0f5;color:var(--slate-dark)}
+.view-toggle{display:flex;gap:0;margin:0 16px 10px;border:.5px solid var(--rose-mid);border-radius:10px;overflow:hidden;background:var(--rose-light)}
+.vt{flex:1;padding:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-2);text-align:center}
+.vt.active{background:var(--rose-btn);color:#fff}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px}
+.nav-btn{width:30px;height:30px;border-radius:50%;border:.5px solid var(--rose-mid);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-2);font-size:15px}
+.cal-lbl{font-size:14px;font-weight:600;color:var(--text)}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);padding:0 12px;margin-bottom:3px}
+.cal-dow{font-size:10px;font-weight:500;color:var(--text-3);text-align:center;padding:3px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 12px;gap:2px}
+.cday{border-radius:9px;padding:4px 2px;cursor:pointer;min-height:46px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cday:active{background:var(--rose-light)}
+.cday.today .dn{background:var(--rose-btn);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.cday.other .dn{color:var(--text-3)}
+.cday.sel{background:var(--rose-light)}
+.cday.reacted{background:#fff5f5}
+.dn{font-size:12px;font-weight:500;color:var(--text);width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.ddots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:32px}
+.dot{width:4px;height:4px;border-radius:50%}
+.df{background:var(--rose-btn)}.db{background:#9b7fbd}.ds{background:#7a8fa8}.dr{background:#e24b4a}
+.week-grid{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wcard{background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:9px 11px;cursor:pointer;min-height:78px}
+.wcard:active{opacity:.8}
+.wcard.today{border-color:var(--rose-btn);border-width:1.5px}
+.wcard.reacted{border-left:3px solid #e24b4a}
+.wcard.future{background:var(--surface);border-style:dashed;opacity:.65}
+.wc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.wc-dn{font-size:12px;font-weight:600;color:var(--text-2)}
+.wc-date{font-size:11px;color:var(--text-3)}
+.wc-stats{display:flex;gap:5px;margin-bottom:4px;flex-wrap:wrap}
+.wc-stat{font-size:10px;color:var(--text-2);display:flex;align-items:center;gap:2px}
+.wsd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.wc-foods{font-size:11px;color:var(--text-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.legend{display:flex;gap:8px;padding:5px 16px 4px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text-3)}
+.ld{width:6px;height:6px;border-radius:50%}
+.detail-back{padding:10px 16px 4px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.back-lbl{font-size:13px;color:var(--rose);font-weight:500}
+.detail-title{font-size:15px;font-weight:600;color:var(--text)}
+.food-tabs{display:flex;gap:5px;padding:0 16px 8px;overflow-x:auto;scrollbar-width:none}
+.food-tabs::-webkit-scrollbar{display:none}
+.ftab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--rose-mid);background:transparent;color:var(--text-2);white-space:nowrap;flex-shrink:0}
+.ftab.active{background:var(--rose-btn);color:#fff;border-color:var(--rose-btn)}
+.food-list{padding:0 16px;display:flex;flex-direction:column;gap:5px}
+.fitem{background:var(--card);border-radius:11px;border:.5px solid var(--rose-mid);padding:9px 12px;display:flex;align-items:center;gap:8px}
+.fitem.ok{border-left:3px solid #639922}.fitem.warn{border-left:3px solid #BA7517}.fitem.no{border-left:3px solid #E24B4A}
+.fdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.fdot.ok{background:#639922}.fdot.warn{background:#BA7517}.fdot.no{background:#E24B4A}.fdot.new{background:#378ADD}
+.fname{flex:1;font-size:13px;color:var(--text)}
+.fst{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:500;flex-shrink:0}
+.st-ok{background:#eaf3de;color:#3b6d11}.st-new{background:#E6F1FB;color:#185FA5}
+.st-warn{background:#faeeda;color:#854f0b}.st-no{background:#fcebeb;color:#a32d2d}
+.tl-wrap{padding:0 16px}
+.tl-month{margin-bottom:14px}
+.tl-ml{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tl-b{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500}
+.tl-curr{background:var(--rose-light);color:var(--rose-dark)}.tl-past{background:#eaf3de;color:#3b6d11}.tl-fut{background:#E6F1FB;color:#185FA5}
+.tl-pills{display:flex;flex-wrap:wrap;gap:4px}
+.tl-pill{font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid var(--rose-mid);background:var(--card);color:var(--text)}
+.tl-pill.done{background:#eaf3de;border-color:#c0dd97;color:#3b6d11}
+.tl-pill.overdue{background:#fcebeb;border-color:#f09595;color:#a32d2d}
+.tl-pill.curr{background:var(--rose-light);border-color:var(--rose-mid);color:var(--rose-dark);font-weight:500}
+.sum-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:0 16px 10px}
+.scard{background:var(--card);border:.5px solid var(--rose-mid);border-radius:11px;padding:9px 10px;text-align:center}
+.sn{font-size:18px;font-weight:700;color:var(--text)}
+.sl{font-size:10px;color:var(--text-3);margin-top:1px}
+.swarn{color:var(--red)}
+.fzlist{padding:0 16px;display:flex;flex-direction:column;gap:7px}
+.fzcard{background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:12px 13px}
+.fzcard.fresh{border-left:3px solid #639922}.fzcard.expiring{border-left:3px solid #EF9F27}.fzcard.expired{border-left:3px solid #e24b4a}
+.fztop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px}
+.fzname{font-size:14px;font-weight:500;color:var(--text)}
+.fztype{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500;flex-shrink:0;margin-left:6px}
+.tp-p{background:var(--rose-light);color:var(--rose-dark)}.tp-k{background:#edf0f5;color:#3a5068}.tp-m{background:#f3eef8;color:#5c3d8a}.tp-ka{background:#eaf3de;color:#3b6d11}
+.fzsub{font-size:11px;color:var(--text-3);margin-bottom:7px}
+.fzbot{display:flex;align-items:center;justify-content:space-between}
+.fzstepper{display:flex;align-items:center;gap:5px}
+.step{width:28px;height:28px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.fzamt{font-size:15px;font-weight:600;color:var(--text)}
+.fzunit{font-size:11px;color:var(--text-3)}
+.fzexp{text-align:right}
+.fzdays{font-size:11px;font-weight:600}
+.fzdays.ok{color:var(--green)}.fzdays.warn{color:var(--amber)}.fzdays.bad{color:var(--red)}
+.fzdate{font-size:10px;color:var(--text-3)}
+.expbar{height:3px;border-radius:2px;margin-top:7px;background:var(--rose-light);overflow:hidden}
+.expfill{height:100%;border-radius:2px}
+.add-btn{margin:8px 16px 0;width:calc(100% - 32px);padding:11px;border-radius:12px;background:var(--rose-light);border:none;color:var(--rose-dark);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.av-sec{display:flex;flex-direction:column;align-items:center;padding:12px 20px 14px}
+.av{width:72px;height:72px;border-radius:50%;background:var(--rose-light);border:2px solid var(--rose-mid);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;margin-bottom:8px}
+.av-name{font-size:18px;font-weight:700;color:var(--text)}
+.av-age{font-size:13px;color:var(--text-2);margin-top:2px}
+.set-sec{margin:0 16px 12px}
+.set-title{font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;padding-left:2px}
+.set-card{background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);overflow:hidden}
+.set-row{display:flex;align-items:center;padding:11px 14px;border-bottom:.5px solid var(--rose-light);cursor:pointer;gap:10px}
+.set-row:last-child{border-bottom:none}
+.set-row:active{background:var(--rose-light)}
+.si{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.si-r{background:var(--rose-light)}.si-p{background:#f3eef8}.si-s{background:#edf0f5}.si-red{background:var(--red-bg)}
+.set-lbl{flex:1}
+.set-lbl-t{font-size:14px;color:var(--text)}
+.set-lbl-s{font-size:11px;color:var(--text-3);margin-top:1px}
+.set-val{font-size:13px;color:var(--text-2);margin-right:4px}
+.al-wrap{padding:10px 14px;display:flex;flex-wrap:wrap;gap:5px}
+.al-pill{font-size:11px;padding:4px 10px;border-radius:16px;font-weight:500;background:var(--red-bg);color:var(--red);border:.5px solid #f09595;cursor:pointer;display:flex;align-items:center;gap:4px}
+.al-add{font-size:11px;padding:4px 10px;border-radius:16px;background:var(--rose-light);color:var(--rose-dark);border:.5px solid var(--rose-mid);cursor:pointer;font-weight:500}
+.doc-card{background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px 14px;margin-bottom:6px}
+.doc-top{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.doc-icon{width:34px;height:34px;border-radius:10px;background:#edf0f5;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.doc-name{font-size:14px;font-weight:500;color:var(--text)}
+.doc-type{font-size:11px;color:var(--text-3)}
+.doc-contact{font-size:12px;color:var(--text-2);padding-left:44px}
+.next-b{font-size:10px;background:var(--rose-light);color:var(--rose-dark);padding:1px 6px;border-radius:7px;margin-left:6px}
+.tabbar{height:78px;background:var(--card);border-top:.5px solid var(--rose-mid);display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;flex-shrink:0}
+.ti{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-width:42px;padding:2px}
+.ti svg{width:22px;height:22px;stroke:var(--text-3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s}
+.ti.active svg{stroke:var(--rose)}
+.tl{font-size:9px;color:var(--text-3);font-weight:500;transition:color .15s}
+.ti.active .tl{color:var(--rose);font-weight:600}
+.modal-wrap{display:none;position:fixed;inset:0;z-index:200}
+.modal-wrap.open{display:block}
+.movl{background:rgba(44,26,24,.45);height:100%;display:flex;align-items:flex-end;justify-content:center}
+.msheet{background:var(--card);border-radius:22px 22px 0 0;padding:18px;width:100%;max-width:430px;max-height:85vh;overflow-y:auto}
+.mhandle{width:34px;height:4px;background:var(--rose-mid);border-radius:2px;margin:0 auto 12px}
+.mtitle{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px}
+.mrow{margin-bottom:10px}
+.mrow label{font-size:11px;color:var(--text-2);font-weight:500;display:block;margin-bottom:3px}
+.mrow input,.mrow select,.mrow textarea{width:100%;padding:8px 10px;border-radius:10px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--text);font-size:13px;font-family:inherit}
+.mrow textarea{min-height:50px;resize:none}
+.type-btns{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.type-btn{padding:8px;border-radius:9px;border:.5px solid var(--rose-mid);background:transparent;font-size:12px;font-weight:500;color:var(--text-2);cursor:pointer;text-align:center}
+.type-btn.sel{background:var(--rose-btn);color:#fff;border-color:var(--rose-btn)}
+.msave{width:100%;padding:12px;border-radius:13px;background:var(--rose-btn);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:5px}
+.mcancel{width:100%;padding:8px;border-radius:13px;background:transparent;border:none;color:var(--text-2);font-size:12px;cursor:pointer;margin-top:3px}
+.fsug{background:var(--card);border:.5px solid var(--rose-mid);border-radius:10px;max-height:110px;overflow-y:auto;margin-top:3px}
+.fsug-item{padding:8px 11px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:.5px solid var(--rose-light)}
+.fsug-item:last-child{border-bottom:none}
+.fsug-item:active{background:var(--rose-light)}
+.sel-foods{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.sfp{background:var(--rose-light);color:var(--rose-dark);font-size:11px;padding:3px 8px;border-radius:16px;cursor:pointer;border:.5px solid var(--rose-mid)}
+.fz-sug-box{background:#f0f8e8;border:.5px solid #c0dd97;border-radius:10px;padding:9px 12px;margin-top:6px;display:none}
+.fz-sug-box p{font-size:11px;color:#3b6d11;font-weight:500;margin-bottom:5px}
+.fz-sug-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:.5px solid #d5eebc;font-size:11px}
+.fz-sug-row:last-child{border-bottom:none}
+.rh-item{display:flex;gap:8px;padding:6px 8px;background:var(--card);border-radius:9px;border:.5px solid var(--rose-light)}
+.rh-item.close-r{border-color:#f09595;background:#fff8f8}
+/* onboarding */
+.onboard{position:fixed;inset:0;background:var(--surface);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center}
+.onboard h2{font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px}
+.onboard p{font-size:14px;color:var(--text-2);margin-bottom:32px;line-height:1.5}
+.ob-btns{display:flex;gap:12px;width:100%;max-width:280px}
+.ob-btn{flex:1;padding:16px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer}
+.ob-mama{background:var(--rose-btn);color:#fff}
+.ob-tata{background:var(--slate-light);color:var(--slate-dark);border:.5px solid var(--rose-mid)}
+.ob-emoji{font-size:48px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div class="onboard" id="onboard">
+  <div class="ob-emoji">👶</div>
+  <h2>Sofin's menu</h2>
+  <p>Kdo jsi? Záznamy budou označeny tvým jménem, takže víte kdo co zadal.</p>
+  <div class="ob-btns">
+    <button class="ob-btn ob-mama" onclick="setIdentity('mama')">🤱 Mama</button>
+    <button class="ob-btn ob-tata" onclick="setIdentity('tata')">👨 Táta</button>
+  </div>
+</div>
+
+<div class="phone">
+  <div class="statusbar">
+    <span class="time" id="clockEl">9:41</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sync-bar"><div class="sync-dot" id="syncDot"></div><span id="syncLbl">synchronizováno</span></div>
+    </div>
+  </div>
+
+  <!-- DNES -->
+  <div id="scr-today" class="screen active">
+    <div class="sticky-top">
+      <div class="header">
+        <div class="header-top"><h1>Sofin's menu</h1><span class="date-badge" id="todayBadge"></span></div>
+        <div class="subtitle" id="appSubtitle">Sofinka · 8 měsíců</div>
+        <div class="status-row" id="statusRow"></div>
+      </div>
+      <div class="action-row">
+        <button class="act-btn btn-food" onclick="openModal('mFood')">
+          <div class="act-icon">+</div>
+          <span class="act-label">Přidat jídlo</span>
+        </button>
+        <button class="act-btn btn-breast" onclick="openModal('mBreast')">
+          <div class="act-icon">🤱</div>
+          <span class="act-label">Zaznamenat kojení</span>
+        </button>
+        <button class="act-btn btn-sleep" id="sleepBtn" onclick="toggleSleep()">
+          <div class="sleep-icon" id="sleepIcon">
+            <svg id="iconPlay" viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9"/></svg>
+            <svg id="iconPause" viewBox="0 0 10 10" style="display:none"><rect x="1.5" y="1" width="2.5" height="8" rx=".8"/><rect x="6" y="1" width="2.5" height="8" rx=".8"/></svg>
+          </div>
+          <span class="act-label">
+            <span id="sleepLabel">Začít spánek</span>
+            <span class="act-sub" id="sleepSub" style="display:block"></span>
+          </span>
+          <span class="sleep-live" id="sleepLive" style="display:none"></span>
+        </button>
+        <div class="reaction-strip" onclick="openModal('mReaction')">
+          <div class="ri">⚠</div>
+          <div><div style="font-size:12px;font-weight:500;color:var(--red)">Zaznamenat reakci</div><div style="font-size:10px;color:var(--red);opacity:.6">zvracení, vyrážka, stolice...</div></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+    </div>
+    <div class="scroll-area">
+      <div class="sec-lbl">Záznamy dne</div>
+      <div class="entry-list" id="todayList"></div>
+      <div style="height:8px"></div>
+    </div>
+  </div>
+
+  <!-- PLÁN -->
+  <div id="scr-plan" class="screen">
+    <div class="sticky-top">
+      <div class="header"><div class="header-top"><h1>Plán</h1></div><div class="subtitle">Sofinka</div></div>
+      <div class="view-toggle">
+        <button class="vt" id="vtM" onclick="setCalView('month')">Měsíc</button>
+        <button class="vt active" id="vtW" onclick="setCalView('week')">Týden</button>
+      </div>
+      <div class="cal-nav">
+        <button class="nav-btn" onclick="navPrev()">&#8592;</button>
+        <span class="cal-lbl" id="calLbl"></span>
+        <button class="nav-btn" onclick="navNext()">&#8594;</button>
+      </div>
+      <div id="mHdr" style="display:none"><div class="cal-header" id="calHdr"></div></div>
+      <div id="calGrid"></div>
+      <div class="legend" id="calLeg" style="display:none">
+        <div class="li"><div class="ld" style="background:var(--rose-btn)"></div>jídlo</div>
+        <div class="li"><div class="ld" style="background:#9b7fbd"></div>kojení</div>
+        <div class="li"><div class="ld" style="background:#7a8fa8"></div>spánek</div>
+        <div class="li"><div class="ld" style="background:#e24b4a"></div>reakce</div>
+      </div>
+    </div>
+    <div class="scroll-area" id="planScroll">
+      <div id="planDetail" style="display:none">
+        <div class="detail-back" onclick="closePlanDetail()"><span class="back-lbl">← Zpět</span><span class="detail-title" id="planDTitle"></span></div>
+        <div id="planDContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POTRAVINY -->
+  <div id="scr-food" class="screen">
+    <div class="sticky-top">
+      <div class="header"><div class="header-top"><h1>Potraviny</h1></div><div class="subtitle" id="foodSubtitle">8. měsíc · zavádění</div></div>
+      <div class="view-toggle" style="margin-bottom:8px">
+        <button class="vt active" id="vfl" onclick="setFoodView('list')">Seznam</button>
+        <button class="vt" id="vft" onclick="setFoodView('timeline')">Časová osa</button>
+      </div>
+      <div class="food-tabs" id="foodTabsBar">
+        <button class="ftab active" onclick="filterFood('vse',this)">Vše</button>
+        <button class="ftab" onclick="filterFood('zelenina',this)">Zelenina</button>
+        <button class="ftab" onclick="filterFood('ovoce',this)">Ovoce</button>
+        <button class="ftab" onclick="filterFood('obiloviny',this)">Obiloviny</button>
+        <button class="ftab" onclick="filterFood('bilkoviny',this)">Bílkoviny</button>
+        <button class="ftab" onclick="filterFood('tuky',this)">Tuky & jiné</button>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div id="foodListView"><div class="food-list" id="foodGrid"></div></div>
+      <div id="foodTlView" style="display:none"><div class="tl-wrap" id="tlWrap"></div></div>
+      <div style="height:8px"></div>
+    </div>
+  </div>
+
+  <!-- MRAZÁK -->
+  <div id="scr-freezer" class="screen">
+    <div class="sticky-top">
+      <div class="header">
+        <div class="header-top">
+          <h1>Mrazák</h1>
+          <button onclick="openModal('mFzAdd')" style="width:30px;height:30px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+        </div>
+        <div class="subtitle">zásoby Sofinky</div>
+      </div>
+      <div class="sum-bar" id="sumBar"></div>
+      <div class="food-tabs">
+        <button class="ftab active" onclick="filterFz('vse',this)">Vše</button>
+        <button class="ftab" onclick="filterFz('prikrm',this)">Příkrmy</button>
+        <button class="ftab" onclick="filterFz('kase',this)">Kaše</button>
+        <button class="ftab" onclick="filterFz('mleko',this)">Mléko</button>
+        <button class="ftab" onclick="filterFz('kapsicka',this)">Kapsičky</button>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="fzlist" id="fzList"></div>
+      <button class="add-btn" onclick="openModal('mFzAdd')">
+        <span style="width:16px;height:16px;background:var(--rose-btn);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px">+</span>
+        Přidat do mrazáku
+      </button>
+      <div style="height:8px"></div>
+    </div>
+  </div>
+
+  <!-- NASTAVENÍ -->
+  <div id="scr-settings" class="screen">
+    <div class="scroll-area">
+      <div class="header"><div class="header-top"><h1>Nastavení</h1></div></div>
+      <div class="av-sec">
+        <div class="av">👶</div>
+        <div class="av-name" id="avName">Sofinka</div>
+        <div class="av-age" id="avAge">8 měsíců</div>
+      </div>
+      <div class="set-sec">
+        <div class="set-title">Profil dítěte</div>
+        <div class="set-card">
+          <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">👶</div><div class="set-lbl"><div class="set-lbl-t">Jméno</div></div><span class="set-val" id="svName">Sofinka</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">🎂</div><div class="set-lbl"><div class="set-lbl-t">Datum narození</div></div><span class="set-val" id="svBirth">14. 8. 2024</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">⚖️</div><div class="set-lbl"><div class="set-lbl-t">Váha</div></div><span class="set-val" id="svWeight">7,8 kg</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+        </div>
+      </div>
+      <div class="set-sec">
+        <div class="set-title">Já jsem</div>
+        <div class="set-card">
+          <div class="set-row" onclick="resetIdentity()"><div class="si si-p">👤</div><div class="set-lbl"><div class="set-lbl-t">Identita</div><div class="set-lbl-s">kdo zadává záznamy</div></div><span class="set-val" id="identityVal">—</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+        </div>
+      </div>
+      <div class="set-sec">
+        <div class="set-title">Alergie</div>
+        <div class="set-card"><div class="al-wrap" id="alWrap"></div></div>
+      </div>
+      <div class="set-sec">
+        <div class="set-title">Lékaři</div>
+        <div id="docList"></div>
+        <button class="add-btn" style="margin:0" onclick="openModal('mDoctor')">+ Přidat lékaře</button>
+      </div>
+      <div class="set-sec" style="margin-top:8px">
+        <div class="set-card">
+          <div class="set-row"><div class="si si-s">📤</div><div class="set-lbl"><div class="set-lbl-t">Export pro alergologa</div><div class="set-lbl-s">PDF se záznamy reakcí</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+        </div>
+      </div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.0 · real-time sync ✓</div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="ti active" id="ti-today" onclick="showScreen('today')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tl">Dnes</span></div>
+    <div class="ti" id="ti-plan" onclick="showScreen('plan')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tl">Plán</span></div>
+    <div class="ti" id="ti-food" onclick="showScreen('food')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="tl">Potraviny</span></div>
+    <div class="ti" id="ti-freezer" onclick="showScreen('freezer')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="14" x2="12" y2="20"/></svg><span class="tl">Mrazák</span></div>
+    <div class="ti" id="ti-settings" onclick="showScreen('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="tl">Nastavení</span></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-wrap" id="mFood"><div class="movl" onclick="closeModal('mFood')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Přidat jídlo</div>
+  <div class="mrow"><label>Typ</label><div class="type-btns">
+    <button class="type-btn sel" onclick="selType(this)">Snídaně</button>
+    <button class="type-btn" onclick="selType(this)">Oběd</button>
+    <button class="type-btn" onclick="selType(this)">Svačina</button>
+    <button class="type-btn" onclick="selType(this)">Večeře</button>
+  </div></div>
+  <div class="mrow"><label>Zdroj</label><div class="type-btns">
+    <button class="type-btn sel" id="srcOwn" onclick="selSrc('own')">🏠 Vlastní</button>
+    <button class="type-btn" id="srcBought" onclick="selSrc('bought')">🏪 Kupované</button>
+  </div></div>
+  <div class="mrow" id="rowBrand" style="display:none"><label>Značka</label><input type="text" id="brandInput" placeholder="HiPP Bio hruška 125g"/></div>
+  <div class="mrow"><label>Složky</label>
+    <input type="text" id="ingInput" placeholder="začni psát..." oninput="showSuggest(this.value)" autocomplete="off"/>
+    <div class="fsug" id="foodSug" style="display:none"></div>
+    <div class="sel-foods" id="selFoods"></div>
+  </div>
+  <div id="fzSugBox" class="fz-sug-box"><p>❄️ Dostupné v mrazáku — použít?</p><div id="fzSugItems"></div></div>
+  <div class="mrow"><label>Čas</label><input type="time" id="foodTime" value="12:00"/></div>
+  <button class="msave" onclick="saveFood()">Uložit jídlo</button>
+  <button class="mcancel" onclick="closeModal('mFood')">Zrušit</button>
+</div></div></div>
+
+<div class="modal-wrap" id="mBreast"><div class="movl" onclick="closeModal('mBreast')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Kojení</div>
+  <div class="mrow"><label>Čas</label><input type="time" id="breastTime" value="09:00"/></div>
+  <div class="mrow"><label>Strana</label><div class="type-btns">
+    <button class="type-btn sel" onclick="selType(this)">Levá</button>
+    <button class="type-btn" onclick="selType(this)">Pravá</button>
+    <button class="type-btn" onclick="selType(this)">Obě</button>
+  </div></div>
+  <div class="mrow"><label>Délka (min)</label><input type="number" id="breastDur" value="15" min="1" max="60"/></div>
+  <div class="mrow"><label>Poznámka</label><input type="text" id="breastNote" placeholder="neklidná..."/></div>
+  <button class="msave" onclick="saveBreast()">Uložit kojení</button>
+  <button class="mcancel" onclick="closeModal('mBreast')">Zrušit</button>
+</div></div></div>
+
+<div class="modal-wrap" id="mReaction"><div class="movl" onclick="closeModal('mReaction')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Zaznamenat reakci</div>
+  <div class="mrow"><label>Typ (lze vybrat více)</label><div class="type-btns">
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Zvracení</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Průjem</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Vyrážka</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Plačtivost</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Špatná stolice</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Otoky</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Rýma / kašel</button>
+    <button class="type-btn" onclick="this.classList.toggle('sel')">Jiné</button>
+  </div></div>
+  <div class="mrow"><label>Čas reakce</label><input type="time" id="reactionTime"/></div>
+  <div class="mrow">
+    <label>Co jedla předtím <span style="font-weight:400;color:var(--text-3)">(48h)</span></label>
+    <div style="background:var(--surface);border-radius:11px;border:.5px solid var(--rose-mid);overflow:hidden">
+      <div style="padding:8px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleRH()">
+        <span style="font-size:12px;font-weight:500;color:var(--text)">Historie jídel a kojení</span>
+        <span style="font-size:11px;color:var(--rose);font-weight:500" id="rhToggle">▼ rozbalit</span>
+      </div>
+      <div id="rhList" style="display:none;padding:0 10px 10px;flex-direction:column;gap:4px"></div>
+    </div>
+  </div>
+  <div class="mrow"><label>Podezřelá potravina</label><input type="text" id="suspectFood" placeholder="např. batát..."/></div>
+  <div class="mrow"><label>Poznámka</label><textarea id="reactionNote" placeholder="Co se stalo..."></textarea></div>
+  <button class="msave" onclick="saveReaction()">Uložit reakci</button>
+  <button class="mcancel" onclick="closeModal('mReaction')">Zrušit</button>
+</div></div></div>
+
+<div class="modal-wrap" id="mFzAdd"><div class="movl" onclick="closeModal('mFzAdd')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Přidat do mrazáku</div>
+  <div class="mrow"><label>Typ</label><div class="type-btns">
+    <button class="type-btn sel" onclick="selType(this);setFzUnit(this)">Příkrm</button>
+    <button class="type-btn" onclick="selType(this);setFzUnit(this)">Kaše</button>
+    <button class="type-btn" onclick="selType(this);setFzUnit(this)">Mléko</button>
+    <button class="type-btn" onclick="selType(this);setFzUnit(this)">Kapsička</button>
+  </div></div>
+  <div class="mrow"><label>Složky / potravina</label>
+    <input type="text" id="fzIngInput" placeholder="začni psát..." oninput="showFzSuggest(this.value)" autocomplete="off"/>
+    <div class="fsug" id="fzFoodSug" style="display:none"></div>
+    <div class="sel-foods" id="fzSelFoods"></div>
+  </div>
+  <div class="mrow"><label>Množství</label>
+    <div style="display:flex;gap:7px">
+      <input type="number" id="fzAmt" value="6" min="1" style="flex:1"/>
+      <select id="fzUnit" style="width:100px;flex-shrink:0"><option value="kostičky">kostičky</option><option value="ml">ml</option></select>
+    </div>
+  </div>
+  <div class="mrow"><label>Datum zmrazení</label><input type="date" id="fzDate"/></div>
+  <div class="mrow"><label>Poznámka</label><input type="text" id="fzNote" placeholder="volitelně..."/></div>
+  <button class="msave" onclick="saveFzItem()">Uložit do mrazáku</button>
+  <button class="mcancel" onclick="closeModal('mFzAdd')">Zrušit</button>
+</div></div></div>
+
+<div class="modal-wrap" id="mChild"><div class="movl" onclick="closeModal('mChild')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Profil dítěte</div>
+  <div class="mrow"><label>Jméno</label><input type="text" id="cName" value="Sofinka"/></div>
+  <div class="mrow"><label>Datum narození</label><input type="date" id="cBirth" value="2024-08-14"/></div>
+  <div class="mrow"><label>Váha (kg)</label><input type="number" id="cWeight" value="7.8" step="0.1"/></div>
+  <button class="msave" onclick="saveChild()">Uložit</button>
+  <button class="mcancel" onclick="closeModal('mChild')">Zrušit</button>
+</div></div></div>
+
+<div class="modal-wrap" id="mDoctor"><div class="movl" onclick="closeModal('mDoctor')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Přidat lékaře</div>
+  <div class="mrow"><label>Typ</label><div class="type-btns">
+    <button class="type-btn sel" onclick="selType(this)">Pediatr</button>
+    <button class="type-btn" onclick="selType(this)">Alergolog</button>
+    <button class="type-btn" onclick="selType(this)">Gastroenterolog</button>
+    <button class="type-btn" onclick="selType(this)">Jiný</button>
+  </div></div>
+  <div class="mrow"><label>Jméno</label><input type="text" id="dName" placeholder="MUDr. ..."/></div>
+  <div class="mrow"><label>Telefon</label><input type="tel" id="dPhone" placeholder="+420 ..."/></div>
+  <div class="mrow"><label>Ordinace</label><input type="text" id="dPlace" placeholder="nemocnice..."/></div>
+  <div class="mrow"><label>Příští návštěva</label><input type="date" id="dNext"/></div>
+  <button class="msave" onclick="saveDoctor()">Uložit lékaře</button>
+  <button class="mcancel" onclick="closeModal('mDoctor')">Zrušit</button>
+</div></div></div>
+
+<script>
+// ============================================================
+// IDENTITY (localStorage — per device)
+// ============================================================
+let myIdentity = localStorage.getItem('sofin:identity') || null;
+
+function setIdentity(who) {
+  myIdentity = who;
+  localStorage.setItem('sofin:identity', who);
+  document.getElementById('onboard').style.display = 'none';
+  document.getElementById('identityVal').textContent = who === 'mama' ? '🤱 Mama' : '👨 Táta';
+}
+
+function resetIdentity() {
+  if(confirm('Změnit identitu?')) {
+    localStorage.removeItem('sofin:identity');
+    myIdentity = null;
+    document.getElementById('onboard').style.display = 'flex';
+  }
+}
+
+function whoAmI() { return myIdentity || 'mama'; }
+
+// ============================================================
+// FOODS DB
+// ============================================================
+const CM = 8;
+const FDB = [
+  {name:'batát',cat:'zelenina',month:4,status:'ok'},{name:'brambor',cat:'zelenina',month:4,status:'ok'},
+  {name:'brokolice',cat:'zelenina',month:4,status:'ok'},{name:'cuketa',cat:'zelenina',month:4,status:'ok'},
+  {name:'červená řepa',cat:'zelenina',month:4,status:'new'},{name:'hrášek',cat:'zelenina',month:4,status:'new'},
+  {name:'květák',cat:'zelenina',month:4,status:'new'},{name:'máslová dýně',cat:'zelenina',month:4,status:'ok'},
+  {name:'mrkev',cat:'zelenina',month:4,status:'ok'},{name:'petržel',cat:'zelenina',month:4,status:'new'},
+  {name:'pastinák',cat:'zelenina',month:4,status:'new'},{name:'špenát',cat:'zelenina',month:4,status:'new'},
+  {name:'celer',cat:'zelenina',month:6,status:'new'},{name:'okurka',cat:'zelenina',month:6,status:'new'},
+  {name:'rajče',cat:'zelenina',month:6,status:'new'},{name:'zelené fazolky',cat:'zelenina',month:6,status:'new'},
+  {name:'kapusta',cat:'zelenina',month:7,status:'new'},{name:'kedlubna',cat:'zelenina',month:7,status:'new'},
+  {name:'pórek',cat:'zelenina',month:7,status:'new'},{name:'paprika',cat:'zelenina',month:8,status:'new'},
+  {name:'kuřecí',cat:'bilkoviny',month:5,status:'ok'},{name:'krůtí',cat:'bilkoviny',month:5,status:'new'},
+  {name:'králík',cat:'bilkoviny',month:5,status:'new'},{name:'telecí',cat:'bilkoviny',month:5,status:'new'},
+  {name:'vepřové',cat:'bilkoviny',month:5,status:'new'},{name:'jehněčí',cat:'bilkoviny',month:5,status:'new'},
+  {name:'hovězí',cat:'bilkoviny',month:5,status:'no',allergen:true},
+  {name:'kapr',cat:'bilkoviny',month:7,status:'new'},{name:'losos',cat:'bilkoviny',month:7,status:'new'},
+  {name:'treska',cat:'bilkoviny',month:7,status:'new'},{name:'čočka červená',cat:'bilkoviny',month:8,status:'new'},
+  {name:'avokádo',cat:'ovoce',month:5,status:'ok'},{name:'banán',cat:'ovoce',month:5,status:'ok'},
+  {name:'borůvka',cat:'ovoce',month:5,status:'new'},{name:'broskev',cat:'ovoce',month:5,status:'new'},
+  {name:'hruška',cat:'ovoce',month:5,status:'ok'},{name:'jablko',cat:'ovoce',month:5,status:'ok'},
+  {name:'malina',cat:'ovoce',month:5,status:'new'},{name:'mango',cat:'ovoce',month:5,status:'new'},
+  {name:'meruňka',cat:'ovoce',month:5,status:'new'},{name:'švestka',cat:'ovoce',month:5,status:'new'},
+  {name:'angrešt',cat:'ovoce',month:6,status:'new'},{name:'hrozen',cat:'ovoce',month:6,status:'new'},
+  {name:'kiwi',cat:'ovoce',month:6,status:'new'},{name:'meloun',cat:'ovoce',month:6,status:'new'},
+  {name:'třešně',cat:'ovoce',month:6,status:'new'},
+  {name:'rýže',cat:'obiloviny',month:5,status:'ok'},{name:'kukuřice',cat:'obiloviny',month:5,status:'ok'},
+  {name:'oves',cat:'obiloviny',month:5,status:'warn'},{name:'pohanka',cat:'obiloviny',month:5,status:'new'},
+  {name:'proso',cat:'obiloviny',month:5,status:'new'},{name:'amarant',cat:'obiloviny',month:5,status:'new'},
+  {name:'ječmen',cat:'obiloviny',month:5,status:'new'},{name:'pšenice',cat:'obiloviny',month:5,status:'new'},
+  {name:'žito',cat:'obiloviny',month:5,status:'new'},{name:'jáhly',cat:'obiloviny',month:8,status:'new'},
+  {name:'olivový olej',cat:'tuky',month:4,status:'ok'},{name:'máslo',cat:'tuky',month:6,status:'warn'},
+  {name:'bílý jogurt',cat:'tuky',month:6,status:'new'},{name:'žloutek',cat:'tuky',month:6,status:'new'},
+  {name:'mateřské mléko',cat:'tuky',month:4,status:'ok'},{name:'kuřecí vývar',cat:'bilkoviny',month:5,status:'ok'},
+  {name:'sója',cat:'tuky',month:5,status:'no',allergen:true},
+  {name:'sezam',cat:'tuky',month:6,status:'no',allergen:true},
+  {name:'vejce',cat:'tuky',month:12,status:'no',allergen:true},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+const DAYS_MON=['Po','Út','St','Čt','Pá','So','Ne'];
+const MONTHS_CS=['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+const MONTHS_GEN=['ledna','února','března','dubna','května','června','července','srpna','září','října','listopadu','prosince'];
+
+const DEFAULT_STATE = {
+  todayLog: [],
+  sleep: {active:false, startTs:null},
+  freezer: [
+    {id:1,foods:['mrkev','batát'],type:'prikrm',amount:8,unit:'kostičky',frozen:Date.now()-5*864e5,note:''},
+    {id:2,foods:['máslová dýně','rýže'],type:'kase',amount:12,unit:'kostičky',frozen:Date.now()-18*864e5,note:'bez soli'},
+    {id:3,foods:['mateřské mléko'],type:'mleko',amount:180,unit:'ml',frozen:Date.now()-3*864e5,note:'ranní'},
+    {id:4,foods:['kuřecí','mrkev','brambor'],type:'prikrm',amount:6,unit:'kostičky',frozen:Date.now()-45*864e5,note:''},
+  ],
+  settings: {
+    name:'Sofinka', birth:'2024-08-14', weight:'7,8',
+    allergens:['ABKM (kravské mléko)','sója','hovězí','vejce','sezam'],
+    doctors:[
+      {type:'pediatr',name:'MUDr. Jana Nováková',phone:'+420 123 456 789',place:'Dětská ordinace Praha 4',next:'2025-06-10'},
+      {type:'alergolog',name:'MUDr. Petr Svoboda',phone:'+420 987 654 321',place:'FN Motol',next:'2025-07-22'}
+    ]
+  },
+  calData: {},
+  fzNextId: 5,
+  ts: 0
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let lastRemoteTs = 0;
+
+// ============================================================
+// SYNC (localStorage for real-time between tabs/devices)
+// ============================================================
+const STORAGE_KEY = 'sofin:shared:v1';
+
+function saveAll() {
+  try {
+    state.ts = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('error');
+  }
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const remote = JSON.parse(raw);
+    if (remote.ts && remote.ts > lastRemoteTs) {
+      lastRemoteTs = remote.ts;
+      // merge — ne přepisovat state pokud jsem to já ukládal
+      const wasMe = (Date.now() - remote.ts) < 200;
+      if (!wasMe) {
+        state.todayLog = remote.todayLog || state.todayLog;
+        state.sleep = remote.sleep || state.sleep;
+        state.freezer = remote.freezer || state.freezer;
+        state.settings = remote.settings || state.settings;
+        renderAll();
+      }
+    }
+  } catch(e) {}
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLbl');
+  if (status === 'ok') { dot.className='sync-dot'; lbl.textContent='synchronizováno'; }
+  else if (status === 'syncing') { dot.className='sync-dot syncing'; lbl.textContent='ukládám...'; }
+  else { dot.className='sync-dot error'; lbl.textContent='offline'; }
+}
+
+// Poslouchat změny z jiných tabů/oken (real-time)
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEY) loadFromStorage();
+});
+
+// Seed demo cal data
+function seedCalData() {
+  const fl=['mrkev','batát','hruška','rýže','banán','cuketa','jablko','kuřecí','brokolice'];
+  for(let i=-20;i<=14;i++){
+    const d=new Date(TODAY);d.setDate(d.getDate()+i);
+    const k=dateKey(d);const p=i<=0;
+    const df=p?fl.slice(0,Math.floor(Math.random()*4)+2).sort(()=>Math.random()-.5):[];
+    state.calData[k]={
+      foods:df,breast:p?Math.floor(Math.random()*3)+2:0,
+      sleep:p?Math.floor(Math.random()*2)+1:0,
+      reaction:p&&(i===-2||i===-8),
+      entries:p?[
+        {type:'breast',ts:new Date(d).setHours(6,30),name:'Kojení',sub:'levá · 15 min',reaction:false},
+        {type:'sleep',ts:new Date(d).setHours(7,15),name:'Spánek',sub:'7:15–8:50',reaction:false},
+        {type:'food',ts:new Date(d).setHours(9,0),name:'Snídaně',sub:df.slice(0,2).join(', '),reaction:false},
+        {type:'food',ts:new Date(d).setHours(11,30),name:'Oběd',sub:df.slice(1,4).join(', '),reaction:p&&(i===-2||i===-8)},
+      ]:[],
+      planned:!p&&i<=5?['mrkvová kaše','hrušková přesnídávka']:[]
+    };
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function getMonday(d){const day=d.getDay(),diff=(day===0)?-6:1-day,m=new Date(d);m.setDate(d.getDate()+diff);m.setHours(0,0,0,0);return m}
+function fmtTime(ts){const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function fmtTimer(ms){const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60;if(h>0)return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');return m+':'+String(s).padStart(2,'0');}
+function fmtElapsed(ms){const mins=Math.floor(ms/60000);if(mins<60)return 'před '+mins+'min';const h=Math.floor(mins/60),m=mins%60;if(h<24)return 'před '+h+'h'+(m?' '+m+'min':'');const dd=Math.floor(h/24),rh=h%24;return 'před '+dd+' dnem'+(rh?' '+rh+'h':'');}
+function fmtDate(str){if(!str)return'';const d=new Date(str);return d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();}
+function calcAge(b){const birth=new Date(b),now=new Date();let m=(now.getFullYear()-birth.getFullYear())*12+(now.getMonth()-birth.getMonth());if(now.getDate()<birth.getDate())m--;if(m>=12){const y=Math.floor(m/12),rm=m%12;return y+'r '+(rm?rm+'m':'');}return m+' měsíců';}
+function daysLeft(ts){return 60-Math.floor((Date.now()-ts)/864e5);}
+function parseTimeToTs(val){if(!val)return Date.now();const[h,m]=val.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d.getTime();}
+
+// ============================================================
+// SCREEN NAV
+// ============================================================
+let curScreen='today';
+function showScreen(n){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ti').forEach(t=>t.classList.remove('active'));
+  document.getElementById('scr-'+n).classList.add('active');
+  document.getElementById('ti-'+n).classList.add('active');
+  curScreen=n;
+  if(n==='plan')renderCal();
+  if(n==='food')renderFoods();
+  if(n==='freezer')renderFreezer();
+  if(n==='settings')renderSettings();
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll(){
+  renderTodayBadge();renderStatus();renderTodayList();updateSleepUI();
+  if(curScreen==='plan')renderCal();
+  if(curScreen==='food')renderFoods();
+  if(curScreen==='freezer')renderFreezer();
+  if(curScreen==='settings')renderSettings();
+}
+
+// ============================================================
+// TODAY
+// ============================================================
+function renderTodayBadge(){
+  const d=new Date();const days=['Ne','Po','Út','St','Čt','Pá','So'];
+  document.getElementById('todayBadge').textContent=days[d.getDay()]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.';
+}
+
+function renderStatus(){
+  const now=Date.now();
+  const lastFood=state.todayLog.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
+  const foodElapsed=lastFood?now-lastFood.ts:null;
+  const foodMins=foodElapsed?Math.floor(foodElapsed/60000):null;
+  let html='';
+  if(foodElapsed) html+=`<div class="chip ${foodMins>180?'warn':''}"><span>🍽</span><span>jídlo <span class="chip-val">${fmtElapsed(foodElapsed)}</span></span></div>`;
+  if(state.sleep.active){
+    html+=`<div class="chip sleeping"><span>😴</span><span style="font-weight:500">právě spí</span></div>`;
+  } else {
+    const ls=state.todayLog.filter(e=>e.type==='sleep'&&!e.live).sort((a,b)=>b.ts-a.ts)[0];
+    if(ls){const aw=now-ls.ts;const awMins=Math.floor(aw/60000);html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;}
+  }
+  document.getElementById('statusRow').innerHTML=html;
+}
+
+function renderTodayList(){
+  const sorted=[...state.todayLog].sort((a,b)=>a.ts-b.ts);
+  const byMap={'mama':'who-mama','tata':'who-tata'};
+  document.getElementById('todayList').innerHTML=sorted.map(e=>{
+    const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):'';
+    const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
+    const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
+    const who=e.by?`<span class="who ${byMap[e.by]||'who-tata'}">${e.by}</span>`:'';
+    const rd=e.reaction?`<div class="rdot">⚠</div>`:'';
+    const lb=e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'';
+    return`<div class="ecard${cc}"><span class="etime">${fmtTime(e.ts)}</span><div class="eicon ${ic}">${em}</div><div class="einfo"><div class="ename">${e.name}</div><div class="esub" ${e.live?'id="liveCardSub"':''}>${e.sub}</div></div><div class="eright">${who}${rd}${lb}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div></div>`;
+  }).join('');
+}
+
+// ============================================================
+// SLEEP
+// ============================================================
+let sleepTimerInterval=null;
+function updateSleepUI(){
+  const active=state.sleep.active;
+  const btn=document.getElementById('sleepBtn');
+  const label=document.getElementById('sleepLabel');
+  const sub=document.getElementById('sleepSub');
+  const live=document.getElementById('sleepLive');
+  const play=document.getElementById('iconPlay');
+  const pause=document.getElementById('iconPause');
+  if(active){
+    btn.classList.add('sleeping');label.textContent='Probíhá spánek';sub.textContent='od '+fmtTime(state.sleep.startTs);live.style.display='inline';play.style.display='none';pause.style.display='block';
+    if(!sleepTimerInterval){sleepTimerInterval=setInterval(()=>{const el=Date.now()-state.sleep.startTs;const d=document.getElementById('liveCardTimer');const b=document.getElementById('sleepLive');const s=document.getElementById('liveCardSub');if(d)d.textContent=fmtTimer(el);if(b)b.textContent=fmtTimer(el);if(s)s.textContent='probíhá · '+fmtTimer(el);renderStatus();},1000);}
+  } else {
+    btn.classList.remove('sleeping');label.textContent='Začít spánek';sub.textContent='';live.style.display='none';live.textContent='';play.style.display='block';pause.style.display='none';
+    if(sleepTimerInterval){clearInterval(sleepTimerInterval);sleepTimerInterval=null;}
+  }
+}
+function toggleSleep(){
+  if(!state.sleep.active){
+    state.sleep={active:true,startTs:Date.now()};
+    state.todayLog=state.todayLog.filter(e=>!e.live);
+    state.todayLog.push({id:'sleep-live',type:'sleep',ts:state.sleep.startTs,name:'Spánek',sub:'probíhá...',live:true,reaction:false,by:whoAmI()});
+  } else {
+    const dur=Date.now()-state.sleep.startTs;
+    const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+    const ds=(h>0?h+'h ':'')+(m>0?m+'min':'<1min');
+    state.todayLog=state.todayLog.filter(e=>!e.live);
+    state.todayLog.push({id:'sleep-'+Date.now(),type:'sleep',ts:state.sleep.startTs,name:'Spánek',sub:fmtTime(state.sleep.startTs)+' – '+fmtTime(Date.now())+' · '+ds,live:false,reaction:false,by:whoAmI()});
+    state.sleep={active:false,startTs:null};
+  }
+  updateSleepUI();renderTodayList();renderStatus();saveAll();
+}
+
+// ============================================================
+// FOOD / BREAST / REACTION
+// ============================================================
+let selFoods=[], fzSelFoodsArr=[];
+function saveFood(){
+  if(!selFoods.length){closeModal('mFood');return;}
+  const typeBtn=document.querySelector('#mFood .type-btn.sel');
+  const name=typeBtn?typeBtn.textContent:'Jídlo';
+  const ts=parseTimeToTs(document.getElementById('foodTime').value);
+  state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub:selFoods.join(', '),reaction:false,by:whoAmI()});
+  selFoods.forEach(food=>{const fz=state.freezer.find(f=>f.foods.includes(food)&&f.amount>0);if(fz)fz.amount=Math.max(0,fz.amount-1);});
+  state.freezer=state.freezer.filter(f=>f.amount>0);
+  selFoods=[];renderSelFoodsEl();renderTodayList();renderStatus();closeModal('mFood');saveAll();
+}
+function saveBreast(){
+  const ts=parseTimeToTs(document.getElementById('breastTime').value);
+  const side=document.querySelector('#mBreast .type-btn.sel');
+  const dur=document.getElementById('breastDur').value;
+  const note=document.getElementById('breastNote').value;
+  state.todayLog.push({id:'b'+Date.now(),type:'breast',ts,name:'Kojení',sub:(side?side.textContent:'')+(dur?' · '+dur+' min':'')+(note?' · '+note:''),reaction:false,by:whoAmI()});
+  renderTodayList();renderStatus();closeModal('mBreast');saveAll();
+}
+function saveReaction(){
+  // uložit reakci — označit poslední jídlo
+  const ts=parseTimeToTs(document.getElementById('reactionTime').value);
+  const note=document.getElementById('reactionNote').value;
+  const suspect=document.getElementById('suspectFood').value;
+  state.todayLog.push({id:'r'+Date.now(),type:'reaction',ts,name:'Reakce',sub:(suspect?'Podezřelé: '+suspect+'. ':'')+(note||''),reaction:true,by:whoAmI()});
+  renderTodayList();closeModal('mReaction');saveAll();
+}
+
+// food suggest
+function showSuggest(val){
+  const sg=document.getElementById('foodSug');
+  if(!val){sg.style.display='none';checkFzSug();return;}
+  const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&f.month<=CM&&!selFoods.includes(f.name)).slice(0,5);
+  if(!m.length){sg.style.display='none';return;}
+  sg.style.display='block';
+  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat}</span></div>`).join('');
+}
+function addFoodItem(name){if(!selFoods.includes(name))selFoods.push(name);document.getElementById('ingInput').value='';document.getElementById('foodSug').style.display='none';renderSelFoodsEl();checkFzSug();}
+function removeFoodItem(name){selFoods=selFoods.filter(f=>f!==name);renderSelFoodsEl();checkFzSug();}
+function renderSelFoodsEl(){document.getElementById('selFoods').innerHTML=selFoods.map(n=>`<span class="sfp" onclick="removeFoodItem('${n}')">${n} ×</span>`).join('');}
+function checkFzSug(){
+  const box=document.getElementById('fzSugBox');
+  const matches=state.freezer.filter(fz=>fz.amount>0&&fz.foods.some(f=>selFoods.includes(f)));
+  if(matches.length){box.style.display='block';document.getElementById('fzSugItems').innerHTML=matches.map(fz=>`<div class="fz-sug-row"><span>${fz.foods.join(', ')}</span><span style="color:#3b6d11">${fz.amount} ${fz.unit} · ${daysLeft(fz.frozen)}d</span></div>`).join('');}
+  else box.style.display='none';
+}
+
+// ============================================================
+// FREEZER
+// ============================================================
+let fzFilter='vse';
+function renderFreezer(){
+  const list=fzFilter==='vse'?state.freezer:state.freezer.filter(i=>i.type===fzFilter);
+  const sorted=[...list].sort((a,b)=>daysLeft(a.frozen)-daysLeft(b.frozen));
+  const exp=state.freezer.filter(i=>daysLeft(i.frozen)<=0).length;
+  const expiring=state.freezer.filter(i=>{const dl=daysLeft(i.frozen);return dl>0&&dl<=14;}).length;
+  document.getElementById('sumBar').innerHTML=`<div class="scard"><div class="sn">${state.freezer.length}</div><div class="sl">položek</div></div><div class="scard"><div class="sn ${expiring?'swarn':''}">${expiring}</div><div class="sl">brzy vyprší</div></div><div class="scard"><div class="sn ${exp?'swarn':''}">${exp}</div><div class="sl">prošlých</div></div>`;
+  const tMap={prikrm:['Příkrm','tp-p'],kase:['Kaše','tp-k'],mleko:['Mléko','tp-m'],kapsicka:['Kapsička','tp-ka']};
+  document.getElementById('fzList').innerHTML=sorted.map(item=>{
+    const dl=daysLeft(item.frozen);const st=dl<=0?'expired':dl<=14?'expiring':'fresh';
+    const pct=Math.max(0,Math.min(100,Math.round((dl/60)*100)));const clr=dl<=0?'#e24b4a':dl<=14?'#EF9F27':'#639922';
+    const dtxt=dl<=0?'prošlé!':dl===1?'1 den':dl+' dní';const dcls=dl<=0?'bad':dl<=14?'warn':'ok';
+    const[tl,tc]=tMap[item.type]||['Jiné','tp-p'];
+    return`<div class="fzcard ${st}"><div class="fztop"><div><div class="fzname">${item.foods.join(', ')}</div>${item.note?`<div class="fzsub">${item.note}</div>`:''}</div><span class="fztype ${tc}">${tl}</span></div><div class="fzbot"><div class="fzstepper"><button class="step" onclick="fzChange(event,${item.id},-1)">−</button><span class="fzamt">${item.amount}</span><span class="fzunit">${item.unit}</span><button class="step" onclick="fzChange(event,${item.id},1)">+</button></div><div class="fzexp"><div class="fzdays ${dcls}">zbývá ${dtxt}</div><div class="fzdate">${new Date(item.frozen).getDate()}.${new Date(item.frozen).getMonth()+1}.${new Date(item.frozen).getFullYear()}</div></div></div><div class="expbar"><div class="expfill" style="width:${pct}%;background:${clr}"></div></div></div>`;
+  }).join('');
+}
+function fzChange(e,id,d){e.stopPropagation();const item=state.freezer.find(i=>i.id===id);if(!item)return;item.amount=Math.max(0,item.amount+d);if(item.amount===0)state.freezer=state.freezer.filter(i=>i.id!==id);renderFreezer();saveAll();}
+function filterFz(f,btn){fzFilter=f;document.querySelectorAll('#scr-freezer .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFreezer();}
+function showFzSuggest(val){const sg=document.getElementById('fzFoodSug');if(!val){sg.style.display='none';return;}const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!fzSelFoodsArr.includes(f.name)).slice(0,5);if(!m.length){sg.style.display='none';return;}sg.style.display='block';sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addFzFood('${f.name}')">${f.name}</div>`).join('');}
+function addFzFood(name){if(!fzSelFoodsArr.includes(name))fzSelFoodsArr.push(name);document.getElementById('fzIngInput').value='';document.getElementById('fzFoodSug').style.display='none';document.getElementById('fzSelFoods').innerHTML=fzSelFoodsArr.map(n=>`<span class="sfp" onclick="removeFzFood('${n}')">${n} ×</span>`).join('');}
+function removeFzFood(name){fzSelFoodsArr=fzSelFoodsArr.filter(f=>f!==name);document.getElementById('fzSelFoods').innerHTML=fzSelFoodsArr.map(n=>`<span class="sfp" onclick="removeFzFood('${n}')">${n} ×</span>`).join('');}
+function setFzUnit(btn){const map={'Příkrm':'kostičky','Kaše':'kostičky','Mléko':'ml','Kapsička':'kostičky'};document.getElementById('fzUnit').value=map[btn.textContent]||'kostičky';}
+function saveFzItem(){
+  if(!fzSelFoodsArr.length){closeModal('mFzAdd');return;}
+  const typeBtn=document.querySelector('#mFzAdd .type-btn.sel');
+  const tmap={'Příkrm':'prikrm','Kaše':'kase','Mléko':'mleko','Kapsička':'kapsicka'};
+  const dateVal=document.getElementById('fzDate').value;
+  state.freezer.push({id:state.fzNextId++,foods:[...fzSelFoodsArr],type:tmap[typeBtn?typeBtn.textContent:'Příkrm']||'prikrm',amount:parseInt(document.getElementById('fzAmt').value)||1,unit:document.getElementById('fzUnit').value,frozen:dateVal?new Date(dateVal).getTime():Date.now(),note:document.getElementById('fzNote').value});
+  fzSelFoodsArr=[];closeModal('mFzAdd');renderFreezer();saveAll();
+}
+
+// ============================================================
+// PLÁN
+// ============================================================
+let calView='week',curYear=TODAY.getFullYear(),curMonth=TODAY.getMonth(),curWeekStart=getMonday(TODAY),planDetOpen=false,planSelDate=null;
+function renderCal(){if(calView==='month')renderMonth();else renderWeek();}
+function renderMonth(){
+  document.getElementById('calLbl').textContent=MONTHS_CS[curMonth]+' '+curYear;
+  document.getElementById('mHdr').style.display='block';document.getElementById('calLeg').style.display='flex';
+  document.getElementById('calHdr').innerHTML=DAYS_MON.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const first=new Date(curYear,curMonth,1),sd=(first.getDay()===0)?6:first.getDay()-1;
+  const dim=new Date(curYear,curMonth+1,0).getDate(),pd=new Date(curYear,curMonth,0).getDate();
+  let cells='';
+  const ac=(d,oth)=>{const k=dateKey(d),isT=d.getTime()===TODAY.getTime(),isSel=planSelDate&&!planDetOpen&&dateKey(planSelDate)===k,dd=state.calData[k];let cls='cday';if(oth)cls+=' other';if(isT)cls+=' today';if(isSel)cls+=' sel';if(dd&&dd.reaction)cls+=' reacted';let dots='';if(dd){if(dd.foods&&dd.foods.length)for(let i=0;i<Math.min(dd.foods.length,3);i++)dots+=`<div class="dot df"></div>`;if(dd.breast)for(let i=0;i<Math.min(dd.breast,2);i++)dots+=`<div class="dot db"></div>`;if(dd.sleep)for(let i=0;i<Math.min(dd.sleep,2);i++)dots+=`<div class="dot ds"></div>`;if(dd&&dd.reaction)dots+=`<div class="dot dr"></div>`;}cells+=`<div class="${cls}" onclick="selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})"><div class="dn">${d.getDate()}</div><div class="ddots">${dots}</div></div>`;};
+  for(let i=0;i<sd;i++)ac(new Date(curYear,curMonth-1,pd-sd+i+1),true);
+  for(let i=1;i<=dim;i++)ac(new Date(curYear,curMonth,i),false);
+  const rem=(7-(sd+dim)%7)%7;for(let i=1;i<=rem;i++)ac(new Date(curYear,curMonth+1,i),true);
+  document.getElementById('calGrid').innerHTML=`<div class="cal-grid">${cells}</div>`;
+}
+function renderWeek(){
+  const ends=new Date(curWeekStart);ends.setDate(ends.getDate()+6);
+  const fmt=d=>d.getDate()+'.'+(d.getMonth()+1)+'.';
+  document.getElementById('calLbl').textContent=fmt(curWeekStart)+' – '+fmt(ends);
+  document.getElementById('mHdr').style.display='none';document.getElementById('calLeg').style.display='none';
+  let html=`<div class="week-grid">`;
+  for(let i=0;i<7;i++){
+    const d=new Date(curWeekStart);d.setDate(d.getDate()+i);
+    const k=dateKey(d),dd=state.calData[k]||{};
+    const isT=d.getTime()===TODAY.getTime(),isFut=d>TODAY;
+    const dowIdx=(d.getDay()===0)?6:d.getDay()-1;
+    let cls='wcard';if(isT)cls+=' today';if(dd.reaction)cls+=' reacted';if(isFut)cls+=' future';
+    const rb=dd.reaction?`<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;font-weight:500">⚠</span>`:'';
+    const tb=isT?`<span style="width:6px;height:6px;border-radius:50%;background:var(--rose-btn);display:inline-block"></span>`:'';
+    let body='';
+    if(isFut){body=dd.planned&&dd.planned.length?`<div class="wc-foods" style="color:var(--rose-dark)">${dd.planned.join(', ')}</div>`:`<div class="wc-foods" style="color:var(--text-3);font-style:italic">prázdný</div>`;}
+    else{const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',dd.sleep?`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek</div>`:''].filter(Boolean).join('');if(st)body+=`<div class="wc-stats">${st}</div>`;if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;}
+    html+=`<div class="${cls}" onclick="selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})"><div class="wc-head"><span class="wc-dn">${DAYS_MON[dowIdx]}</span><div style="display:flex;align-items:center;gap:3px"><span class="wc-date">${d.getDate()}.</span>${rb}${tb}</div></div>${body}</div>`;
+  }
+  html+=`</div>`;document.getElementById('calGrid').innerHTML=html;
+}
+function selDay(y,m,day){
+  planSelDate=new Date(y,m,day);planDetOpen=true;
+  const k=dateKey(planSelDate),dd=state.calData[k]||{};
+  const isFut=planSelDate>TODAY,isT=planSelDate.getTime()===TODAY.getTime();
+  const dowIdx=(planSelDate.getDay()===0)?6:planSelDate.getDay()-1;
+  document.getElementById('planDTitle').textContent=(isT?'Dnes – ':'')+DAYS_MON[dowIdx]+' '+planSelDate.getDate()+'. '+MONTHS_GEN[planSelDate.getMonth()];
+  let html='';
+  if(isFut){html+=`<div style="margin:0 16px 8px;background:var(--rose-light);border-radius:11px;padding:9px 12px;font-size:12px;color:var(--rose-dark)">Plánovaný den</div><button class="add-btn" style="margin:0 16px">+ Naplánovat jídlo</button>`;}
+  else{if(dd.reaction)html+=`<div style="margin:6px 16px;background:#fff5f5;border-radius:11px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500">⚠ Reakce zaznamenaná v tento den</div>`;html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;(dd.entries||[]).forEach(e=>{const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':'';const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';html+=`<div class="ecard${cc}"><span class="etime">${fmtTime(e.ts)}</span><div class="eicon ${ic}">${em}</div><div class="einfo"><div class="ename">${e.name}</div><div class="esub">${e.sub}</div></div><div class="eright">${e.reaction?'<div class="rdot">⚠</div>':''}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div></div>`;});html+=`</div>`;}
+  document.getElementById('planDContent').innerHTML=html;document.getElementById('planDetail').style.display='block';document.getElementById('planScroll').scrollTop=0;
+  if(calView==='month')renderMonth();else renderWeek();
+}
+function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
+function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
+function navPrev(){if(calView==='month'){curMonth--;if(curMonth<0){curMonth=11;curYear--;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()-7);renderWeek();}}
+function navNext(){if(calView==='month'){curMonth++;if(curMonth>11){curMonth=0;curYear++;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()+7);renderWeek();}}
+
+// ============================================================
+// POTRAVINY
+// ============================================================
+let foodCat='vse',foodView='list';
+function renderFoods(){
+  const stL={ok:'bez reakce',new:'nezkoušeno',warn:'sledujeme',no:'eliminováno'};
+  if(foodView==='list'){
+    let list=foodCat==='vse'?FDB:FDB.filter(f=>f.cat===foodCat);list=list.filter(f=>f.month<=CM);
+    document.getElementById('foodGrid').innerHTML=list.map(f=>{const cls=f.status==='ok'?'ok':f.status==='warn'?'warn':f.status==='no'?'no':'';const dot=f.status==='ok'?'ok':f.status==='warn'?'warn':f.status==='no'?'no':'new';const at=f.allergen?'<span style="font-size:9px;background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:7px;margin-left:3px">alergen</span>':'';return`<div class="fitem ${cls}"><div class="fdot ${dot}"></div><span class="fname">${f.name}${at}</span><span style="font-size:10px;color:var(--text-3);margin-right:4px">${f.month}.m</span><span class="fst st-${f.status}">${stL[f.status]}</span></div>`;}).join('');
+  } else {
+    const months=[4,5,6,7,8,9,10];
+    document.getElementById('tlWrap').innerHTML=months.map(m=>{const foods=FDB.filter(f=>f.month===m);if(!foods.length)return'';let badge='',bc='';if(m<CM){badge='zavedeno';bc='tl-past';}else if(m===CM){badge='tento měsíc';bc='tl-curr';}else{badge='za '+(m-CM)+' měs.';bc='tl-fut';}const missed=foods.filter(f=>f.status==='new'&&!f.allergen&&m<CM).length;const pills=foods.map(f=>{let cls='tl-pill';if(['ok','warn','no'].includes(f.status))cls+=' done';else if(m===CM)cls+=' curr';else if(m<CM&&f.status==='new')cls+=' overdue';return`<span class="${cls}">${f.allergen?'⚠ ':''}${f.name}</span>`;}).join('');return`<div class="tl-month"><div class="tl-ml">${m}. měsíc <span class="tl-b ${bc}">${badge}</span>${missed?`<span style="font-size:10px;color:var(--red)">${missed}× nezavedeno</span>`:''}</div><div class="tl-pills">${pills}</div></div>`;}).join('');
+  }
+}
+function filterFood(cat,btn){foodCat=cat;document.querySelectorAll('.food-tabs .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFoods();}
+function setFoodView(v){foodView=v;document.getElementById('vfl').classList.toggle('active',v==='list');document.getElementById('vft').classList.toggle('active',v==='timeline');document.getElementById('foodListView').style.display=v==='list'?'block':'none';document.getElementById('foodTlView').style.display=v==='timeline'?'block':'none';document.getElementById('foodTabsBar').style.display=v==='list'?'flex':'none';renderFoods();}
+
+// ============================================================
+// NASTAVENÍ
+// ============================================================
+function renderSettings(){
+  const s=state.settings;
+  document.getElementById('avName').textContent=s.name;
+  document.getElementById('avAge').textContent=calcAge(s.birth)+' · '+fmtDate(s.birth);
+  document.getElementById('svName').textContent=s.name;
+  document.getElementById('svBirth').textContent=fmtDate(s.birth);
+  document.getElementById('svWeight').textContent=s.weight+' kg';
+  document.getElementById('appSubtitle').textContent=s.name+' · '+calcAge(s.birth);
+  document.getElementById('foodSubtitle').textContent=calcAge(s.birth)+' · zavádění';
+  document.getElementById('identityVal').textContent=myIdentity==='mama'?'🤱 Mama':myIdentity==='tata'?'👨 Táta':'—';
+  document.getElementById('alWrap').innerHTML=s.allergens.map((a,i)=>`<div class="al-pill">${a}<span style="font-size:13px;opacity:.6;line-height:1;cursor:pointer" onclick="removeAllergen(${i})">×</span></div>`).join('')+`<div class="al-add" onclick="addAllergenPrompt()">+ přidat</div>`;
+  const icons={pediatr:'👩‍⚕️',alergolog:'🔬',gastroenterolog:'🩺',jiný:'👨‍⚕️'};
+  const labels={pediatr:'Pediatr',alergolog:'Alergolog',gastroenterolog:'Gastroenterolog',jiný:'Jiný'};
+  document.getElementById('docList').innerHTML=s.doctors.map(d=>`<div class="doc-card"><div class="doc-top"><div class="doc-icon">${icons[d.type]||'👨‍⚕️'}</div><div><div class="doc-name">${d.name}</div><div class="doc-type">${labels[d.type]||d.type}${d.place?' · '+d.place:''}</div></div></div><div class="doc-contact">${d.phone}${d.next?`<span class="next-b">příště ${fmtDate(d.next)}</span>`:''}</div></div>`).join('');
+}
+function removeAllergen(i){state.settings.allergens.splice(i,1);renderSettings();saveAll();}
+function addAllergenPrompt(){const v=prompt('Přidat alergii:');if(v){state.settings.allergens.push(v);renderSettings();saveAll();}}
+function saveChild(){state.settings.name=document.getElementById('cName').value||'Sofinka';state.settings.birth=document.getElementById('cBirth').value||'2024-08-14';state.settings.weight=document.getElementById('cWeight').value.replace('.',',')||'7,8';closeModal('mChild');renderSettings();saveAll();}
+function saveDoctor(){const name=document.getElementById('dName').value.trim();if(!name){closeModal('mDoctor');return;}const typeBtn=document.querySelector('#mDoctor .type-btn.sel');const tmap={'Pediatr':'pediatr','Alergolog':'alergolog','Gastroenterolog':'gastroenterolog','Jiný':'jiný'};state.settings.doctors.push({type:tmap[typeBtn?typeBtn.textContent:'Jiný']||'jiný',name,phone:document.getElementById('dPhone').value,place:document.getElementById('dPlace').value,next:document.getElementById('dNext').value});closeModal('mDoctor');renderSettings();saveAll();}
+
+// ============================================================
+// REAKCE HISTORIE
+// ============================================================
+let rhOpen=false;
+function toggleRH(){
+  rhOpen=!rhOpen;
+  const list=document.getElementById('rhList');const toggle=document.getElementById('rhToggle');
+  if(rhOpen){
+    const now=Date.now();const hist=[...state.todayLog].filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts).slice(0,8);
+    list.style.display='flex';
+    list.innerHTML=hist.map(e=>{const el=now-e.ts;const mins=Math.floor(el/60000);const clr=mins<=120?'var(--red)':mins<=240?'var(--amber)':'var(--text-2)';const warn=e.type==='food'&&mins<=120?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;margin-left:4px">⚠ blízko</span>':'';return`<div class="rh-item ${e.type==='food'&&mins<=120?'close-r':''}"><div style="min-width:60px;text-align:right"><div style="font-size:11px;font-weight:600;color:${clr}">${fmtElapsed(el)}</div><div style="font-size:10px;color:var(--text-3)">${fmtTime(e.ts)}</div></div><div><div style="font-size:12px;color:${e.type==='breast'?'#5c3d8a':'var(--text)'}">${e.type==='breast'?'🤱 ':''} ${e.sub}${warn}</div></div></div>`;}).join('');
+    toggle.textContent='▲ sbalit';
+  } else {list.style.display='none';toggle.textContent='▼ rozbalit';}
+}
+
+// ============================================================
+// MODAL UTILS
+// ============================================================
+function openModal(id){
+  if(id==='mFood'){selFoods=[];renderSelFoodsEl();document.getElementById('ingInput').value='';document.getElementById('foodSug').style.display='none';document.getElementById('fzSugBox').style.display='none';document.getElementById('rowBrand').style.display='none';const now=new Date();document.getElementById('foodTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
+  if(id==='mBreast'){const now=new Date();document.getElementById('breastTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
+  if(id==='mReaction'){const now=new Date();document.getElementById('reactionTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');rhOpen=false;document.getElementById('rhList').style.display='none';document.getElementById('rhToggle').textContent='▼ rozbalit';}
+  if(id==='mFzAdd'){fzSelFoodsArr=[];document.getElementById('fzSelFoods').innerHTML='';document.getElementById('fzIngInput').value='';document.getElementById('fzFoodSug').style.display='none';document.getElementById('fzDate').value=new Date().toISOString().slice(0,10);document.getElementById('fzNote').value='';}
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function selType(btn){btn.closest('.type-btns').querySelectorAll('.type-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function selSrc(t){document.getElementById('srcOwn').classList.toggle('sel',t==='own');document.getElementById('srcBought').classList.toggle('sel',t==='bought');document.getElementById('rowBrand').style.display=t==='bought'?'block':'none';}
+
+// ============================================================
+// CLOCK + INIT
+// ============================================================
+function updateClock(){const n=new Date();document.getElementById('clockEl').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+setInterval(updateClock,1000);updateClock();
+setInterval(renderStatus,30000);
+
+// Init
+if(myIdentity){document.getElementById('onboard').style.display='none';}
+const savedState=localStorage.getItem(STORAGE_KEY);
+if(savedState){try{const s=JSON.parse(savedState);Object.assign(state,s);lastRemoteTs=s.ts||0;}catch(e){}}
+seedCalData();
+renderAll();
+</script>
+</body>
+</html>
