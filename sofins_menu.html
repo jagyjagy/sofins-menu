@@ -265,6 +265,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .food-status-btn.active-new{background:#E6F1FB;border-color:#9ec5f0;color:#185FA5}
 /* plan clear history */
 .plan-clear-btn{margin:8px 16px 0;width:calc(100% - 32px);padding:10px;border-radius:11px;background:var(--red-bg);border:.5px solid #f09595;color:var(--red);font-size:12px;font-weight:500;cursor:pointer}
+/* selection mode */
+.select-btn{padding:5px 12px;border-radius:8px;border:.5px solid var(--rose-mid);background:transparent;color:var(--rose-dark);font-size:12px;font-weight:500;cursor:pointer}
+.select-btn.active{background:var(--rose-btn);color:#fff;border-color:var(--rose-btn)}
+.sel-bar{display:none;padding:8px 16px;background:var(--rose-light);border-bottom:.5px solid var(--rose-mid);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sel-bar.show{display:flex}
+.sel-count{font-size:12px;font-weight:500;color:var(--rose-dark)}
+.sel-action-btn{padding:6px 14px;border-radius:9px;border:none;font-size:12px;font-weight:600;cursor:pointer}
+.sel-del{background:var(--red-bg);color:var(--red);border:.5px solid #f09595}
+.sel-cancel{background:transparent;color:var(--text-2);border:.5px solid var(--rose-mid)}
+/* day/food checkboxes in select mode */
+.day-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--rose-mid);background:#fff;flex-shrink:0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.day-check.visible{display:flex}
+.day-check.checked{background:var(--rose-btn);border-color:var(--rose-btn)}
+.day-check.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.food-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--rose-mid);background:#fff;flex-shrink:0;display:none;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;margin-right:2px}
+.food-check.visible{display:flex}
+.food-check.checked{background:var(--rose-btn);border-color:var(--rose-btn)}
+.food-check.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+/* bulk status picker */
+.bulk-status-wrap{padding:0 16px;display:flex;flex-direction:column;gap:8px}
 /* doctor edit */
 .doc-card{cursor:pointer}
 .doc-card:active{background:var(--rose-light)}
@@ -349,7 +369,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <!-- PLÁN -->
   <div id="scr-plan" class="screen">
     <div class="sticky-top">
-      <div class="header"><div class="header-top"><h1>Plán</h1></div><div class="subtitle">Sofinka</div></div>
+      <div class="header">
+        <div class="header-top">
+          <h1>Plán</h1>
+          <button class="select-btn" id="planSelectBtn" onclick="togglePlanSelect()">Vybrat</button>
+        </div>
+        <div class="subtitle">Sofinka</div>
+      </div>
+      <div id="planSelBar" class="sel-bar">
+        <span class="sel-count" id="planSelCount">0 vybráno</span>
+        <div style="display:flex;gap:6px">
+          <button class="sel-action-btn sel-del" onclick="deleteSelectedDays()">🗑 Smazat</button>
+          <button class="sel-action-btn sel-cancel" onclick="togglePlanSelect()">Zrušit</button>
+        </div>
+      </div>
       <div class="view-toggle">
         <button class="vt" id="vtM" onclick="setCalView('month')">Měsíc</button>
         <button class="vt active" id="vtW" onclick="setCalView('week')">Týden</button>
@@ -374,7 +407,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <div class="detail-back" onclick="closePlanDetail()"><span class="back-lbl">← Zpět</span><span class="detail-title" id="planDTitle"></span></div>
         <div id="planDContent"></div>
       </div>
-      <button class="plan-clear-btn" id="planClearBtn" onclick="clearPlanHistory()" style="display:none">🗑 Smazat záznamy minulých dnů</button>
       <div style="height:8px"></div>
     </div>
   </div>
@@ -382,7 +414,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <!-- POTRAVINY -->
   <div id="scr-food" class="screen">
     <div class="sticky-top">
-      <div class="header"><div class="header-top"><h1>Potraviny</h1></div><div class="subtitle" id="foodSubtitle">8. měsíc · zavádění</div></div>
+      <div class="header">
+        <div class="header-top">
+          <h1>Potraviny</h1>
+          <button class="select-btn" id="foodSelectBtn" onclick="toggleFoodSelect()">Vybrat</button>
+        </div>
+        <div class="subtitle" id="foodSubtitle">8. měsíc · zavádění</div>
+      </div>
+      <div id="foodSelBar" class="sel-bar">
+        <span class="sel-count" id="foodSelCount">0 vybráno</span>
+        <div style="display:flex;gap:6px">
+          <button class="sel-action-btn" style="background:var(--rose-light);color:var(--rose-dark);border:.5px solid var(--rose-mid)" onclick="openModal('mBulkStatus')">✏ Změnit status</button>
+          <button class="sel-action-btn sel-cancel" onclick="toggleFoodSelect()">Zrušit</button>
+        </div>
+      </div>
       <div class="view-toggle" style="margin-bottom:8px">
         <button class="vt active" id="vfl" onclick="setFoodView('list')">Seznam</button>
         <button class="vt" id="vft" onclick="setFoodView('timeline')">Časová osa</button>
@@ -606,6 +651,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <div class="mrow"><label>Příští návštěva</label><input type="date" id="dNext"/></div>
   <button class="msave" onclick="saveDoctor()">Uložit lékaře</button>
   <button class="mcancel" onclick="closeModal('mDoctor')">Zrušit</button>
+</div></div></div>
+
+<!-- MODAL hromadná změna statusu -->
+<div class="modal-wrap" id="mBulkStatus"><div class="movl" onclick="closeModal('mBulkStatus')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div class="mtitle">Hromadná změna statusu</div>
+  <div style="font-size:12px;color:var(--text-2);margin-bottom:14px" id="bulkStatusInfo"></div>
+  <div class="food-status-btns">
+    <button class="food-status-btn" onclick="applyBulkStatus('new')"><span style="font-size:16px">🔵</span>Nezkoušeno</button>
+    <button class="food-status-btn" onclick="applyBulkStatus('ok')"><span style="font-size:16px">✅</span>Bez reakce</button>
+    <button class="food-status-btn" onclick="applyBulkStatus('warn')"><span style="font-size:16px">🟡</span>Sledujeme</button>
+    <button class="food-status-btn" onclick="applyBulkStatus('no')"><span style="font-size:16px">🔴</span>Eliminováno</button>
+  </div>
+  <button class="mcancel" onclick="closeModal('mBulkStatus')">Zrušit</button>
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
@@ -894,7 +953,7 @@ function showScreen(n){
   document.getElementById('scr-'+n).classList.add('active');
   document.getElementById('ti-'+n).classList.add('active');
   curScreen=n;
-  if(n==='plan'){renderCal();document.getElementById('planClearBtn').style.display='block';}
+  if(n==='plan'){renderCal();}
   if(n==='food')renderFoods();
   if(n==='freezer')renderFreezer();
   if(n==='settings')renderSettings();
@@ -1393,6 +1452,100 @@ function goToToday(){
   curYear=TODAY.getFullYear();curMonth=TODAY.getMonth();curWeekStart=getMonday(TODAY);
   closePlanDetail();renderCal();
 }
+
+// ============================================================
+// PLAN SELECTION MODE
+// ============================================================
+let planSelectMode=false;
+let selectedDays=new Set();
+
+function togglePlanSelect(){
+  planSelectMode=!planSelectMode;
+  selectedDays=new Set();
+  const btn=document.getElementById('planSelectBtn');
+  const bar=document.getElementById('planSelBar');
+  btn.classList.toggle('active',planSelectMode);
+  btn.textContent=planSelectMode?'Hotovo':'Vybrat';
+  bar.classList.toggle('show',planSelectMode);
+  updatePlanSelCount();
+  renderCal();
+}
+
+function toggleDaySelect(k,el){
+  if(!planSelectMode)return;
+  if(selectedDays.has(k)){selectedDays.delete(k);el.classList.remove('checked');}
+  else{selectedDays.add(k);el.classList.add('checked');}
+  updatePlanSelCount();
+}
+
+function updatePlanSelCount(){
+  document.getElementById('planSelCount').textContent=selectedDays.size+' vybráno';
+}
+
+function deleteSelectedDays(){
+  if(!selectedDays.size){togglePlanSelect();return;}
+  if(!confirm('Smazat záznamy z '+selectedDays.size+' dní?'))return;
+  selectedDays.forEach(k=>{
+    if(state.calData[k]){
+      state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
+    }
+  });
+  selectedDays=new Set();
+  togglePlanSelect();
+  saveAll();
+}
+
+// ============================================================
+// FOOD SELECTION MODE
+// ============================================================
+let foodSelectMode=false;
+let selectedFoodNames=new Set();
+
+function toggleFoodSelect(){
+  foodSelectMode=!foodSelectMode;
+  selectedFoodNames=new Set();
+  const btn=document.getElementById('foodSelectBtn');
+  const bar=document.getElementById('foodSelBar');
+  btn.classList.toggle('active',foodSelectMode);
+  btn.textContent=foodSelectMode?'Hotovo':'Vybrat';
+  bar.classList.toggle('show',foodSelectMode);
+  updateFoodSelCount();
+  renderFoods();
+}
+
+function toggleFoodItemSelect(name,el){
+  if(!foodSelectMode)return;
+  if(selectedFoodNames.has(name)){selectedFoodNames.delete(name);el.classList.remove('checked');}
+  else{selectedFoodNames.add(name);el.classList.add('checked');}
+  updateFoodSelCount();
+}
+
+function updateFoodSelCount(){
+  document.getElementById('foodSelCount').textContent=selectedFoodNames.size+' vybráno';
+}
+
+function applyBulkStatus(status){
+  if(!selectedFoodNames.size){closeModal('mBulkStatus');return;}
+  if(!state.foodOverrides)state.foodOverrides={};
+  selectedFoodNames.forEach(name=>{
+    const prev=(state.foodOverrides[name]||{}).status;
+    state.foodOverrides[name]={...( state.foodOverrides[name]||{}),status};
+    // sync allergens
+    if(status==='no'){
+      if(!state.settings.allergens.some(a=>a.toLowerCase()===name.toLowerCase()))
+        state.settings.allergens.push(name);
+    } else if(prev==='no'){
+      state.settings.allergens=state.settings.allergens.filter(a=>a.toLowerCase()!==name.toLowerCase());
+    }
+  });
+  closeModal('mBulkStatus');
+  selectedFoodNames=new Set();
+  foodSelectMode=false;
+  document.getElementById('foodSelectBtn').classList.remove('active');
+  document.getElementById('foodSelectBtn').textContent='Vybrat';
+  document.getElementById('foodSelBar').classList.remove('show');
+  renderFoods();saveAll();
+}
 let fzFilter='vse';
 function renderFreezer(){
   const list=fzFilter==='vse'?state.freezer:state.freezer.filter(i=>i.type===fzFilter);
@@ -1521,12 +1674,21 @@ function renderMonth(){
   const first=new Date(curYear,curMonth,1),sd=(first.getDay()===0)?6:first.getDay()-1;
   const dim=new Date(curYear,curMonth+1,0).getDate(),pd=new Date(curYear,curMonth,0).getDate();
   let cells='';
-  const ac=(d,oth)=>{const k=dateKey(d),isT=d.getTime()===TODAY.getTime(),isSel=planSelDate&&!planDetOpen&&dateKey(planSelDate)===k,dd=state.calData[k];let cls='cday';if(oth)cls+=' other';if(isT)cls+=' today';if(isSel)cls+=' sel';if(dd&&dd.reaction)cls+=' reacted';let dots='';if(dd){if(dd.foods&&dd.foods.length)for(let i=0;i<Math.min(dd.foods.length,3);i++)dots+=`<div class="dot df"></div>`;if(dd.breast)for(let i=0;i<Math.min(dd.breast,2);i++)dots+=`<div class="dot db"></div>`;if(dd.sleep)for(let i=0;i<Math.min(dd.sleep,2);i++)dots+=`<div class="dot ds"></div>`;if(dd&&dd.reaction)dots+=`<div class="dot dr"></div>`;}cells+=`<div class="${cls}" onclick="selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})"><div class="dn">${d.getDate()}</div><div class="ddots">${dots}</div></div>`;};
+  const ac=(d,oth)=>{
+    const k=dateKey(d),isT=d.getTime()===TODAY.getTime(),isSel=planSelDate&&!planDetOpen&&dateKey(planSelDate)===k,dd=state.calData[k];
+    const isChecked=selectedDays.has(k);
+    let cls='cday';if(oth)cls+=' other';if(isT)cls+=' today';if(isSel&&!planSelectMode)cls+=' sel';if(dd&&dd.reaction)cls+=' reacted';if(isChecked)cls+=' sel';
+    let dots='';if(dd){if(dd.foods&&dd.foods.length)for(let i=0;i<Math.min(dd.foods.length,3);i++)dots+=`<div class="dot df"></div>`;if(dd.breast)for(let i=0;i<Math.min(dd.breast,2);i++)dots+=`<div class="dot db"></div>`;if(dd.sleep)for(let i=0;i<Math.min(dd.sleep,2);i++)dots+=`<div class="dot ds"></div>`;if(dd&&dd.reaction)dots+=`<div class="dot dr"></div>`;}
+    const chk=planSelectMode?`<div class="day-check visible${isChecked?' checked':''}" id="dc-${k}" onclick="event.stopPropagation();toggleDaySelect('${k}',this)"></div>`:'';
+    const clickFn=planSelectMode?`toggleDaySelect('${k}',document.getElementById('dc-${k}'))`:`selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})`;
+    cells+=`<div class="${cls}" onclick="${clickFn}">${chk}<div class="dn">${d.getDate()}</div><div class="ddots">${dots}</div></div>`;
+  };
   for(let i=0;i<sd;i++)ac(new Date(curYear,curMonth-1,pd-sd+i+1),true);
   for(let i=1;i<=dim;i++)ac(new Date(curYear,curMonth,i),false);
   const rem=(7-(sd+dim)%7)%7;for(let i=1;i<=rem;i++)ac(new Date(curYear,curMonth+1,i),true);
   document.getElementById('calGrid').innerHTML=`<div class="cal-grid">${cells}</div>`;
 }
+
 function renderWeek(){
   const ends=new Date(curWeekStart);ends.setDate(ends.getDate()+6);
   const fmt=d=>d.getDate()+'.'+(d.getMonth()+1)+'.';
@@ -1538,17 +1700,21 @@ function renderWeek(){
     const k=dateKey(d),dd=state.calData[k]||{};
     const isT=d.getTime()===TODAY.getTime(),isFut=d>TODAY;
     const dowIdx=(d.getDay()===0)?6:d.getDay()-1;
-    let cls='wcard';if(isT)cls+=' today';if(dd.reaction)cls+=' reacted';if(isFut)cls+=' future';
+    const isChecked=selectedDays.has(k);
+    let cls='wcard';if(isT)cls+=' today';if(dd.reaction)cls+=' reacted';if(isFut)cls+=' future';if(isChecked)cls+=' selected-card';
     const rb=dd.reaction?`<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;font-weight:500">⚠</span>`:'';
     const tb=isT?`<span style="width:6px;height:6px;border-radius:50%;background:var(--rose-btn);display:inline-block"></span>`:'';
+    const chk=planSelectMode?`<div class="day-check visible${isChecked?' checked':''}" id="wdc-${k}" onclick="event.stopPropagation();toggleDaySelect('${k}',this)" style="margin-right:4px"></div>`:'';
     let body='';
     if(isFut){body=dd.planned&&dd.planned.length?`<div class="wc-foods" style="color:var(--rose-dark)">${dd.planned.join(', ')}</div>`:`<div class="wc-foods" style="color:var(--text-3);font-style:italic">prázdný</div>`;}
     else{const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',dd.sleep?`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek</div>`:''].filter(Boolean).join('');if(st)body+=`<div class="wc-stats">${st}</div>`;if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;}
-    html+=`<div class="${cls}" onclick="selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})"><div class="wc-head"><span class="wc-dn">${DAYS_MON[dowIdx]}</span><div style="display:flex;align-items:center;gap:3px"><span class="wc-date">${d.getDate()}.</span>${rb}${tb}</div></div>${body}</div>`;
+    const clickFn=planSelectMode?`toggleDaySelect('${k}',document.getElementById('wdc-${k}'))`:`selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})`;
+    html+=`<div class="${cls}" style="${isChecked?'background:var(--rose-light);border-color:var(--rose-btn)':''}" onclick="${clickFn}"><div class="wc-head">${chk}<span class="wc-dn">${DAYS_MON[dowIdx]}</span><div style="display:flex;align-items:center;gap:3px"><span class="wc-date">${d.getDate()}.</span>${rb}${tb}</div></div>${body}</div>`;
   }
   html+=`</div>`;document.getElementById('calGrid').innerHTML=html;
 }
 function selDay(y,m,day){
+  if(planSelectMode)return;
   planSelDate=new Date(y,m,day);planDetOpen=true;
   const k=dateKey(planSelDate),dd=state.calData[k]||{};
   const isFut=planSelDate>TODAY,isT=planSelDate.getTime()===TODAY.getTime();
@@ -1575,7 +1741,7 @@ function selDay(y,m,day){
   }
   document.getElementById('planDContent').innerHTML=html;
   document.getElementById('planDetail').style.display='block';
-  document.getElementById('planClearBtn').style.display='none';
+  
   document.getElementById('planScroll').scrollTop=0;
   if(calView==='month')renderMonth();else renderWeek();
 }
@@ -1597,7 +1763,7 @@ function openPlanReactionDetail(dayKey){
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>`<div class="rh-item"><div style="min-width:58px;text-align:right"><div style="font-size:11px;font-weight:600;color:var(--text-2)">${fmtTime(h.ts)}</div></div><div><div style="font-size:12px;color:var(--text)">${h.sub||h.name}</div></div></div>`).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy</div>`;
   openModal('mReactionDetail');
 }
-function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';document.getElementById('planClearBtn').style.display='block';renderCal();}
+function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
 function navPrev(){if(calView==='month'){curMonth--;if(curMonth<0){curMonth=11;curYear--;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()-7);renderWeek();}}
 function navNext(){if(calView==='month'){curMonth++;if(curMonth>11){curMonth=0;curYear++;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()+7);renderWeek();}}
@@ -1621,12 +1787,17 @@ function renderFoods(){
       const dot=status==='ok'?'ok':status==='warn'?'warn':status==='no'?'no':'new';
       const at=f.allergen?'<span style="font-size:9px;background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:7px;margin-left:3px">alergen</span>':'';
       const lastUsed=ov.lastUsed?`<span style="font-size:10px;color:var(--text-3);margin-right:4px">${fmtDateShort(ov.lastUsed)}</span>`:'';
-      return`<div class="fitem ${cls}" onclick="openFoodDetail('${f.name}')">
+      const isChecked=selectedFoodNames.has(f.name);
+      const chk=foodSelectMode?`<div class="food-check visible${isChecked?' checked':''}" id="fc-${f.name.replace(/\s/g,'_')}" onclick="event.stopPropagation();toggleFoodItemSelect('${f.name}',this)"></div>`:'';
+      const clickFn=foodSelectMode?`toggleFoodItemSelect('${f.name}',document.getElementById('fc-${f.name.replace(/\s/g,'_')}'))`:`openFoodDetail('${f.name}')`;
+      const selStyle=isChecked?'background:var(--rose-light);border-color:var(--rose-btn)':'';
+      return`<div class="fitem ${cls}" style="${selStyle}" onclick="${clickFn}">
+        ${chk}
         <div class="fdot ${dot}"></div>
         <span class="fname">${f.name}${at}</span>
         ${lastUsed}
         <span class="fst st-${status}">${stL[status]}</span>
-        <svg class="ch" style="margin-left:4px" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg>
+        ${foodSelectMode?'':'<svg class="ch" style="margin-left:4px" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg>'}
       </div>`;
     }).join('');
   } else {
@@ -1657,6 +1828,7 @@ function filterFood(cat,btn){foodCat=cat;document.querySelectorAll('.food-tabs .
 function setFoodView(v){foodView=v;document.getElementById('vfl').classList.toggle('active',v==='list');document.getElementById('vft').classList.toggle('active',v==='timeline');document.getElementById('foodListView').style.display=v==='list'?'block':'none';document.getElementById('foodTlView').style.display=v==='timeline'?'block':'none';document.getElementById('foodTabsBar').style.display=v==='list'?'flex':'none';renderFoods();}
 
 function openFoodDetail(name){
+  if(foodSelectMode)return;
   currentFoodDetail=name;
   const f=FDB.find(x=>x.name===name);
   if(!f)return;
@@ -1806,7 +1978,10 @@ function openModal(id){
   if(id==='mBreast'){const now=new Date();document.getElementById('breastTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
   if(id==='mReaction'){const now=new Date();document.getElementById('reactionTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');rhOpen=false;document.getElementById('rhList').style.display='none';document.getElementById('rhToggle').textContent='▼ rozbalit';}
   if(id==='mFzAdd'){fzSelFoodsArr=[];document.getElementById('fzSelFoods').innerHTML='';document.getElementById('fzIngInput').value='';document.getElementById('fzFoodSug').style.display='none';document.getElementById('fzDate').value=new Date().toISOString().slice(0,10);document.getElementById('fzNote').value='';document.getElementById('fzIngRow').style.display='block';document.getElementById('fzMilkInfo').style.display='none';document.getElementById('fzExpiryPreview').style.display='none';document.getElementById('fzMaxDaysHint').textContent='max trvanlivost: 2 měsíce';document.getElementById('fzAmt').value='6';document.querySelector('#mFzAdd .type-btn.sel')?.classList.remove('sel');document.querySelector('#mFzAdd .type-btn').classList.add('sel');document.getElementById('fzUnit').value='kostičky';}
-  if(id==='mDoctor'&&editDoctorIdx<0){document.getElementById('mDoctorTitle').textContent='Přidat lékaře';document.getElementById('dName').value='';document.getElementById('dPhone').value='';document.getElementById('dPlace').value='';document.getElementById('dNext').value='';document.querySelectorAll('#mDoctor .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));}
+  if(id==='mBulkStatus'){
+    const names=[...selectedFoodNames];
+    document.getElementById('bulkStatusInfo').textContent=names.length+' potravin: '+names.slice(0,5).join(', ')+(names.length>5?'…':'');
+  }document.getElementById('mDoctorTitle').textContent='Přidat lékaře';document.getElementById('dName').value='';document.getElementById('dPhone').value='';document.getElementById('dPlace').value='';document.getElementById('dNext').value='';document.querySelectorAll('#mDoctor .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));}
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
