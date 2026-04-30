@@ -909,55 +909,92 @@ let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let lastRemoteTs = 0;
 
 // ============================================================
-// SYNC (localStorage for real-time between tabs/devices)
+// SYNC — Firebase Realtime Database (cross-device real-time)
 // ============================================================
 const STORAGE_KEY = 'sofin:shared:v1';
+const FB_URL = 'https://sofins-menu-default-rtdb.europe-west1.firebasedatabase.app/sofin.json';
+let lastRemoteTs = 0;
+let fbListener = null;
 
 function saveAll() {
-  try {
-    syncTodayToCalData();
-    state.ts = Date.now();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    setSyncStatus('ok');
-  } catch(e) {
-    setSyncStatus('error');
-  }
+  syncTodayToCalData();
+  state.ts = Date.now();
+  // uložit lokálně
+  try{localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}catch(e){}
+  // uložit do Firebase
+  setSyncStatus('syncing');
+  fetch(FB_URL, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(state)})
+    .then(r=>r.ok?setSyncStatus('ok'):setSyncStatus('error'))
+    .catch(()=>{
+      setSyncStatus('error');
+      // fallback — localStorage funguje aspoň pro multi-tab
+    });
 }
 
 function loadFromStorage() {
+  // lokální fallback pro první načtení
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-    const remote = JSON.parse(raw);
-    if (remote.ts && remote.ts > lastRemoteTs) {
-      lastRemoteTs = remote.ts;
-      // merge — ne přepisovat state pokud jsem to já ukládal
-      const wasMe = (Date.now() - remote.ts) < 200;
-      if (!wasMe) {
-        state.todayLog = remote.todayLog || state.todayLog;
-        state.sleep = remote.sleep || state.sleep;
-        state.freezer = remote.freezer || state.freezer;
-        state.settings = remote.settings || state.settings;
-        state.foodOverrides = remote.foodOverrides || state.foodOverrides;
-        state.customFoods = remote.customFoods || state.customFoods;
-        state.brands = remote.brands || state.brands;
-        renderAll();
-      }
-    }
+    const s = JSON.parse(raw);
+    applyRemoteState(s);
   } catch(e) {}
+}
+
+function applyRemoteState(remote) {
+  if (!remote || !remote.ts) return;
+  if (remote.ts <= lastRemoteTs) return;
+  lastRemoteTs = remote.ts;
+  const wasMe = (Date.now() - remote.ts) < 300;
+  if (wasMe) return;
+  state.todayLog = remote.todayLog || state.todayLog;
+  state.sleep = remote.sleep || state.sleep;
+  state.freezer = remote.freezer || state.freezer;
+  state.settings = remote.settings || state.settings;
+  state.foodOverrides = remote.foodOverrides || state.foodOverrides;
+  state.customFoods = remote.customFoods || state.customFoods;
+  state.brands = remote.brands || state.brands;
+  if (remote.calData) state.calData = remote.calData;
+  renderAll();
+  setSyncStatus('ok');
+}
+
+function startFirebaseSync() {
+  // Firebase Server-Sent Events pro real-time updates
+  try {
+    const es = new EventSource(FB_URL.replace('.json','') + '.json?alt=media');
+    es.addEventListener('put', e => {
+      try { applyRemoteState(JSON.parse(e.data)); } catch(err) {}
+    });
+    es.onerror = () => {
+      es.close();
+      // fallback polling každé 3 sekundy
+      setInterval(()=>{
+        fetch(FB_URL).then(r=>r.json()).then(applyRemoteState).catch(()=>{});
+      }, 3000);
+    };
+  } catch(e) {
+    // polling fallback
+    setInterval(()=>{
+      fetch(FB_URL).then(r=>r.json()).then(applyRemoteState).catch(()=>{});
+    }, 3000);
+  }
 }
 
 function setSyncStatus(status) {
   const dot = document.getElementById('syncDot');
   const lbl = document.getElementById('syncLbl');
+  if (!dot) return;
   if (status === 'ok') { dot.className='sync-dot'; lbl.textContent='synchronizováno'; }
   else if (status === 'syncing') { dot.className='sync-dot syncing'; lbl.textContent='ukládám...'; }
   else { dot.className='sync-dot error'; lbl.textContent='offline'; }
 }
 
-// Poslouchat změny z jiných tabů/oken (real-time)
+// Multi-tab sync (stejný prohlížeč)
 window.addEventListener('storage', (e) => {
-  if (e.key === STORAGE_KEY) loadFromStorage();
+  if (e.key === STORAGE_KEY && e.newValue) {
+    try { applyRemoteState(JSON.parse(e.newValue)); } catch(err) {}
+  }
 });
 
 // Seed demo cal data
@@ -1030,7 +1067,12 @@ function showScreen(n){
   document.getElementById('scr-'+n).classList.add('active');
   document.getElementById('ti-'+n).classList.add('active');
   curScreen=n;
-  if(n==='plan'){renderCal();document.getElementById('planClearBtn').style.display='block';}
+  if(n==='plan'){
+    // reset detail při přechodu na plán
+    planDetOpen=false;planSelDate=null;
+    document.getElementById('planDetail').style.display='none';
+    renderCal();
+  }
   if(n==='food')renderFoods();
   if(n==='freezer')renderFreezer();
   if(n==='settings')renderSettings();
@@ -1740,9 +1782,9 @@ function renderMonth(){
   const dim=new Date(curYear,curMonth+1,0).getDate(),pd=new Date(curYear,curMonth,0).getDate();
   let cells='';
   const ac=(d,oth)=>{
-    const k=dateKey(d),isT=d.getTime()===TODAY.getTime(),isSel=planSelDate&&!planDetOpen&&dateKey(planSelDate)===k,dd=state.calData[k];
+    const k=dateKey(d),isT=d.getTime()===TODAY.getTime(),isSel=planSelDate&&dateKey(planSelDate)===k,dd=state.calData[k];
     const isDaySel=planSelectMode&&selectedDays.has(k);
-    let cls='cday';if(oth)cls+=' other';if(isT)cls+=' today';if((isSel&&!planSelectMode)||isDaySel)cls+=' sel';if(dd&&dd.reaction)cls+=' reacted';
+    let cls='cday';if(oth)cls+=' other';if(isT)cls+=' today';if(isSel&&!planSelectMode)cls+=' sel';if(isDaySel)cls+=' sel';if(dd&&dd.reaction)cls+=' reacted';
     let dots='';if(dd){if(dd.foods&&dd.foods.length)for(let i=0;i<Math.min(dd.foods.length,3);i++)dots+=`<div class="dot df"></div>`;if(dd.breast)for(let i=0;i<Math.min(dd.breast,2);i++)dots+=`<div class="dot db"></div>`;if(dd.sleep)for(let i=0;i<Math.min(dd.sleep,2);i++)dots+=`<div class="dot ds"></div>`;if(dd&&dd.reaction)dots+=`<div class="dot dr"></div>`;}
     const chk=planSelectMode?`<div style="position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:3px;border:1.5px solid ${isDaySel?'var(--rose-btn)':'var(--rose-mid)'};background:${isDaySel?'var(--rose-btn)':'#fff'};font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center">${isDaySel?'✓':''}</div>`:'';
     const clickFn=planSelectMode?`toggleDaySelect('${k}')`:`selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})`;
@@ -1765,6 +1807,7 @@ function renderWeek(){
     const isT=d.getTime()===TODAY.getTime(),isFut=d>TODAY;
     const dowIdx=(d.getDay()===0)?6:d.getDay()-1;
     const isDaySel=planSelectMode&&selectedDays.has(k);
+    const isSelDay=planSelDate&&dateKey(planSelDate)===k&&!planSelectMode;
     let cls='wcard';if(isT)cls+=' today';if(dd.reaction)cls+=' reacted';if(isFut)cls+=' future';
     const rb=dd.reaction?`<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;font-weight:500">⚠</span>`:'';
     const tb=isT?`<span style="width:6px;height:6px;border-radius:50%;background:var(--rose-btn);display:inline-block"></span>`:'';
@@ -1776,26 +1819,29 @@ function renderWeek(){
     }
     else{const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',dd.sleep?`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek</div>`:''].filter(Boolean).join('');if(st)body+=`<div class="wc-stats">${st}</div>`;if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;}
     const clickFn=planSelectMode?`toggleDaySelect('${k}')`:`selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})`;
-    const selBorder=isDaySel?'border-color:var(--rose-btn);background:var(--rose-light)':'';
+    const selBorder=isDaySel?'border-color:var(--rose-btn);background:var(--rose-light)':isSelDay?'border-color:var(--rose-btn);border-width:2px':'';
     html+=`<div class="${cls}" style="${selBorder}" onclick="${clickFn}"><div class="wc-head">${chk}<span class="wc-dn">${DAYS_MON[dowIdx]}</span><div style="display:flex;align-items:center;gap:3px"><span class="wc-date">${d.getDate()}.</span>${rb}${tb}</div></div>${body}</div>`;
   }
   html+=`</div>`;document.getElementById('calGrid').innerHTML=html;
 }
 function selDay(y,m,day){
+  if(planSelectMode){toggleDaySelect(dateKey(new Date(y,m,day)));return;}
   planSelDate=new Date(y,m,day);planDetOpen=true;
   const k=dateKey(planSelDate),dd=state.calData[k]||{};
   const isFut=planSelDate>TODAY,isT=planSelDate.getTime()===TODAY.getTime();
+  const canPlan=isFut||isT; // plánovat lze dnes i v budoucnu
   const dowIdx=(planSelDate.getDay()===0)?6:planSelDate.getDay()-1;
   document.getElementById('planDTitle').textContent=(isT?'Dnes – ':'')+DAYS_MON[dowIdx]+' '+planSelDate.getDate()+'. '+MONTHS_GEN[planSelDate.getMonth()];
   let html='';
-  if(isFut){
+
+  // tlačítko naplánovat jídlo pro dnes i budoucnost
+  if(canPlan){
+    html+=`<button class="add-btn" style="margin:8px 16px 10px" onclick="openPlanFoodModal('${k}')">+ Naplánovat jídlo</button>`;
     const planned=dd.plannedItems||[];
-    html+=`<div style="margin:0 16px 8px;background:var(--rose-light);border-radius:11px;padding:9px 12px;font-size:12px;color:var(--rose-dark)">📅 Plánovaný den · ${DAYS_MON[dowIdx]} ${planSelDate.getDate()}. ${MONTHS_GEN[planSelDate.getMonth()]}</div>`;
-    html+=`<button class="add-btn" style="margin:0 16px 10px" onclick="openPlanFoodModal('${k}')">+ Naplánovat jídlo</button>`;
     if(planned.length){
       html+=`<div class="sec-lbl">Naplánované</div><div class="entry-list">`;
       planned.forEach((p,i)=>{
-        html+=`<div class="ecard" style="opacity:.75;border-style:dashed">
+        html+=`<div class="ecard" style="opacity:.75;border-style:dashed;border-color:var(--rose-mid)">
           <div class="eicon i-food">🍽</div>
           <div class="einfo"><div class="ename">${p.name}</div><div class="esub">${p.foods.join(', ')}</div></div>
           <div class="eright">
@@ -1805,25 +1851,32 @@ function selDay(y,m,day){
       });
       html+=`</div>`;
     }
-  } else {
-    if(dd.reaction)html+=`<div style="margin:6px 16px;background:#fff5f5;border-radius:11px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500;cursor:pointer" onclick="openPlanReactionDetail('${k}')">⚠ Reakce zaznamenaná v tento den — klikni pro detail</div>`;
-    html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;
-    (dd.entries||[]).forEach((e,i)=>{
-      const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':'';
-      const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
-      const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
-      html+=`<div class="ecard${cc}" onclick="openPlanEntryDetailByIdx('${k}',${i})">
-        <span class="etime">${fmtTime(e.ts)}</span>
-        <div class="eicon ${ic}">${em}</div>
-        <div class="einfo"><div class="ename">${e.name}</div><div class="esub">${e.sub}</div></div>
-        <div class="eright">${e.reaction?'<div class="rdot">⚠</div>':''}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
-      </div>`;
-    });
-    html+=`</div>`;
   }
+
+  if(!isFut){
+    if(dd.reaction)html+=`<div style="margin:6px 16px;background:#fff5f5;border-radius:11px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500;cursor:pointer" onclick="openPlanReactionDetail('${k}')">⚠ Reakce zaznamenaná v tento den — klikni pro detail</div>`;
+    const entries=dd.entries||[];
+    if(entries.length){
+      html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;
+      entries.forEach((e,i)=>{
+        const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':'';
+        const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
+        const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
+        html+=`<div class="ecard${cc}" onclick="openPlanEntryDetailByIdx('${k}',${i})">
+          <span class="etime">${fmtTime(e.ts)}</span>
+          <div class="eicon ${ic}">${em}</div>
+          <div class="einfo"><div class="ename">${e.name}</div><div class="esub">${e.sub}</div></div>
+          <div class="eright">${e.reaction?'<div class="rdot">⚠</div>':''}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+        </div>`;
+      });
+      html+=`</div>`;
+    } else if(!canPlan){
+      html+=`<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Žádné záznamy</div>`;
+    }
+  }
+
   document.getElementById('planDContent').innerHTML=html;
   document.getElementById('planDetail').style.display='block';
-  document.getElementById('planClearBtn').style.display='none';
   document.getElementById('planScroll').scrollTop=0;
   if(calView==='month')renderMonth();else renderWeek();
 }
@@ -1845,7 +1898,7 @@ function openPlanReactionDetail(dayKey){
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>`<div class="rh-item"><div style="min-width:58px;text-align:right"><div style="font-size:11px;font-weight:600;color:var(--text-2)">${fmtTime(h.ts)}</div></div><div><div style="font-size:12px;color:var(--text)">${h.sub||h.name}</div></div></div>`).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy</div>`;
   openModal('mReactionDetail');
 }
-function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';document.getElementById('planClearBtn').style.display='block';renderCal();}
+function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
 function navPrev(){if(calView==='month'){curMonth--;if(curMonth<0){curMonth=11;curYear--;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()-7);renderWeek();}}
 function navNext(){if(calView==='month'){curMonth++;if(curMonth>11){curMonth=0;curYear++;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()+7);renderWeek();}}
@@ -2086,6 +2139,9 @@ function openModal(id){
   if(id==='mReaction'){const now=new Date();document.getElementById('reactionTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');rhOpen=false;document.getElementById('rhList').style.display='none';document.getElementById('rhToggle').textContent='▼ rozbalit';}
   if(id==='mFzAdd'){fzSelFoodsArr=[];document.getElementById('fzSelFoods').innerHTML='';document.getElementById('fzIngInput').value='';document.getElementById('fzFoodSug').style.display='none';document.getElementById('fzDate').value=new Date().toISOString().slice(0,10);document.getElementById('fzNote').value='';document.getElementById('fzIngRow').style.display='block';document.getElementById('fzMilkInfo').style.display='none';document.getElementById('fzExpiryPreview').style.display='none';document.getElementById('fzMaxDaysHint').textContent='max trvanlivost: 2 měsíce';document.getElementById('fzAmt').value='6';document.querySelector('#mFzAdd .type-btn.sel')?.classList.remove('sel');document.querySelector('#mFzAdd .type-btn').classList.add('sel');document.getElementById('fzUnit').value='kostičky';}
   if(id==='mDoctor'&&editDoctorIdx<0){document.getElementById('mDoctorTitle').textContent='Přidat lékaře';document.getElementById('dName').value='';document.getElementById('dPhone').value='';document.getElementById('dPlace').value='';document.getElementById('dNext').value='';document.querySelectorAll('#mDoctor .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));}
+  if(id==='mAddFood'){document.getElementById('afName').value='';document.getElementById('afNote').value='';document.getElementById('afMonth').value=CM;document.querySelectorAll('#mAddFood .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));}
+  if(id==='mAddBrand'&&editingBrandIdx<0){document.getElementById('mAddBrandTitle').textContent='Přidat značku / recept';document.getElementById('abName').value='';document.getElementById('abNote').value='';abSelFoods=[];abSelectedEmoji='🥣';document.getElementById('abSelFoods').innerHTML='';document.getElementById('abIngInput').value='';document.getElementById('brandIngSug').style.display='none';document.querySelectorAll('#abEmojiPicker span').forEach(s=>s.style.background='transparent');}
+  if(id==='mBulkStatus'){const names=[...selectedFoodNames];document.getElementById('bulkStatusInfo').textContent=names.length+' potravin: '+names.slice(0,5).join(', ')+(names.length>5?'…':'');}
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -2212,30 +2268,19 @@ function openCustomFoodDetail(name){
 }
 
 // ============================================================
-// CROSS-DEVICE SYNC — polling každé 4 sekundy
+// CROSS-DEVICE SYNC — Firebase real-time
 // ============================================================
-setInterval(()=>{
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw)return;
-    const remote=JSON.parse(raw);
-    if(remote.ts&&remote.ts>lastRemoteTs+500){
-      lastRemoteTs=remote.ts;
-      if(remote.todayLog!==undefined)state.todayLog=remote.todayLog;
-      if(remote.sleep!==undefined)state.sleep=remote.sleep;
-      if(remote.freezer!==undefined)state.freezer=remote.freezer;
-      if(remote.settings)state.settings={...state.settings,...remote.settings};
-      if(remote.foodOverrides!==undefined)state.foodOverrides=remote.foodOverrides;
-      if(remote.customFoods!==undefined)state.customFoods=remote.customFoods;
-      if(remote.brands!==undefined)state.brands=remote.brands;
-      renderAll();
-    }
-  }catch(e){}
-},4000);
+// (Firebase sync handled above via startFirebaseSync)
 
-// ============================================================
-// PLÁNOVÁNÍ JÍDEL
-// ============================================================
+renderAll();
+// Načíst z Firebase a spustit real-time listener
+fetch(FB_URL).then(r=>r.json()).then(remote=>{
+  if(remote&&remote.ts&&remote.ts>(state.ts||0)){
+    applyRemoteState(remote);
+  }
+}).catch(()=>{}).finally(()=>{
+  startFirebaseSync();
+});
 let planFoodDateKey=null,planFoodSelFoods=[];
 
 function openPlanFoodModal(dk){
@@ -2402,25 +2447,6 @@ function editBrand(idx){
 function deleteBrand(idx){
   if(!confirm('Smazat značku?'))return;
   state.brands.splice(idx,1);renderBrands();saveAll();
-}
-
-// Patch openModal for mAddBrand reset
-const _omB=openModal;
-function openModal(id){
-  if(id==='mAddBrand'&&editingBrandIdx<0){
-    document.getElementById('mAddBrandTitle').textContent='Přidat značku / recept';
-    document.getElementById('abName').value='';document.getElementById('abNote').value='';
-    abSelFoods=[];abSelectedEmoji='🥣';
-    document.getElementById('abSelFoods').innerHTML='';document.getElementById('abIngInput').value='';
-    document.getElementById('brandIngSug').style.display='none';
-    document.querySelectorAll('#abEmojiPicker span').forEach(s=>s.style.background='transparent');
-  }
-  if(id==='mAddFood'){
-    document.getElementById('afName').value='';document.getElementById('afNote').value='';
-    document.getElementById('afMonth').value=CM;
-    document.querySelectorAll('#mAddFood .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));
-  }
-  _omB(id);
 }
 
 renderAll();
