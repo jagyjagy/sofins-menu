@@ -74,7 +74,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .act-label{flex:1;font-size:13px}
 .act-sub{font-size:10px;opacity:.6;font-weight:400;display:block;margin-top:1px}
 .sleep-live{font-size:11px;font-weight:600;color:var(--slate-dark);min-width:44px;text-align:right}
-.reaction-strip{margin:0 16px 8px;background:var(--red-bg);border-radius:12px;border:1.5px solid #e87575;padding:7px 13px;display:flex;align-items:center;gap:9px;cursor:pointer}
+.reaction-strip{margin:0 16px 8px;background:var(--red-bg);border-radius:12px;border:2px solid #e05555;padding:7px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;width:calc(100% - 32px);box-sizing:border-box}
 .reaction-strip *{color:var(--red)!important}
 .ri{width:22px;height:22px;border-radius:7px;background:#f7c1c1;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .divider{height:.5px;background:var(--rose-mid);margin:0 16px}
@@ -1087,23 +1087,25 @@ function fmtDuration(ms){
 }
 function getSleepEndTs(entry){
   const sub=entry.sub||'';
-  // Formát 1: "14:15 – 15:50 · 1h 35min"
-  const rangeMatch=sub.match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);
+  // ignoruj live záznamy
+  if(sub.includes('probíhá')||entry.live) return entry.ts;
+  // Formát 1: "14:15 – 15:50" nebo "14:15–15:50"
+  const rangeMatch=sub.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
   if(rangeMatch){
-    const startD=new Date(entry.ts);
     const endD=new Date(entry.ts);
     endD.setHours(parseInt(rangeMatch[3]),parseInt(rangeMatch[4]),0,0);
-    if(endD.getTime()<=startD.getTime()) endD.setDate(endD.getDate()+1);
+    if(endD.getTime()<=entry.ts) endD.setDate(endD.getDate()+1);
     return endD.getTime();
   }
-  // Formát 2: délka "1h 35min" nebo "45min" nebo "<1min"
+  // Formát 2: "<1min" → 1 minuta
+  if(sub.includes('<1min')) return entry.ts+60000;
+  // Formát 3: "1h 35min" nebo "45min"
   let totalMins=0;
-  const hMatch=sub.match(/(\d+)h/);
-  const mMatch=sub.match(/(\d+)min/);
+  const hMatch=sub.match(/(\d+)\s*h/);
+  const mMatch=sub.match(/(\d+)\s*min/);
   if(hMatch) totalMins+=parseInt(hMatch[1])*60;
   if(mMatch) totalMins+=parseInt(mMatch[1]);
   if(totalMins>0) return entry.ts+totalMins*60000;
-  // fallback — neznámý formát
   return entry.ts;
 }
 function fmtDate(str){if(!str)return'';const d=new Date(str);return d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();}
@@ -1190,13 +1192,17 @@ function renderStatus(){
   // právě spí / vzhůru už
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
-  } else if(sleepEntries.length){
-    const ls=[...sleepEntries].sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0];
-    const sleepEndTs=getSleepEndTs(ls);
-    const aw=now-sleepEndTs;
-    const awMins=Math.floor(aw/60000);
-    if(aw>0&&aw<20*3600000){
-      html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+  } else {
+    // pro "vzhůru už" bereme VŠECHNY dnešní spánky (i <1min) — hledáme poslední konec
+    const allTodaySleep=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&e.ts>=todayStartTs);
+    if(allTodaySleep.length){
+      const ls=[...allTodaySleep].sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0];
+      const sleepEndTs=getSleepEndTs(ls);
+      const aw=now-sleepEndTs;
+      const awMins=Math.floor(aw/60000);
+      if(aw>0&&aw<20*3600000){
+        html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+      }
     }
   }
 
