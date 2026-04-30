@@ -958,6 +958,7 @@ function applyRemoteState(remote) {
   lastRemoteTs = remote.ts;
   const wasMe = (Date.now() - remote.ts) < 300;
   if (wasMe) return;
+  const sleepWasActive = state.sleep && state.sleep.active;
   state.todayLog = remote.todayLog || state.todayLog;
   state.sleep = remote.sleep || state.sleep;
   state.freezer = remote.freezer || state.freezer;
@@ -966,30 +967,29 @@ function applyRemoteState(remote) {
   state.customFoods = remote.customFoods || state.customFoods;
   state.brands = remote.brands || state.brands;
   if (remote.calData) state.calData = remote.calData;
+  // pokud se změnil stav spánku, aktualizuj UI okamžitě
+  const sleepNowActive = state.sleep && state.sleep.active;
+  if (sleepWasActive !== sleepNowActive) {
+    updateSleepUI();
+  }
   renderAll();
   setSyncStatus('ok');
 }
 
 function startFirebaseSync() {
-  // Firebase Server-Sent Events pro real-time updates
-  try {
-    const es = new EventSource(FB_URL.replace('.json','') + '.json?alt=media');
-    es.addEventListener('put', e => {
-      try { applyRemoteState(JSON.parse(e.data)); } catch(err) {}
-    });
-    es.onerror = () => {
-      es.close();
-      // fallback polling každé 3 sekundy
-      setInterval(()=>{
-        fetch(FB_URL).then(r=>r.json()).then(applyRemoteState).catch(()=>{});
-      }, 3000);
-    };
-  } catch(e) {
-    // polling fallback
-    setInterval(()=>{
-      fetch(FB_URL).then(r=>r.json()).then(applyRemoteState).catch(()=>{});
-    }, 3000);
+  // Polling — každé 2 sekundy když spánek běží, jinak každé 4 sekundy
+  function poll(){
+    fetch(FB_URL+'?t='+Date.now(), {cache:'no-store'})
+      .then(r=>r.json())
+      .then(applyRemoteState)
+      .catch(()=>{setSyncStatus('error');});
   }
+
+  // Rychlý interval pro spánek (každé 2s), normální pro ostatní (každé 4s)
+  setInterval(()=>{
+    if(state.sleep&&state.sleep.active) poll(); // rychle když spánek běží
+  }, 2000);
+  setInterval(poll, 4000); // vždy každé 4s
 }
 
 function setSyncStatus(status) {
