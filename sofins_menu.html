@@ -445,7 +445,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       </div>
     </div>
     <div class="scroll-area">
-      <div id="foodListView"><div class="food-list" id="foodGrid"></div></div>
+      <div id="foodListView">
+        <div style="padding:6px 16px 4px">
+          <div style="position:relative">
+            <input type="text" id="foodSearch" placeholder="🔍  hledat potravinu..." oninput="filterFoodSearch(this.value)" style="width:100%;padding:8px 12px 8px 12px;border-radius:10px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--text);font-size:13px;font-family:inherit"/>
+            <span id="foodSearchClear" onclick="clearFoodSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-3);font-size:16px">×</span>
+          </div>
+        </div>
+        <div class="food-list" id="foodGrid"></div>
+      </div>
       <div id="foodTlView" style="display:none"><div class="tl-wrap" id="tlWrap"></div></div>
       <div id="foodBrandsView" style="display:none">
         <div class="food-list" id="brandsGrid"></div>
@@ -1119,7 +1127,20 @@ function renderStatus(){
     html+=`<div class="chip sleeping"><span>😴</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
     const ls=state.todayLog.filter(e=>e.type==='sleep'&&!e.live).sort((a,b)=>b.ts-a.ts)[0];
-    if(ls){const aw=now-ls.ts;const awMins=Math.floor(aw/60000);html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;}
+    if(ls){
+      // konec spánku = parsuj z sub "HH:MM – HH:MM" nebo použij ts + délka
+      let sleepEndTs=ls.ts;
+      const subMatch=(ls.sub||'').match(/(\d+:\d+)\s*–\s*(\d+:\d+)/);
+      if(subMatch){
+        const [h,m]=subMatch[2].split(':').map(Number);
+        const endD=new Date(ls.ts);endD.setHours(h,m,0,0);
+        // pokud konec je před začátkem (přes půlnoc), přidej den
+        if(endD.getTime()<ls.ts)endD.setDate(endD.getDate()+1);
+        sleepEndTs=endD.getTime();
+      }
+      const aw=now-sleepEndTs;const awMins=Math.floor(aw/60000);
+      html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+    }
   }
   document.getElementById('statusRow').innerHTML=html;
 }
@@ -1917,7 +1938,7 @@ function navNext(){if(calView==='month'){curMonth++;if(curMonth>11){curMonth=0;c
 // ============================================================
 // POTRAVINY
 // ============================================================
-let foodCat='vse',foodView='list';
+let foodCat='vse',foodView='list',foodSearchQuery='';
 let currentFoodDetail=null; // {name, idx in FDB}
 
 function getFoodOverride(name){return (state.foodOverrides||{})[name]||{};}
@@ -1929,7 +1950,8 @@ function renderFoods(){
     // přidat custom potraviny
     const custom=state.customFoods||[];
     const customList=foodCat==='vse'?custom:custom.filter(f=>f.cat===foodCat||f.cat==='nezařazeno');
-    const fullList=[...list,...customList];
+    let fullList=[...list,...customList];
+    if(foodSearchQuery)fullList=fullList.filter(f=>f.name.toLowerCase().includes(foodSearchQuery));
     document.getElementById('foodGrid').innerHTML=fullList.map(f=>{
       const ov=getFoodOverride(f.name);
       const status=ov.status||f.status||'new';
@@ -1985,9 +2007,25 @@ function renderFoods(){
     document.getElementById('tlWrap').innerHTML=tlHtml;
   }
 }
+function filterFoodSearch(val){
+  foodSearchQuery=val.trim().toLowerCase();
+  document.getElementById('foodSearchClear').style.display=val?'block':'none';
+  renderFoods();
+}
+function clearFoodSearch(){
+  foodSearchQuery='';
+  document.getElementById('foodSearch').value='';
+  document.getElementById('foodSearchClear').style.display='none';
+  renderFoods();
+}
 function filterFood(cat,btn){foodCat=cat;document.querySelectorAll('.food-tabs .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFoods();}
 function setFoodView(v){
   foodView=v;
+  foodSearchQuery='';
+  const se=document.getElementById('foodSearch');
+  if(se)se.value='';
+  const sc=document.getElementById('foodSearchClear');
+  if(sc)sc.style.display='none';
   document.getElementById('vfl').classList.toggle('active',v==='list');
   document.getElementById('vft').classList.toggle('active',v==='timeline');
   document.getElementById('vfb').classList.toggle('active',v==='brands');
