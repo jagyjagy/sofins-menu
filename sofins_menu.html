@@ -1068,8 +1068,36 @@ function seedCalData() {
 function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function getMonday(d){const day=d.getDay(),diff=(day===0)?-6:1-day,m=new Date(d);m.setDate(d.getDate()+diff);m.setHours(0,0,0,0);return m}
 function fmtTime(ts){const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
-function fmtTimer(ms){const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60;if(h>0)return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');return m+':'+String(s).padStart(2,'0');}
-function fmtElapsed(ms){const mins=Math.floor(ms/60000);if(mins<60)return 'před '+mins+'min';const h=Math.floor(mins/60),m=mins%60;if(h<24)return 'před '+h+'h'+(m?' '+m+'min':'');const dd=Math.floor(h/24),rh=h%24;return 'před '+dd+' dnem'+(rh?' '+rh+'h':'');}
+function fmtTimer(ms){const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60;if(h>0)return h+'h '+String(m).padStart(2,'0')+'min';return m+'min '+String(s).padStart(2,'0')+'s';}
+function fmtElapsed(ms){
+  if(ms<0)ms=0;
+  const mins=Math.floor(ms/60000);
+  if(mins<60)return mins+'min';
+  const h=Math.floor(mins/60),m=mins%60;
+  if(h<24)return h+'h'+(m?' '+m+'min':'');
+  const dd=Math.floor(h/24),rh=h%24;
+  return dd+'d'+(rh?' '+rh+'h':'');
+}
+function fmtDuration(ms){
+  if(ms<0)ms=0;
+  const mins=Math.floor(ms/60000);
+  if(mins<60)return mins+'min';
+  const h=Math.floor(mins/60),m=mins%60;
+  return h+'h'+(m?' '+m+'min':'');
+}
+function getSleepEndTs(entry){
+  // parsuj konec z "HH:MM – HH:MM · ..." formátu
+  const subMatch=(entry.sub||'').match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/);
+  if(!subMatch) return entry.ts;
+  const [eh,em]=subMatch[2].split(':').map(Number);
+  // použij datum začátku spánku jako základ
+  const startD=new Date(entry.ts);
+  const endD=new Date(entry.ts);
+  endD.setHours(eh,em,0,0);
+  // pokud konec vychází PŘED začátkem, přidej den (přes půlnoc)
+  if(endD.getTime()<=startD.getTime()) endD.setDate(endD.getDate()+1);
+  return endD.getTime();
+}
 function fmtDate(str){if(!str)return'';const d=new Date(str);return d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();}
 function calcAge(b){const birth=new Date(b),now=new Date();let m=(now.getFullYear()-birth.getFullYear())*12+(now.getMonth()-birth.getMonth());if(now.getDate()<birth.getDate())m--;if(m>=12){const y=Math.floor(m/12),rm=m%12;return y+'r '+(rm?rm+'m':'');}return m+' měsíců';}
 function maxDays(type){return type==='mleko'?180:type==='prikrm'?60:type==='kase'?60:60;}
@@ -1123,23 +1151,29 @@ function renderStatus(){
   const foodMins=foodElapsed?Math.floor(foodElapsed/60000):null;
   let html='';
   if(foodElapsed) html+=`<div class="chip ${foodMins>180?'warn':''}"><span>🍽</span><span>jídlo <span class="chip-val">${fmtElapsed(foodElapsed)}</span></span></div>`;
+
+  // součet spánku za dnešek
+  const sleepEntries=state.todayLog.filter(e=>e.type==='sleep'&&!e.live);
+  let totalSleepMs=0;
+  sleepEntries.forEach(e=>{
+    const end=getSleepEndTs(e);
+    const dur=end-e.ts;
+    if(dur>0)totalSleepMs+=dur;
+  });
+  if(state.sleep.active) totalSleepMs+=now-state.sleep.startTs;
+  if(totalSleepMs>60000){
+    html+=`<div class="chip sleeping"><span>😴</span><span>naspala <span class="chip-val">${fmtDuration(totalSleepMs)}</span></span></div>`;
+  }
+
   if(state.sleep.active){
-    html+=`<div class="chip sleeping"><span>😴</span><span style="font-weight:500">právě spí</span></div>`;
+    html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    const ls=state.todayLog.filter(e=>e.type==='sleep'&&!e.live).sort((a,b)=>b.ts-a.ts)[0];
+    const ls=sleepEntries.sort((a,b)=>b.ts-a.ts)[0];
     if(ls){
-      // konec spánku = parsuj z sub "HH:MM – HH:MM" nebo použij ts + délka
-      let sleepEndTs=ls.ts;
-      const subMatch=(ls.sub||'').match(/(\d+:\d+)\s*–\s*(\d+:\d+)/);
-      if(subMatch){
-        const [h,m]=subMatch[2].split(':').map(Number);
-        const endD=new Date(ls.ts);endD.setHours(h,m,0,0);
-        // pokud konec je před začátkem (přes půlnoc), přidej den
-        if(endD.getTime()<ls.ts)endD.setDate(endD.getDate()+1);
-        sleepEndTs=endD.getTime();
-      }
-      const aw=now-sleepEndTs;const awMins=Math.floor(aw/60000);
-      html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+      const sleepEndTs=getSleepEndTs(ls);
+      const aw=now-sleepEndTs;
+      const awMins=Math.floor(aw/60000);
+      if(aw>0) html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
     }
   }
   document.getElementById('statusRow').innerHTML=html;
@@ -1219,7 +1253,16 @@ function updateSleepUI(){
   const pause=document.getElementById('iconPause');
   if(active){
     btn.classList.add('sleeping');label.textContent='Probíhá spánek';sub.textContent='od '+fmtTime(state.sleep.startTs);live.style.display='inline';play.style.display='none';pause.style.display='block';
-    if(!sleepTimerInterval){sleepTimerInterval=setInterval(()=>{const el=Date.now()-state.sleep.startTs;const d=document.getElementById('liveCardTimer');const b=document.getElementById('sleepLive');const s=document.getElementById('liveCardSub');if(d)d.textContent=fmtTimer(el);if(b)b.textContent=fmtTimer(el);if(s)s.textContent='probíhá · '+fmtTimer(el);renderStatus();},1000);}
+    if(!sleepTimerInterval){sleepTimerInterval=setInterval(()=>{
+      const el=Date.now()-state.sleep.startTs;
+      const d=document.getElementById('liveCardTimer');
+      const b=document.getElementById('sleepLive');
+      const s=document.getElementById('liveCardSub');
+      if(d)d.textContent=fmtTimer(el);
+      if(b)b.textContent=fmtTimer(el);
+      if(s)s.textContent='probíhá · '+fmtTimer(el);
+      renderStatus();
+    },1000);}
   } else {
     btn.classList.remove('sleeping');label.textContent='Začít spánek';sub.textContent='';live.style.display='none';live.textContent='';play.style.display='block';pause.style.display='none';
     if(sleepTimerInterval){clearInterval(sleepTimerInterval);sleepTimerInterval=null;}
@@ -2547,11 +2590,13 @@ function exportAlergolog(){
     lines.push('');
   }
 
-  // Sbíráme reakce ze všech dnů
+  // Sbíráme reakce ze všech dnů — bez duplikátů
   const reactions=[];
+  const todayKey=dateKey(TODAY);
 
-  // z calData (minulé dny)
+  // z calData (pouze minulé dny, ne dnešek)
   Object.entries(state.calData||{}).sort().forEach(([k,day])=>{
+    if(k===todayKey)return; // dnešek bereme z todayLog
     (day.entries||[]).filter(e=>e.type==='reaction').forEach(e=>{
       reactions.push({date:k,ts:e.ts,sub:e.sub,dayEntries:day.entries||[]});
     });
@@ -2559,8 +2604,7 @@ function exportAlergolog(){
 
   // z todayLog (dnešní den)
   state.todayLog.filter(e=>e.type==='reaction').forEach(e=>{
-    const k=dateKey(TODAY);
-    reactions.push({date:k,ts:e.ts,sub:e.sub,dayEntries:state.todayLog});
+    reactions.push({date:todayKey,ts:e.ts,sub:e.sub,dayEntries:state.todayLog});
   });
 
   // seřadit podle data
