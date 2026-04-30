@@ -827,6 +827,7 @@ const DEFAULT_STATE = {
   calData: {},
   fzNextId: 5,
   foodOverrides: {},
+  customFoods: [],
   ts: 0
 };
 
@@ -864,6 +865,7 @@ function loadFromStorage() {
         state.freezer = remote.freezer || state.freezer;
         state.settings = remote.settings || state.settings;
         state.foodOverrides = remote.foodOverrides || state.foodOverrides;
+        state.customFoods = remote.customFoods || state.customFoods;
         renderAll();
       }
     }
@@ -1113,12 +1115,37 @@ function saveReaction(){
 function showSuggest(val){
   const sg=document.getElementById('foodSug');
   if(!val){sg.style.display='none';checkFzSug();return;}
-  const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&f.month<=CM&&!selFoods.includes(f.name)).slice(0,5);
-  if(!m.length){sg.style.display='none';return;}
+  // hledej v FDB i v custom potravinách
+  const custom=state.customFoods||[];
+  const fdbMatches=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&f.month<=CM&&!selFoods.includes(f.name));
+  const customMatches=custom.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!selFoods.includes(f.name));
+  const allMatches=[...fdbMatches,...customMatches].slice(0,5);
   sg.style.display='block';
-  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat}</span></div>`).join('');
+  let html=allMatches.map(f=>`<div class="fsug-item" onclick="addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||'nezařazeno'}</span></div>`).join('');
+  // pokud neexistuje přesná shoda, nabídni přidat novou
+  const exactMatch=[...FDB,...custom].some(f=>f.name.toLowerCase()===val.toLowerCase());
+  if(!exactMatch&&val.length>=2){
+    html+=`<div class="fsug-item" style="color:var(--rose-dark);font-style:italic" onclick="addCustomFoodItem('${val}')">+ Přidat "${val}" jako novou</div>`;
+  }
+  sg.innerHTML=html;
 }
-function addFoodItem(name){if(!selFoods.includes(name))selFoods.push(name);document.getElementById('ingInput').value='';document.getElementById('foodSug').style.display='none';renderSelFoodsEl();checkFzSug();}
+
+function addCustomFoodItem(name){
+  // přidat do custom potravin
+  if(!state.customFoods)state.customFoods=[];
+  const trimmed=name.trim();
+  if(!state.customFoods.some(f=>f.name.toLowerCase()===trimmed.toLowerCase())){
+    state.customFoods.push({name:trimmed,cat:'nezařazeno',month:null,status:'new',custom:true});
+  }
+  addFoodItem(trimmed);
+}
+
+function addFoodItem(name){
+  if(!selFoods.includes(name))selFoods.push(name);
+  document.getElementById('ingInput').value='';
+  document.getElementById('foodSug').style.display='none';
+  renderSelFoodsEl();checkFzSug();
+}
 function removeFoodItem(name){selFoods=selFoods.filter(f=>f!==name);renderSelFoodsEl();checkFzSug();}
 function renderSelFoodsEl(){document.getElementById('selFoods').innerHTML=selFoods.map(n=>`<span class="sfp" onclick="removeFoodItem('${n}')">${n} ×</span>`).join('');}
 function checkFzSug(){
@@ -1778,23 +1805,40 @@ function getFoodOverride(name){return (state.foodOverrides||{})[name]||{};}
 
 function renderFoods(){
   const stL={ok:'bez reakce',new:'nezkoušeno',warn:'sledujeme',no:'eliminováno'};
+  const custom=state.customFoods||[];
+
+  const makePill=(f,st)=>{
+    let cls='tl-pill';
+    if(st==='ok') cls+=' done';
+    else if(st==='warn') cls+=' done-warn';
+    else if(st==='no') cls+=' done-no';
+    else cls+=' new-pill';
+    const clickFn=foodSelectMode?`toggleFoodItemSelect('${f.name}',this)`:`openFoodDetail('${f.name}')`;
+    return`<span class="${cls}" onclick="${clickFn}">${f.allergen?'⚠ ':''}${f.name}${f.custom?' ✦':''}</span>`;
+  };
+
   if(foodView==='list'){
-    let list=foodCat==='vse'?FDB:FDB.filter(f=>f.cat===foodCat);list=list.filter(f=>f.month<=CM);
-    document.getElementById('foodGrid').innerHTML=list.map(f=>{
+    let list=foodCat==='vse'?FDB:FDB.filter(f=>f.cat===foodCat);
+    list=list.filter(f=>f.month<=CM);
+    const customFiltered=foodCat==='vse'?custom:custom.filter(f=>f.cat===foodCat||foodCat==='nezarazeno');
+    const fullList=[...list,...customFiltered];
+
+    document.getElementById('foodGrid').innerHTML=fullList.map(f=>{
       const ov=getFoodOverride(f.name);
-      const status=ov.status||f.status;
+      const status=ov.status||f.status||'new';
       const cls=status==='ok'?'ok':status==='warn'?'warn':status==='no'?'no':'';
       const dot=status==='ok'?'ok':status==='warn'?'warn':status==='no'?'no':'new';
       const at=f.allergen?'<span style="font-size:9px;background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:7px;margin-left:3px">alergen</span>':'';
+      const customBadge=f.custom?'<span style="font-size:9px;background:var(--slate-light);color:var(--slate-dark);padding:1px 5px;border-radius:7px;margin-left:3px">vlastní</span>':'';
       const lastUsed=ov.lastUsed?`<span style="font-size:10px;color:var(--text-3);margin-right:4px">${fmtDateShort(ov.lastUsed)}</span>`:'';
       const isChecked=selectedFoodNames.has(f.name);
-      const chk=foodSelectMode?`<div class="food-check visible${isChecked?' checked':''}" id="fc-${f.name.replace(/\s/g,'_')}" onclick="event.stopPropagation();toggleFoodItemSelect('${f.name}',this)"></div>`:'';
-      const clickFn=foodSelectMode?`toggleFoodItemSelect('${f.name}',document.getElementById('fc-${f.name.replace(/\s/g,'_')}'))`:`openFoodDetail('${f.name}')`;
+      const safeId=f.name.replace(/[^a-z0-9]/gi,'_');
+      const chk=foodSelectMode?`<div class="food-check visible${isChecked?' checked':''}" id="fc-${safeId}" onclick="event.stopPropagation();toggleFoodItemSelect('${f.name}',this)"></div>`:'';
+      const clickFn=foodSelectMode?`toggleFoodItemSelect('${f.name}',document.getElementById('fc-${safeId}'))`:`openFoodDetail('${f.name}')`;
       const selStyle=isChecked?'background:var(--rose-light);border-color:var(--rose-btn)':'';
       return`<div class="fitem ${cls}" style="${selStyle}" onclick="${clickFn}">
-        ${chk}
-        <div class="fdot ${dot}"></div>
-        <span class="fname">${f.name}${at}</span>
+        ${chk}<div class="fdot ${dot}"></div>
+        <span class="fname">${f.name}${at}${customBadge}</span>
         ${lastUsed}
         <span class="fst st-${status}">${stL[status]}</span>
         ${foodSelectMode?'':'<svg class="ch" style="margin-left:4px" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg>'}
@@ -1802,26 +1846,21 @@ function renderFoods(){
     }).join('');
   } else {
     const months=[4,5,6,7,8,9,10];
-    document.getElementById('tlWrap').innerHTML=months.map(m=>{
+    let tlHtml=months.map(m=>{
       const foods=FDB.filter(f=>f.month===m);if(!foods.length)return'';
       let badge='',bc='';
       if(m<CM){badge='zavedeno';bc='tl-past';}
       else if(m===CM){badge='tento měsíc';bc='tl-curr';}
       else{badge='za '+(m-CM)+' měs.';bc='tl-fut';}
-      const missed=foods.filter(f=>{const ov=getFoodOverride(f.name);const st=ov.status||f.status;return st==='new'&&!f.allergen&&m<CM;}).length;
-      const pills=foods.map(f=>{
-        const ov=getFoodOverride(f.name);const st=ov.status||f.status;
-        let cls='tl-pill';
-        if(st==='ok')cls+=' done';
-        else if(st==='warn')cls+=' done-warn';
-        else if(st==='no')cls+=' done-no';
-        else if(m===CM)cls+=' curr';
-        else if(m<CM&&st==='new')cls+=' overdue';
-        else cls+=' new-pill';
-        return`<span class="${cls}" onclick="openFoodDetail('${f.name}')">${f.allergen?'⚠ ':''}${f.name}</span>`;
-      }).join('');
-      return`<div class="tl-month"><div class="tl-ml">${m}. měsíc <span class="tl-b ${bc}">${badge}</span>${missed?`<span style="font-size:10px;color:var(--red)">${missed}× nezavedeno</span>`:''}</div><div class="tl-pills">${pills}</div></div>`;
+      const pills=foods.map(f=>{const ov=getFoodOverride(f.name);return makePill(f,ov.status||f.status);}).join('');
+      return`<div class="tl-month"><div class="tl-ml">${m}. měsíc <span class="tl-b ${bc}">${badge}</span></div><div class="tl-pills">${pills}</div></div>`;
     }).join('');
+    // sekce nezařazeno pro custom potraviny
+    if(custom.length){
+      const customPills=custom.map(f=>{const ov=getFoodOverride(f.name);return makePill(f,ov.status||f.status||'new');}).join('');
+      tlHtml+=`<div class="tl-month"><div class="tl-ml">Nezařazeno <span class="tl-b" style="background:var(--slate-light);color:var(--slate-dark)">vlastní</span></div><div class="tl-pills">${customPills}</div></div>`;
+    }
+    document.getElementById('tlWrap').innerHTML=tlHtml;
   }
 }
 function filterFood(cat,btn){foodCat=cat;document.querySelectorAll('.food-tabs .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFoods();}
@@ -1830,7 +1869,7 @@ function setFoodView(v){foodView=v;document.getElementById('vfl').classList.togg
 function openFoodDetail(name){
   if(foodSelectMode)return;
   currentFoodDetail=name;
-  const f=FDB.find(x=>x.name===name);
+  const f=FDB.find(x=>x.name===name)||(state.customFoods||[]).find(x=>x.name===name);
   if(!f)return;
   const ov=getFoodOverride(name);
   const status=ov.status||f.status;
@@ -1842,7 +1881,7 @@ function openFoodDetail(name){
   state.todayLog.forEach(e=>{if(e.sub&&e.sub.toLowerCase().includes(name.toLowerCase())){if(!lastUseTs||e.ts>lastUseTs)lastUseTs=e.ts;}});
   const ovLastUsed=ov.lastUsed;
   const displayTs=ovLastUsed?new Date(ovLastUsed).getTime():lastUseTs;
-  document.getElementById('fdMeta').textContent=`${f.cat} · doporučeno od ${f.month}. měsíce${displayTs?' · naposledy '+fmtDateShort(displayTs):''}`;
+  document.getElementById('fdMeta').textContent=`${f.cat||'nezařazeno'}${f.month?' · doporučeno od '+f.month+'. měsíce':' · vlastní potravina'}${displayTs?' · naposledy '+fmtDateShort(displayTs):''}${f.custom?' · ✦ vlastní':''}`;
   // set status buttons
   ['new','ok','warn','no'].forEach(s=>{
     const btn=document.getElementById('fsBtn-'+s);
