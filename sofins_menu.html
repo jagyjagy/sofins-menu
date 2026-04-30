@@ -2272,7 +2272,6 @@ function openCustomFoodDetail(name){
 // ============================================================
 // (Firebase sync handled above via startFirebaseSync)
 
-renderAll();
 // Načíst z Firebase a spustit real-time listener
 fetch(FB_URL).then(r=>r.json()).then(remote=>{
   if(remote&&remote.ts&&remote.ts>(state.ts||0)){
