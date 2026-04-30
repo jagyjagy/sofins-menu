@@ -354,8 +354,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           </span>
           <span class="sleep-live" id="sleepLive" style="display:none"></span>
         </button>
-        <div class="act-btn" style="background:var(--red-bg);border:2px solid #e05555;cursor:pointer;justify-content:center" onclick="openModal('mReaction')">
-          <span class="act-label" style="color:var(--red);font-weight:700;flex:0">Zaznamenat reakci</span>
+        <div class="act-btn" style="background:var(--red-bg);border:2px solid #e05555;cursor:pointer" onclick="openModal('mReaction')">
+          <div class="act-icon" style="background:#f7c1c1;font-size:13px">⚠</div>
+          <span style="flex:1;text-align:center;color:var(--red);font-weight:700;font-size:13px">Zaznamenat reakci</span>
         </div>
       </div>
       <div class="divider"></div>
@@ -1156,53 +1157,43 @@ function renderTodayBadge(){
 
 function renderStatus(){
   const now=Date.now();
-  const ts0=new Date();ts0.setHours(0,0,0,0);
   const todayKey=dateKey(TODAY);
-
-  // Všechny dnešní záznamy z todayLog + calData (deduplikované)
-  const calE=(state.calData[todayKey]||{}).entries||[];
-  const seen=new Set();
-  const entries=[...state.todayLog,...calE].filter(e=>{
-    if(e.ts<ts0.getTime())return false;
-    const k=e.ts+'|'+e.type;
-    if(seen.has(k))return false;
-    seen.add(k);return true;
-  });
-
   let html='';
 
-  // 🍽 jídlo od
-  const lastFood=entries.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
+  // 🍽 jídlo od — z todayLog
+  const lastFood=state.todayLog.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
   if(lastFood){
     const el=now-lastFood.ts,mins=Math.floor(el/60000);
     html+=`<div class="chip ${mins>180?'warn':''}"><span>🍽</span><span>jídlo od <span class="chip-val">${fmtElapsed(el)}</span></span></div>`;
   }
 
-  // 😴 naspala — součet spánků >1min
-  const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá')&&!(e.sub||'').includes('<1min'));
+  // 😴 naspala — součet spánků z todayLog (>1min, ne live)
+  const sleepsDone=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min'));
   let totalMs=0;
-  sleeps.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
-  if(state.sleep.active&&state.sleep.startTs>=ts0.getTime())totalMs+=now-state.sleep.startTs;
+  sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
+  if(state.sleep.active)totalMs+=now-state.sleep.startTs;
   if(totalMs>=60000)html+=`<div class="chip sleeping"><span>😴</span><span>naspala <span class="chip-val">${fmtDuration(totalMs)}</span></span></div>`;
 
-  // 💤 právě spí / 👀 vzhůru od
+  // 💤 právě spí / 👀 vzhůru už
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    // vezmeme VŠECHNY spánky (i <1min) pro poslední konec
-    const allSleeps=entries.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
-    if(allSleeps.length){
-      allSleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
-      const aw=now-getSleepEndTs(allSleeps[0]);
-      const awMins=Math.floor(aw/60000);
-      if(awMins>=0){
-        html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${awMins<60?awMins+'min':Math.floor(awMins/60)+'h '+(awMins%60?awMins%60+'min':'')}</span></span></div>`;
+    // VŠECHNY ukončené spánky z todayLog — hledáme poslední konec
+    const allS=state.todayLog.filter(e=>e.type==='sleep'&&!e.live);
+    if(allS.length){
+      allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
+      const awMs=now-getSleepEndTs(allS[0]);
+      const awM=Math.floor(awMs/60000);
+      if(awM>=0){
+        const awStr=awM<60?awM+'min':Math.floor(awM/60)+'h'+(awM%60?' '+awM%60+'min':'');
+        html+=`<div class="chip ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${awStr}</span></span></div>`;
       }
     }
   }
 
   document.getElementById('statusRow').innerHTML=html;
 }
+
 
 function renderTodayList(){
   const sorted=[...state.todayLog].sort((a,b)=>a.ts-b.ts);
