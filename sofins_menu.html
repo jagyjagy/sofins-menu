@@ -273,6 +273,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .sel-action-btn{padding:6px 14px;border-radius:9px;border:none;font-size:12px;font-weight:600;cursor:pointer}
 .sel-del{background:var(--red-bg);color:var(--red);border:.5px solid #f09595}
 .sel-cancel{background:transparent;color:var(--text-2);border:.5px solid var(--rose-mid)}
+/* značky (recepty/produkty) */
+.brand-card{background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand-card:active{opacity:.8}
+.brand-icon{width:34px;height:34px;border-radius:10px;background:var(--rose-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.brand-name{font-size:14px;font-weight:500;color:var(--text)}
+.brand-ings{font-size:11px;color:var(--text-3);margin-top:2px}
+.brand-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--rose-light);color:var(--rose-dark);font-weight:500;flex-shrink:0}
 /* plánované karty v Dnes */
 .ecard.planned-item{opacity:.6;border-style:dashed;border-color:var(--rose-mid);background:var(--surface)}
 .ecard.planned-item:active{opacity:.4}
@@ -407,7 +414,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <div id="scr-food" class="screen">
     <div class="sticky-top">
       <div class="header">
-        <div class="header-top"><h1>Potraviny</h1><button class="select-btn" id="foodSelectBtn" onclick="toggleFoodSelect()">Vybrat</button></div>
+        <div class="header-top">
+          <h1>Potraviny</h1>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="select-btn" id="foodSelectBtn" onclick="toggleFoodSelect()">Vybrat</button>
+            <button onclick="openModal('mAddFood')" style="width:28px;height:28px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
+          </div>
+        </div>
         <div class="subtitle" id="foodSubtitle">8. měsíc · zavádění</div>
       </div>
       <div id="foodSelBar" class="sel-bar">
@@ -420,6 +433,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       <div class="view-toggle" style="margin-bottom:8px">
         <button class="vt active" id="vfl" onclick="setFoodView('list')">Seznam</button>
         <button class="vt" id="vft" onclick="setFoodView('timeline')">Časová osa</button>
+        <button class="vt" id="vfb" onclick="setFoodView('brands')">Značky</button>
       </div>
       <div class="food-tabs" id="foodTabsBar">
         <button class="ftab active" onclick="filterFood('vse',this)">Vše</button>
@@ -433,6 +447,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
     <div class="scroll-area">
       <div id="foodListView"><div class="food-list" id="foodGrid"></div></div>
       <div id="foodTlView" style="display:none"><div class="tl-wrap" id="tlWrap"></div></div>
+      <div id="foodBrandsView" style="display:none">
+        <div class="food-list" id="brandsGrid"></div>
+        <button class="add-btn" onclick="openModal('mAddBrand')">+ Přidat značku / recept</button>
+        <div style="height:8px"></div>
+      </div>
       <div style="height:8px"></div>
     </div>
   </div>
@@ -643,6 +662,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
+<!-- MODAL přidat potravinu -->
+<div class="modal-wrap" id="mAddFood"><div class="movl" onclick="closeModal('mAddFood')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Přidat potravinu</div>
+  <div class="mrow"><label>Název</label><input type="text" id="afName" placeholder="např. quinoa, tempeh..."/></div>
+  <div class="mrow"><label>Kategorie</label>
+    <div class="type-btns">
+      <button class="type-btn sel" onclick="selType(this)">Zelenina</button>
+      <button class="type-btn" onclick="selType(this)">Ovoce</button>
+      <button class="type-btn" onclick="selType(this)">Obiloviny</button>
+      <button class="type-btn" onclick="selType(this)">Bílkoviny</button>
+      <button class="type-btn" onclick="selType(this)">Tuky & jiné</button>
+      <button class="type-btn" onclick="selType(this)">Nezařazeno</button>
+    </div>
+  </div>
+  <div class="mrow"><label>Doporučený věk (měsíce)</label><input type="number" id="afMonth" value="8" min="4" max="24"/></div>
+  <div class="mrow"><label>Poznámka</label><input type="text" id="afNote" placeholder="volitelně..."/></div>
+  <button class="msave" onclick="saveNewFood()">Přidat potravinu</button>
+  <button class="mcancel" onclick="closeModal('mAddFood')">Zrušit</button>
+</div></div></div>
+
+<!-- MODAL přidat značku/recept -->
+<div class="modal-wrap" id="mAddBrand"><div class="movl" onclick="closeModal('mAddBrand')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle" id="mAddBrandTitle">Přidat značku / recept</div>
+  <div class="mrow"><label>Název značky nebo receptu</label><input type="text" id="abName" placeholder="např. Mrkvová kaše, HiPP Bio..."/></div>
+  <div class="mrow"><label>Emoji ikona</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="abEmojiPicker">
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🥣')">🥣</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🍼')">🍼</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🥕')">🥕</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🍎')">🍎</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🐔')">🐔</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🏪')">🏪</span>
+    </div>
+  </div>
+  <div class="mrow"><label>Složky</label>
+    <input type="text" id="abIngInput" placeholder="začni psát..." oninput="showBrandSuggest(this.value)" autocomplete="off"/>
+    <div class="fsug" id="brandIngSug" style="display:none"></div>
+    <div class="sel-foods" id="abSelFoods"></div>
+  </div>
+  <div class="mrow"><label>Poznámka</label><input type="text" id="abNote" placeholder="výrobce, ml, gramáž..."/></div>
+  <button class="msave" onclick="saveBrand()">Uložit značku</button>
+  <button class="mcancel" onclick="closeModal('mAddBrand')">Zrušit</button>
+</div></div></div>
+
 <!-- MODAL plánování jídla -->
 <div class="modal-wrap" id="mPlanFood"><div class="movl" onclick="closeModal('mPlanFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
@@ -838,6 +901,7 @@ const DEFAULT_STATE = {
   fzNextId: 5,
   foodOverrides: {},
   customFoods: [],
+  brands: [],
   ts: 0
 };
 
@@ -876,6 +940,7 @@ function loadFromStorage() {
         state.settings = remote.settings || state.settings;
         state.foodOverrides = remote.foodOverrides || state.foodOverrides;
         state.customFoods = remote.customFoods || state.customFoods;
+        state.brands = remote.brands || state.brands;
         renderAll();
       }
     }
@@ -1141,13 +1206,39 @@ function saveReaction(){
 }
 
 // food suggest
+function allFoods(){
+  // všechny dostupné potraviny: FDB + vlastní
+  return [...FDB,...(state.customFoods||[])];
+}
+
 function showSuggest(val){
   const sg=document.getElementById('foodSug');
   if(!val){sg.style.display='none';checkFzSug();return;}
-  const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&f.month<=CM&&!selFoods.includes(f.name)).slice(0,5);
-  if(!m.length){sg.style.display='none';return;}
+  const v=val.toLowerCase();
+  // nejdřív hledej značky
+  const brands=(state.brands||[]).filter(b=>b.name.toLowerCase().includes(v)&&!b.ingredients.every(i=>selFoods.includes(i)));
+  // pak potraviny
+  const foods=allFoods().filter(f=>f.name.toLowerCase().includes(v)&&!selFoods.includes(f.name));
+  if(!brands.length&&!foods.length){sg.style.display='none';return;}
   sg.style.display='block';
-  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat}</span></div>`).join('');
+  let html='';
+  brands.slice(0,3).forEach(b=>{
+    html+=`<div class="fsug-item" onclick="addBrandToFood('${b.name}')" style="border-left:3px solid var(--rose-btn);display:flex;align-items:center;gap:6px"><span style="font-size:14px">${b.emoji||'🥣'}</span><span><strong>${b.name}</strong><span style="font-size:10px;color:var(--text-3);margin-left:4px">${b.ingredients.join(', ')}</span></span></div>`;
+  });
+  foods.slice(0,5).forEach(f=>{
+    html+=`<div class="fsug-item" onclick="addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||'nezařazeno'}</span></div>`;
+  });
+  sg.innerHTML=html;
+}
+
+function addBrandToFood(brandName){
+  // přidat všechny složky značky najednou
+  const brand=(state.brands||[]).find(b=>b.name===brandName);
+  if(!brand)return;
+  brand.ingredients.forEach(ing=>{if(!selFoods.includes(ing))selFoods.push(ing);});
+  document.getElementById('ingInput').value='';
+  document.getElementById('foodSug').style.display='none';
+  renderSelFoodsEl();checkFzSug();
 }
 function addFoodItem(name){if(!selFoods.includes(name))selFoods.push(name);document.getElementById('ingInput').value='';document.getElementById('foodSug').style.display='none';renderSelFoodsEl();checkFzSug();}
 function removeFoodItem(name){selFoods=selFoods.filter(f=>f!==name);renderSelFoodsEl();checkFzSug();}
@@ -1831,7 +1922,18 @@ function renderFoods(){
   }
 }
 function filterFood(cat,btn){foodCat=cat;document.querySelectorAll('.food-tabs .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFoods();}
-function setFoodView(v){foodView=v;document.getElementById('vfl').classList.toggle('active',v==='list');document.getElementById('vft').classList.toggle('active',v==='timeline');document.getElementById('foodListView').style.display=v==='list'?'block':'none';document.getElementById('foodTlView').style.display=v==='timeline'?'block':'none';document.getElementById('foodTabsBar').style.display=v==='list'?'flex':'none';renderFoods();}
+function setFoodView(v){
+  foodView=v;
+  document.getElementById('vfl').classList.toggle('active',v==='list');
+  document.getElementById('vft').classList.toggle('active',v==='timeline');
+  document.getElementById('vfb').classList.toggle('active',v==='brands');
+  document.getElementById('foodListView').style.display=v==='list'?'block':'none';
+  document.getElementById('foodTlView').style.display=v==='timeline'?'block':'none';
+  document.getElementById('foodBrandsView').style.display=v==='brands'?'block':'none';
+  document.getElementById('foodTabsBar').style.display=v==='list'?'flex':'none';
+  document.getElementById('foodSelectBtn').style.display=v==='brands'?'none':'block';
+  if(v==='brands')renderBrands();else renderFoods();
+}
 
 function openFoodDetail(name){
   currentFoodDetail=name;
@@ -2110,32 +2212,6 @@ function openCustomFoodDetail(name){
 }
 
 // ============================================================
-// CUSTOM FOOD SUGGEST PATCH
-// ============================================================
-const _showSuggestOrig=showSuggest;
-function showSuggest(val){
-  _showSuggestOrig(val);
-  if(!val||val.length<2)return;
-  const all=[...FDB,...(state.customFoods||[])];
-  if(all.some(f=>f.name.toLowerCase()===val.toLowerCase()))return;
-  const sg=document.getElementById('foodSug');
-  if(!sg)return;
-  sg.style.display='block';
-  const addDiv=document.createElement('div');
-  addDiv.className='fsug-item';
-  addDiv.style.cssText='color:var(--rose-dark);font-style:italic';
-  addDiv.textContent=`+ Přidat "${val.trim()}" jako vlastní`;
-  addDiv.onclick=()=>{
-    const t=val.trim();
-    if(!state.customFoods)state.customFoods=[];
-    if(!state.customFoods.some(f=>f.name.toLowerCase()===t.toLowerCase()))
-      state.customFoods.push({name:t,cat:'nezařazeno',status:'new',custom:true});
-    addFoodItem(t);saveAll();
-  };
-  sg.appendChild(addDiv);
-}
-
-// ============================================================
 // CROSS-DEVICE SYNC — polling každé 4 sekundy
 // ============================================================
 setInterval(()=>{
@@ -2151,6 +2227,7 @@ setInterval(()=>{
       if(remote.settings)state.settings={...state.settings,...remote.settings};
       if(remote.foodOverrides!==undefined)state.foodOverrides=remote.foodOverrides;
       if(remote.customFoods!==undefined)state.customFoods=remote.customFoods;
+      if(remote.brands!==undefined)state.brands=remote.brands;
       renderAll();
     }
   }catch(e){}
@@ -2215,7 +2292,6 @@ function removePlannedItem(dk,idx){
 }
 
 function checkPlanItem(idx){
-  // zaškrtnutí = přesunout do todayLog jako normální jídlo
   const todayKey=dateKey(TODAY);
   const items=(state.calData[todayKey]||{}).plannedItems||[];
   const p=items[idx];
@@ -2223,6 +2299,128 @@ function checkPlanItem(idx){
   state.todayLog.push({id:'pf'+Date.now(),type:'food',ts:Date.now(),name:p.name,sub:p.foods.join(', '),reaction:false,by:whoAmI()});
   state.calData[todayKey].plannedItems.splice(idx,1);
   renderTodayList();renderStatus();saveAll();
+}
+
+// ============================================================
+// PŘIDAT POTRAVINU
+// ============================================================
+function saveNewFood(){
+  const name=document.getElementById('afName').value.trim();
+  if(!name){closeModal('mAddFood');return;}
+  const catBtn=document.querySelector('#mAddFood .type-btn.sel');
+  const catMap={'Zelenina':'zelenina','Ovoce':'ovoce','Obiloviny':'obiloviny','Bílkoviny':'bilkoviny','Tuky & jiné':'tuky','Nezařazeno':'nezařazeno'};
+  const cat=catMap[catBtn?catBtn.textContent:'Nezařazeno']||'nezařazeno';
+  const month=parseInt(document.getElementById('afMonth').value)||CM;
+  if(!state.customFoods)state.customFoods=[];
+  if(state.customFoods.some(f=>f.name.toLowerCase()===name.toLowerCase())||FDB.some(f=>f.name.toLowerCase()===name.toLowerCase())){
+    alert('Tato potravina už existuje.');return;
+  }
+  state.customFoods.push({name,cat,month,status:'new',custom:true,note:document.getElementById('afNote').value});
+  closeModal('mAddFood');renderFoods();saveAll();
+}
+
+// ============================================================
+// ZNAČKY (BRANDS/RECEPTY)
+// ============================================================
+let abSelFoods=[];
+let abSelectedEmoji='🥣';
+let editingBrandIdx=-1;
+
+function selectBrandEmoji(el,emoji){
+  abSelectedEmoji=emoji;
+  document.querySelectorAll('#abEmojiPicker span').forEach(s=>s.style.background='transparent');
+  el.style.background='var(--rose-light)';
+}
+
+function showBrandSuggest(val){
+  const sg=document.getElementById('brandIngSug');
+  if(!val){sg.style.display='none';return;}
+  const m=allFoods().filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!abSelFoods.includes(f.name)).slice(0,6);
+  if(!m.length){sg.style.display='none';return;}
+  sg.style.display='block';
+  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addBrandIng('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||''}</span></div>`).join('');
+}
+
+function addBrandIng(name){
+  if(!abSelFoods.includes(name))abSelFoods.push(name);
+  document.getElementById('abIngInput').value='';
+  document.getElementById('brandIngSug').style.display='none';
+  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onclick="removeBrandIng('${n}')">${n} ×</span>`).join('');
+}
+function removeBrandIng(name){
+  abSelFoods=abSelFoods.filter(f=>f!==name);
+  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onclick="removeBrandIng('${n}')">${n} ×</span>`).join('');
+}
+
+function saveBrand(){
+  const name=document.getElementById('abName').value.trim();
+  if(!name||!abSelFoods.length){closeModal('mAddBrand');return;}
+  if(!state.brands)state.brands=[];
+  const brand={name,emoji:abSelectedEmoji,ingredients:[...abSelFoods],note:document.getElementById('abNote').value};
+  if(editingBrandIdx>=0){state.brands[editingBrandIdx]=brand;editingBrandIdx=-1;}
+  else{state.brands.push(brand);}
+  abSelFoods=[];closeModal('mAddBrand');renderBrands();saveAll();
+}
+
+function renderBrands(){
+  const brands=state.brands||[];
+  const grid=document.getElementById('brandsGrid');
+  if(!grid)return;
+  if(!brands.length){
+    grid.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Zatím žádné značky.<br>Přidej recept nebo výrobek.</div>`;
+    return;
+  }
+  grid.innerHTML=brands.map((b,i)=>`
+    <div class="brand-card" style="margin-bottom:6px">
+      <div class="brand-icon">${b.emoji||'🥣'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="brand-name">${b.name}</div>
+        <div class="brand-ings">${b.ingredients.join(', ')}</div>
+        ${b.note?`<div style="font-size:10px;color:var(--text-3);margin-top:2px">${b.note}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <button onclick="editBrand(${i})" style="font-size:11px;padding:3px 8px;border-radius:7px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);cursor:pointer">✏</button>
+        <button onclick="deleteBrand(${i})" style="font-size:11px;padding:3px 8px;border-radius:7px;border:.5px solid #f09595;background:var(--red-bg);color:var(--red);cursor:pointer">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function editBrand(idx){
+  editingBrandIdx=idx;
+  const b=state.brands[idx];
+  document.getElementById('mAddBrandTitle').textContent='Upravit značku';
+  document.getElementById('abName').value=b.name;
+  document.getElementById('abNote').value=b.note||'';
+  abSelFoods=[...b.ingredients];
+  abSelectedEmoji=b.emoji||'🥣';
+  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onclick="removeBrandIng('${n}')">${n} ×</span>`).join('');
+  document.getElementById('abIngInput').value='';
+  document.querySelectorAll('#abEmojiPicker span').forEach(s=>{s.style.background=s.textContent===b.emoji?'var(--rose-light)':'transparent';});
+  openModal('mAddBrand');
+}
+
+function deleteBrand(idx){
+  if(!confirm('Smazat značku?'))return;
+  state.brands.splice(idx,1);renderBrands();saveAll();
+}
+
+// Patch openModal for mAddBrand reset
+const _omB=openModal;
+function openModal(id){
+  if(id==='mAddBrand'&&editingBrandIdx<0){
+    document.getElementById('mAddBrandTitle').textContent='Přidat značku / recept';
+    document.getElementById('abName').value='';document.getElementById('abNote').value='';
+    abSelFoods=[];abSelectedEmoji='🥣';
+    document.getElementById('abSelFoods').innerHTML='';document.getElementById('abIngInput').value='';
+    document.getElementById('brandIngSug').style.display='none';
+    document.querySelectorAll('#abEmojiPicker span').forEach(s=>s.style.background='transparent');
+  }
+  if(id==='mAddFood'){
+    document.getElementById('afName').value='';document.getElementById('afNote').value='';
+    document.getElementById('afMonth').value=CM;
+    document.querySelectorAll('#mAddFood .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  }
+  _omB(id);
 }
 
 renderAll();
