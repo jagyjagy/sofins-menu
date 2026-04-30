@@ -1160,12 +1160,14 @@ function renderStatus(){
   let html='';
   if(foodElapsed) html+=`<div class="chip ${foodMins>180?'warn':''}"><span>🍽</span><span>jídlo <span class="chip-val">${fmtElapsed(foodElapsed)}</span></span></div>`;
 
-  // součet spánku za dnešek
-  const sleepEntries=state.todayLog.filter(e=>e.type==='sleep'&&!e.live);
+  // součet spánku za dnešek — pouze záznamy z dnešního dne dle timestamps
+  const todayStart=new Date();todayStart.setHours(0,0,0,0);
+  const todayStartTs=todayStart.getTime();
+  const sleepEntries=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&e.ts>=todayStartTs);
   let totalSleepMs=0;
   sleepEntries.forEach(e=>{
     const end=getSleepEndTs(e);
-    const dur=end-e.ts;
+    const dur=Math.min(end-e.ts, 8*3600000); // max 8h na jeden spánek jako sanity check
     if(dur>0)totalSleepMs+=dur;
   });
   if(state.sleep.active) totalSleepMs+=now-state.sleep.startTs;
@@ -1176,12 +1178,13 @@ function renderStatus(){
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    const ls=sleepEntries.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0];
+    // poslední spánek z dnešního dne
+    const ls=sleepEntries.length?[...sleepEntries].sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0]:null;
     if(ls){
       const sleepEndTs=getSleepEndTs(ls);
       const aw=now-sleepEndTs;
       const awMins=Math.floor(aw/60000);
-      if(aw>0) html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+      if(aw>0&&aw<24*3600000) html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
     }
   }
   document.getElementById('statusRow').innerHTML=html;
@@ -2003,6 +2006,13 @@ function renderFoods(){
     const customList=foodCat==='vse'?custom:custom.filter(f=>f.cat===foodCat||f.cat==='nezařazeno');
     let fullList=[...list,...customList];
     if(foodSearchQuery)fullList=fullList.filter(f=>f.name.toLowerCase().includes(foodSearchQuery));
+    // seřadit: nezkoušeno → sledujeme → eliminováno → bez reakce
+    const sortOrder={new:0,warn:1,no:2,ok:3};
+    fullList.sort((a,b)=>{
+      const sa=sortOrder[(getFoodOverride(a.name).status||a.status)||'new']??0;
+      const sb=sortOrder[(getFoodOverride(b.name).status||b.status)||'new']??0;
+      return sa-sb||a.name.localeCompare(b.name,'cs');
+    });
     document.getElementById('foodGrid').innerHTML=fullList.map(f=>{
       const ov=getFoodOverride(f.name);
       const status=ov.status||f.status||'new';
