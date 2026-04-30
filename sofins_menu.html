@@ -519,8 +519,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       </div>
       <div class="set-sec" style="margin-top:8px">
         <div class="set-card">
-          <div class="set-row"><div class="si si-s">📤</div><div class="set-lbl"><div class="set-lbl-t">Export pro alergologa</div><div class="set-lbl-s">PDF se záznamy reakcí</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
-          <div class="set-row"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="exportAlergolog()"><div class="si si-s">📤</div><div class="set-lbl"><div class="set-lbl-t">Export pro alergologa</div><div class="set-lbl-s">seznam reakcí ke kopírování</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
       <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.0 · real-time sync ✓</div>
@@ -662,6 +662,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
+<!-- MODAL export pro alergologa -->
+<div class="modal-wrap" id="mExport"><div class="movl" onclick="closeModal('mExport')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:90vh">
+  <div class="mhandle"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="mtitle" style="margin:0">Export pro alergologa</div>
+    <button onclick="copyExport()" style="padding:6px 14px;border-radius:9px;background:var(--rose-btn);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer">📋 Kopírovat</button>
+  </div>
+  <div id="exportCopied" style="display:none;font-size:11px;color:var(--green);margin-bottom:8px;text-align:center">✓ Zkopírováno do schránky</div>
+  <textarea id="exportText" readonly style="width:100%;min-height:320px;border-radius:11px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--text);font-size:11px;font-family:monospace;padding:10px;resize:none;line-height:1.6"></textarea>
+  <button class="mcancel" onclick="closeModal('mExport')">Zavřít</button>
+</div></div></div>
+
 <!-- MODAL přidat potravinu -->
 <div class="modal-wrap" id="mAddFood"><div class="movl" onclick="closeModal('mAddFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat potravinu</div>
@@ -913,7 +925,6 @@ let lastRemoteTs = 0;
 // ============================================================
 const STORAGE_KEY = 'sofin:shared:v1';
 const FB_URL = 'https://sofins-menu-default-rtdb.europe-west1.firebasedatabase.app/sofin.json';
-let lastRemoteTs = 0;
 let fbListener = null;
 
 function saveAll() {
@@ -2446,6 +2457,135 @@ function editBrand(idx){
 function deleteBrand(idx){
   if(!confirm('Smazat značku?'))return;
   state.brands.splice(idx,1);renderBrands();saveAll();
+}
+
+// ============================================================
+// SMAZAT VŠECHNA DATA
+// ============================================================
+function deleteAllData(){
+  if(!confirm('Opravdu smazat VŠECHNA data?\nToto nelze vrátit zpět.'))return;
+  if(!confirm('Jsi si jistý/á? Smažou se všechny záznamy, mrazák, potraviny i nastavení.'))return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem('sofin:identity');
+  // smazat z Firebase
+  fetch(FB_URL,{method:'DELETE'}).catch(()=>{});
+  // reload
+  location.reload();
+}
+
+// ============================================================
+// EXPORT PRO ALERGOLOGA
+// ============================================================
+function exportAlergolog(){
+  const s=state.settings;
+  const lines=[];
+  const dashes='─'.repeat(40);
+
+  lines.push('SOFIN\'S MENU — EXPORT PRO ALERGOLOGA');
+  lines.push(dashes);
+  lines.push('Jméno: '+s.name);
+  lines.push('Datum narození: '+fmtDate(s.birth));
+  if(s.weight)lines.push('Váha: '+s.weight+' kg');
+  lines.push('Datum exportu: '+new Date().toLocaleDateString('cs-CZ'));
+  lines.push('');
+
+  // Alergie
+  if(s.allergens&&s.allergens.length){
+    lines.push('ALERGIE / ELIMINOVANÉ POTRAVINY');
+    lines.push(dashes);
+    s.allergens.forEach(a=>lines.push('• '+a));
+    lines.push('');
+  }
+
+  // Lékaři
+  if(s.doctors&&s.doctors.length){
+    lines.push('LÉKAŘI');
+    lines.push(dashes);
+    s.doctors.forEach(d=>{
+      lines.push('• '+d.name+' ('+d.type+')');
+      if(d.place)lines.push('  '+d.place);
+      if(d.phone)lines.push('  '+d.phone);
+    });
+    lines.push('');
+  }
+
+  // Sbíráme reakce ze všech dnů
+  const reactions=[];
+
+  // z calData (minulé dny)
+  Object.entries(state.calData||{}).sort().forEach(([k,day])=>{
+    (day.entries||[]).filter(e=>e.type==='reaction').forEach(e=>{
+      reactions.push({date:k,ts:e.ts,sub:e.sub,dayEntries:day.entries||[]});
+    });
+  });
+
+  // z todayLog (dnešní den)
+  state.todayLog.filter(e=>e.type==='reaction').forEach(e=>{
+    const k=dateKey(TODAY);
+    reactions.push({date:k,ts:e.ts,sub:e.sub,dayEntries:state.todayLog});
+  });
+
+  // seřadit podle data
+  reactions.sort((a,b)=>a.ts-b.ts);
+
+  if(!reactions.length){
+    lines.push('ZÁZNAMY REAKCÍ');
+    lines.push(dashes);
+    lines.push('Žádné reakce nebyly zaznamenány.');
+  } else {
+    lines.push('ZÁZNAMY REAKCÍ ('+reactions.length+'×)');
+    lines.push(dashes);
+    reactions.forEach((r,i)=>{
+      const d=new Date(r.ts);
+      const datum=d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();
+      const cas=fmtTime(r.ts);
+      lines.push('');
+      lines.push((i+1)+'. '+datum+' v '+cas);
+
+      // typ reakce + poznámka
+      const parts=(r.sub||'').split('·').map(s=>s.trim()).filter(Boolean);
+      parts.forEach(p=>lines.push('   '+p));
+
+      // co jedla předtím — max 6 hodin zpět
+      const before=r.dayEntries
+        .filter(e=>(e.type==='food'||e.type==='breast')&&e.ts<r.ts&&(r.ts-e.ts)<6*3600000)
+        .sort((a,b)=>b.ts-a.ts);
+
+      if(before.length){
+        lines.push('   Co jedla předtím:');
+        before.forEach(e=>{
+          const minAgo=Math.round((r.ts-e.ts)/60000);
+          const kdy=minAgo<60?minAgo+'min před':Math.round(minAgo/60)+'h před';
+          const co=e.type==='breast'?'kojení':e.sub||e.name;
+          lines.push('   – '+co+' ('+kdy+')');
+        });
+      }
+    });
+  }
+
+  lines.push('');
+  lines.push(dashes);
+  lines.push('Vygenerováno aplikací Sofin\'s Menu');
+
+  document.getElementById('exportText').value=lines.join('\n');
+  document.getElementById('exportCopied').style.display='none';
+  openModal('mExport');
+}
+
+function copyExport(){
+  const ta=document.getElementById('exportText');
+  ta.select();
+  ta.setSelectionRange(0,99999);
+  try{
+    navigator.clipboard.writeText(ta.value).then(()=>{
+      document.getElementById('exportCopied').style.display='block';
+      setTimeout(()=>document.getElementById('exportCopied').style.display='none',2000);
+    });
+  }catch(e){
+    document.execCommand('copy');
+    document.getElementById('exportCopied').style.display='block';
+    setTimeout(()=>document.getElementById('exportCopied').style.display='none',2000);
+  }
 }
 
 renderAll();
