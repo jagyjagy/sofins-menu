@@ -273,6 +273,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .sel-action-btn{padding:6px 14px;border-radius:9px;border:none;font-size:12px;font-weight:600;cursor:pointer}
 .sel-del{background:var(--red-bg);color:var(--red);border:.5px solid #f09595}
 .sel-cancel{background:transparent;color:var(--text-2);border:.5px solid var(--rose-mid)}
+/* plánované karty v Dnes */
+.ecard.planned-item{opacity:.6;border-style:dashed;border-color:var(--rose-mid);background:var(--surface)}
+.ecard.planned-item:active{opacity:.4}
+.plan-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--rose-mid);background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.plan-check:active{background:var(--rose-light)}
+.plan-check svg{width:12px;height:12px;stroke:var(--rose);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.ecard.planned-item .plan-check svg{opacity:1}
 /* doctor edit */
 .doc-card{cursor:pointer}
 .doc-card:active{background:var(--rose-light)}
@@ -636,6 +643,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
+<!-- MODAL plánování jídla -->
+<div class="modal-wrap" id="mPlanFood"><div class="movl" onclick="closeModal('mPlanFood')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div class="mtitle" id="mPlanFoodTitle">Naplánovat jídlo</div>
+  <div style="font-size:12px;color:var(--text-2);margin-bottom:10px" id="mPlanFoodDate"></div>
+  <div class="mrow"><label>Typ</label><div class="type-btns">
+    <button class="type-btn sel" onclick="selType(this)">Snídaně</button>
+    <button class="type-btn" onclick="selType(this)">Oběd</button>
+    <button class="type-btn" onclick="selType(this)">Svačina</button>
+    <button class="type-btn" onclick="selType(this)">Večeře</button>
+  </div></div>
+  <div class="mrow"><label>Složky</label>
+    <input type="text" id="planFoodInput" placeholder="začni psát..." oninput="showPlanSuggest(this.value)" autocomplete="off"/>
+    <div class="fsug" id="planFoodSug" style="display:none"></div>
+    <div class="sel-foods" id="planSelFoods"></div>
+  </div>
+  <button class="msave" onclick="savePlanFood()">Uložit do plánu</button>
+  <button class="mcancel" onclick="closeModal('mPlanFood')">Zrušit</button>
+</div></div></div>
+
 <!-- MODAL hromadná změna statusu -->
 <div class="modal-wrap" id="mBulkStatus"><div class="movl" onclick="closeModal('mBulkStatus')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
@@ -1018,6 +1045,25 @@ function renderTodayList(){
     </div>`;
   }).join('');
   sorted.forEach(e=>initEntrySwipe(e.id));
+
+  // Přidej naplánované položky na dnešek dole
+  const todayKey=dateKey(TODAY);
+  const todayCalData=state.calData[todayKey]||{};
+  const plannedItems=todayCalData.plannedItems||[];
+  if(plannedItems.length){
+    el.innerHTML+=`<div style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;padding:10px 4px 5px">Naplánované</div>`;
+    el.innerHTML+=plannedItems.map((p,i)=>`
+      <div class="ecard planned-item" style="opacity:.65;border-style:dashed;border-color:var(--rose-mid)">
+        <div class="plan-check" onclick="checkPlanItem(${i})" style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--rose-mid);background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg viewBox="0 0 12 12" style="width:12px;height:12px;stroke:var(--rose);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <div class="eicon i-food" style="opacity:.7">🍽</div>
+        <div class="einfo">
+          <div class="ename" style="color:var(--text-2)">${p.name}</div>
+          <div class="esub">${p.foods.join(', ')}</div>
+        </div>
+      </div>`).join('');
+  }
 }
 
 // ============================================================
@@ -1395,19 +1441,56 @@ function deleteReaction(){
 
 // Sync today's log entries into calData so Plan shows them immediately
 function syncTodayToCalData(){
-  const k=dateKey(TODAY);
-  if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
-  const day=state.calData[k];
-  // rebuild from todayLog
-  const foodEntries=state.todayLog.filter(e=>e.type==='food'&&!e.live);
-  const breastEntries=state.todayLog.filter(e=>e.type==='breast');
-  const sleepEntries=state.todayLog.filter(e=>e.type==='sleep'&&!e.live);
-  const reactionEntries=state.todayLog.filter(e=>e.type==='reaction');
-  day.foods=[...new Set(foodEntries.flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
-  day.breast=breastEntries.length;
-  day.sleep=sleepEntries.length;
-  day.reaction=reactionEntries.length>0;
-  day.entries=[...state.todayLog].filter(e=>!e.live).sort((a,b)=>a.ts-b.ts).map(e=>({
+  const todayKey=dateKey(TODAY);
+
+  // ROLLOVER: záznamy které nepatří dnešku přesuň do správného dne v calData
+  const foreign=state.todayLog.filter(e=>{
+    const d=new Date(e.ts);d.setHours(0,0,0,0);
+    return dateKey(d)!==todayKey;
+  });
+  if(foreign.length){
+    // seskup podle dne
+    const byDay={};
+    foreign.forEach(e=>{
+      const d=new Date(e.ts);d.setHours(0,0,0,0);
+      const k=dateKey(d);
+      if(!byDay[k])byDay[k]=[];
+      byDay[k].push(e);
+    });
+    // zapiš do calData správných dnů
+    Object.entries(byDay).forEach(([k,entries])=>{
+      if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
+      const day=state.calData[k];
+      // merge entries (nepřepisuj pokud tam už jsou)
+      const existingIds=new Set((day.entries||[]).map(e=>e.ts+e.type));
+      entries.forEach(e=>{
+        const uid=e.ts+e.type;
+        if(!existingIds.has(uid)){day.entries.push({type:e.type,ts:e.ts,name:e.name,sub:e.sub,reaction:e.reaction||e.type==='reaction'});}
+      });
+      day.entries.sort((a,b)=>a.ts-b.ts);
+      // přepočítej stats
+      day.breast=day.entries.filter(e=>e.type==='breast').length;
+      day.sleep=day.entries.filter(e=>e.type==='sleep').length;
+      day.reaction=day.entries.some(e=>e.type==='reaction');
+      day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+    });
+    // odeber z todayLog záznamy jiných dnů (kromě live spánku)
+    state.todayLog=state.todayLog.filter(e=>{
+      if(e.live)return true;
+      const d=new Date(e.ts);d.setHours(0,0,0,0);
+      return dateKey(d)===todayKey;
+    });
+  }
+
+  // Teď synkuj pouze dnešní záznamy do calData
+  if(!state.calData[todayKey])state.calData[todayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
+  const day=state.calData[todayKey];
+  const todayEntries=state.todayLog.filter(e=>!e.live);
+  day.foods=[...new Set(todayEntries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+  day.breast=todayEntries.filter(e=>e.type==='breast').length;
+  day.sleep=todayEntries.filter(e=>e.type==='sleep').length;
+  day.reaction=todayEntries.some(e=>e.type==='reaction');
+  day.entries=todayEntries.sort((a,b)=>a.ts-b.ts).map(e=>({
     type:e.type,ts:e.ts,name:e.name,sub:e.sub,reaction:e.reaction||e.type==='reaction'
   }));
 }
@@ -1596,7 +1679,10 @@ function renderWeek(){
     const tb=isT?`<span style="width:6px;height:6px;border-radius:50%;background:var(--rose-btn);display:inline-block"></span>`:'';
     const chk=planSelectMode?`<div style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${isDaySel?'var(--rose-btn)':'var(--rose-mid)'};background:${isDaySel?'var(--rose-btn)':'#fff'};font-size:9px;color:#fff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:4px">${isDaySel?'✓':''}</div>`:'';
     let body='';
-    if(isFut){body=dd.planned&&dd.planned.length?`<div class="wc-foods" style="color:var(--rose-dark)">${dd.planned.join(', ')}</div>`:`<div class="wc-foods" style="color:var(--text-3);font-style:italic">prázdný</div>`;}
+    if(isFut){
+      const pi=dd.plannedItems||[];
+      body=pi.length?`<div class="wc-foods" style="color:var(--rose-dark)">${pi.map(p=>p.foods.join(', ')).join(' · ')}</div>`:`<div class="wc-foods" style="color:var(--text-3);font-style:italic">prázdný</div>`;
+    }
     else{const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',dd.sleep?`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek</div>`:''].filter(Boolean).join('');if(st)body+=`<div class="wc-stats">${st}</div>`;if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;}
     const clickFn=planSelectMode?`toggleDaySelect('${k}')`:`selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})`;
     const selBorder=isDaySel?'border-color:var(--rose-btn);background:var(--rose-light)':'';
@@ -1612,7 +1698,22 @@ function selDay(y,m,day){
   document.getElementById('planDTitle').textContent=(isT?'Dnes – ':'')+DAYS_MON[dowIdx]+' '+planSelDate.getDate()+'. '+MONTHS_GEN[planSelDate.getMonth()];
   let html='';
   if(isFut){
-    html+=`<div style="margin:0 16px 8px;background:var(--rose-light);border-radius:11px;padding:9px 12px;font-size:12px;color:var(--rose-dark)">Plánovaný den</div><button class="add-btn" style="margin:0 16px">+ Naplánovat jídlo</button>`;
+    const planned=dd.plannedItems||[];
+    html+=`<div style="margin:0 16px 8px;background:var(--rose-light);border-radius:11px;padding:9px 12px;font-size:12px;color:var(--rose-dark)">📅 Plánovaný den · ${DAYS_MON[dowIdx]} ${planSelDate.getDate()}. ${MONTHS_GEN[planSelDate.getMonth()]}</div>`;
+    html+=`<button class="add-btn" style="margin:0 16px 10px" onclick="openPlanFoodModal('${k}')">+ Naplánovat jídlo</button>`;
+    if(planned.length){
+      html+=`<div class="sec-lbl">Naplánované</div><div class="entry-list">`;
+      planned.forEach((p,i)=>{
+        html+=`<div class="ecard" style="opacity:.75;border-style:dashed">
+          <div class="eicon i-food">🍽</div>
+          <div class="einfo"><div class="ename">${p.name}</div><div class="esub">${p.foods.join(', ')}</div></div>
+          <div class="eright">
+            <div onclick="removePlannedItem('${k}',${i})" style="width:22px;height:22px;border-radius:50%;background:var(--red-bg);border:.5px solid #f09595;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--red);cursor:pointer">✕</div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
   } else {
     if(dd.reaction)html+=`<div style="margin:6px 16px;background:#fff5f5;border-radius:11px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500;cursor:pointer" onclick="openPlanReactionDetail('${k}')">⚠ Reakce zaznamenaná v tento den — klikni pro detail</div>`;
     html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;
@@ -1924,6 +2025,8 @@ if(savedState){
       seedCalData();
     }
     lastRemoteTs=s.ts||0;
+    // ihned zkontroluj rollover — přesuň záznamy jiných dnů
+    syncTodayToCalData();
   }catch(e){seedCalData();}
 } else {
   seedCalData();
@@ -2052,6 +2155,75 @@ setInterval(()=>{
     }
   }catch(e){}
 },4000);
+
+// ============================================================
+// PLÁNOVÁNÍ JÍDEL
+// ============================================================
+let planFoodDateKey=null,planFoodSelFoods=[];
+
+function openPlanFoodModal(dk){
+  planFoodDateKey=dk;planFoodSelFoods=[];
+  const d=new Date(dk+' 12:00');
+  const dowIdx=(d.getDay()===0)?6:d.getDay()-1;
+  document.getElementById('mPlanFoodDate').textContent=DAYS_MON[dowIdx]+' '+d.getDate()+'. '+MONTHS_GEN[d.getMonth()];
+  document.getElementById('planFoodInput').value='';
+  document.getElementById('planFoodSug').style.display='none';
+  document.getElementById('planSelFoods').innerHTML='';
+  document.querySelectorAll('#mPlanFood .type-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  openModal('mPlanFood');
+}
+
+function showPlanSuggest(val){
+  const sg=document.getElementById('planFoodSug');
+  if(!val){sg.style.display='none';return;}
+  const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!planFoodSelFoods.includes(f.name)).slice(0,5);
+  sg.style.display=m.length?'block':'none';
+  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addPlanFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat}</span></div>`).join('');
+}
+
+function addPlanFoodItem(name){
+  if(!planFoodSelFoods.includes(name))planFoodSelFoods.push(name);
+  document.getElementById('planFoodInput').value='';
+  document.getElementById('planFoodSug').style.display='none';
+  document.getElementById('planSelFoods').innerHTML=planFoodSelFoods.map(n=>`<span class="sfp" onclick="removePlanFoodItem('${n}')">${n} ×</span>`).join('');
+}
+
+function removePlanFoodItem(name){
+  planFoodSelFoods=planFoodSelFoods.filter(f=>f!==name);
+  document.getElementById('planSelFoods').innerHTML=planFoodSelFoods.map(n=>`<span class="sfp" onclick="removePlanFoodItem('${n}')">${n} ×</span>`).join('');
+}
+
+function savePlanFood(){
+  if(!planFoodSelFoods.length||!planFoodDateKey){closeModal('mPlanFood');return;}
+  const typeBtn=document.querySelector('#mPlanFood .type-btn.sel');
+  const name=typeBtn?typeBtn.textContent:'Jídlo';
+  if(!state.calData[planFoodDateKey])state.calData[planFoodDateKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+  if(!state.calData[planFoodDateKey].plannedItems)state.calData[planFoodDateKey].plannedItems=[];
+  state.calData[planFoodDateKey].plannedItems.push({name,foods:[...planFoodSelFoods]});
+  planFoodSelFoods=[];
+  closeModal('mPlanFood');
+  const d=new Date(planFoodDateKey+' 12:00');
+  selDay(d.getFullYear(),d.getMonth(),d.getDate());
+  saveAll();
+}
+
+function removePlannedItem(dk,idx){
+  if(state.calData[dk]&&state.calData[dk].plannedItems)state.calData[dk].plannedItems.splice(idx,1);
+  const d=new Date(dk+' 12:00');
+  selDay(d.getFullYear(),d.getMonth(),d.getDate());
+  saveAll();
+}
+
+function checkPlanItem(idx){
+  // zaškrtnutí = přesunout do todayLog jako normální jídlo
+  const todayKey=dateKey(TODAY);
+  const items=(state.calData[todayKey]||{}).plannedItems||[];
+  const p=items[idx];
+  if(!p)return;
+  state.todayLog.push({id:'pf'+Date.now(),type:'food',ts:Date.now(),name:p.name,sub:p.foods.join(', '),reaction:false,by:whoAmI()});
+  state.calData[todayKey].plannedItems.splice(idx,1);
+  renderTodayList();renderStatus();saveAll();
+}
 
 renderAll();
 </script>
