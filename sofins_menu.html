@@ -74,9 +74,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .act-label{flex:1;font-size:13px}
 .act-sub{font-size:10px;opacity:.6;font-weight:400;display:block;margin-top:1px}
 .sleep-live{font-size:11px;font-weight:600;color:var(--slate-dark);min-width:44px;text-align:right}
-.reaction-strip{margin:0 16px 8px;background:var(--red-bg);border-radius:12px;border:0.5px solid #f09595;padding:9px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--red)}
+.reaction-strip{margin:0 16px 8px;background:var(--red-bg);border-radius:12px;border:1.5px solid #e87575;padding:7px 13px;display:flex;align-items:center;gap:9px;cursor:pointer}
 .reaction-strip *{color:var(--red)!important}
-.ri{width:26px;height:26px;border-radius:8px;background:#f7c1c1;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ri{width:22px;height:22px;border-radius:7px;background:#f7c1c1;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .divider{height:.5px;background:var(--rose-mid);margin:0 16px}
 .sec-lbl{font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;padding:10px 20px 5px}
 .entry-list{padding:0 16px;display:flex;flex-direction:column;gap:6px}
@@ -356,7 +356,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         </button>
         <div class="reaction-strip" onclick="openModal('mReaction')">
           <div class="ri">⚠</div>
-          <div><div style="font-size:12px;font-weight:500;color:var(--red)">Zaznamenat reakci</div><div style="font-size:10px;color:var(--red);opacity:.6">zvracení, vyrážka, stolice...</div></div>
+          <div style="font-size:13px;font-weight:700;color:var(--red);letter-spacing:0.01em">Zaznamenat reakci</div>
         </div>
       </div>
       <div class="divider"></div>
@@ -1154,39 +1154,52 @@ function renderTodayBadge(){
 
 function renderStatus(){
   const now=Date.now();
-  const lastFood=state.todayLog.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
+  const todayStart=new Date();todayStart.setHours(0,0,0,0);
+  const todayStartTs=todayStart.getTime();
+
+  // jídlo
+  const lastFood=state.todayLog.filter(e=>(e.type==='food'||e.type==='breast')&&e.ts>=todayStartTs).sort((a,b)=>b.ts-a.ts)[0];
   const foodElapsed=lastFood?now-lastFood.ts:null;
   const foodMins=foodElapsed?Math.floor(foodElapsed/60000):null;
   let html='';
   if(foodElapsed) html+=`<div class="chip ${foodMins>180?'warn':''}"><span>🍽</span><span>jídlo <span class="chip-val">${fmtElapsed(foodElapsed)}</span></span></div>`;
 
-  // součet spánku za dnešek — pouze záznamy z dnešního dne dle timestamps
-  const todayStart=new Date();todayStart.setHours(0,0,0,0);
-  const todayStartTs=todayStart.getTime();
-  const sleepEntries=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&e.ts>=todayStartTs);
+  // spánek — jen dnešní záznamy, ignoruj záznamy kde sub je prázdný nebo "<1min"
+  const sleepEntries=state.todayLog.filter(e=>{
+    if(e.type!=='sleep'||e.live)return false;
+    if(e.ts<todayStartTs)return false;
+    // ignoruj <1min záznamy (náhodné kliknutí)
+    const sub=e.sub||'';
+    if(sub.includes('<1min'))return false;
+    return true;
+  });
+
   let totalSleepMs=0;
   sleepEntries.forEach(e=>{
     const end=getSleepEndTs(e);
-    const dur=Math.min(end-e.ts, 8*3600000); // max 8h na jeden spánek jako sanity check
-    if(dur>0)totalSleepMs+=dur;
+    const dur=end-e.ts;
+    if(dur>60000&&dur<12*3600000)totalSleepMs+=dur; // min 1min, max 12h
   });
-  if(state.sleep.active) totalSleepMs+=now-state.sleep.startTs;
-  if(totalSleepMs>60000){
+  if(state.sleep.active&&state.sleep.startTs>=todayStartTs){
+    totalSleepMs+=now-state.sleep.startTs;
+  }
+  if(totalSleepMs>=60000){
     html+=`<div class="chip sleeping"><span>😴</span><span>naspala <span class="chip-val">${fmtDuration(totalSleepMs)}</span></span></div>`;
   }
 
+  // právě spí / vzhůru už
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
-  } else {
-    // poslední spánek z dnešního dne
-    const ls=sleepEntries.length?[...sleepEntries].sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0]:null;
-    if(ls){
-      const sleepEndTs=getSleepEndTs(ls);
-      const aw=now-sleepEndTs;
-      const awMins=Math.floor(aw/60000);
-      if(aw>0&&aw<24*3600000) html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+  } else if(sleepEntries.length){
+    const ls=[...sleepEntries].sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0];
+    const sleepEndTs=getSleepEndTs(ls);
+    const aw=now-sleepEndTs;
+    const awMins=Math.floor(aw/60000);
+    if(aw>0&&aw<20*3600000){
+      html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
     }
   }
+
   document.getElementById('statusRow').innerHTML=html;
 }
 
