@@ -354,9 +354,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           </span>
           <span class="sleep-live" id="sleepLive" style="display:none"></span>
         </button>
-        <div class="reaction-strip" onclick="openModal('mReaction')">
-          <div class="ri">⚠</div>
-          <div style="font-size:13px;font-weight:700;color:var(--red);letter-spacing:0.01em">Zaznamenat reakci</div>
+        <div class="act-btn" style="background:var(--red-bg);border:2px solid #e05555;cursor:pointer" onclick="openModal('mReaction')">
+          <div class="act-icon" style="background:#f7c1c1;font-size:13px">⚠</div>
+          <span class="act-label" style="color:var(--red);font-weight:700">Zaznamenat reakci</span>
         </div>
       </div>
       <div class="divider"></div>
@@ -1193,14 +1193,16 @@ function renderStatus(){
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    // pro "vzhůru už" bereme VŠECHNY dnešní spánky (i <1min) — hledáme poslední konec
-    const allTodaySleep=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&e.ts>=todayStartTs);
-    if(allTodaySleep.length){
-      const ls=[...allTodaySleep].sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0];
+    // vezmeme poslední ukončený spánek z celého todayLog (bez live)
+    const allSleep=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+    if(allSleep.length){
+      // seřadit podle konce spánku — chceme ten s nejpozdějším koncem
+      allSleep.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
+      const ls=allSleep[0];
       const sleepEndTs=getSleepEndTs(ls);
       const aw=now-sleepEndTs;
-      const awMins=Math.floor(aw/60000);
-      if(aw>0&&aw<20*3600000){
+      if(aw>0){
+        const awMins=Math.floor(aw/60000);
         html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
       }
     }
