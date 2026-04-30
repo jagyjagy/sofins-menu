@@ -1195,9 +1195,9 @@ function renderStatus(){
     if(allSleeps.length){
       allSleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const aw=now-getSleepEndTs(allSleeps[0]);
-      if(aw>0&&aw<20*3600000){
-        const awMins=Math.floor(aw/60000);
-        html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+      const awMins=Math.floor(aw/60000);
+      if(awMins>=0){
+        html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${awMins<60?awMins+'min':Math.floor(awMins/60)+'h '+(awMins%60?awMins%60+'min':'')}</span></span></div>`;
       }
     }
   }
