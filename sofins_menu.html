@@ -356,7 +356,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         </button>
         <div class="act-btn" style="background:var(--red-bg);border:2px solid #e05555;cursor:pointer" onclick="openModal('mReaction')">
           <div class="act-icon" style="background:#f7c1c1;font-size:13px">⚠</div>
-          <span style="flex:1;text-align:center;color:var(--red);font-weight:700;font-size:13px">Zaznamenat reakci</span>
+          <span class="act-label" style="color:var(--red);font-weight:700;text-align:center">Zaznamenat reakci</span>
         </div>
       </div>
       <div class="divider"></div>
@@ -1155,20 +1155,30 @@ function renderTodayBadge(){
   document.getElementById('todayBadge').textContent=days[d.getDay()]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.';
 }
 
+
 function renderStatus(){
   const now=Date.now();
   const todayKey=dateKey(TODAY);
   let html='';
 
-  // 🍽 jídlo od — z todayLog
-  const lastFood=state.todayLog.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
+  // Všechny záznamy — todayLog + calData dnešek (deduplikované)
+  const calEntries=(state.calData[todayKey]||{}).entries||[];
+  const dedup=new Set();
+  const allToday=[...state.todayLog,...calEntries].filter(e=>{
+    const k=e.ts+'|'+e.type;
+    if(dedup.has(k))return false;
+    dedup.add(k);return true;
+  });
+
+  // 🍽 jídlo od
+  const lastFood=allToday.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
   if(lastFood){
     const el=now-lastFood.ts,mins=Math.floor(el/60000);
     html+=`<div class="chip ${mins>180?'warn':''}"><span>🍽</span><span>jídlo od <span class="chip-val">${fmtElapsed(el)}</span></span></div>`;
   }
 
-  // 😴 naspala — součet spánků z todayLog (>1min, ne live)
-  const sleepsDone=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min'));
+  // 😴 naspala
+  const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min'));
   let totalMs=0;
   sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
   if(state.sleep.active)totalMs+=now-state.sleep.startTs;
@@ -1178,21 +1188,19 @@ function renderStatus(){
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    // VŠECHNY ukončené spánky z todayLog — hledáme poslední konec
-    const allS=state.todayLog.filter(e=>e.type==='sleep'&&!e.live);
+    const allS=allToday.filter(e=>e.type==='sleep'&&!e.live);
     if(allS.length){
       allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const awMs=now-getSleepEndTs(allS[0]);
-      const awM=Math.floor(awMs/60000);
-      if(awM>=0){
-        const awStr=awM<60?awM+'min':Math.floor(awM/60)+'h'+(awM%60?' '+awM%60+'min':'');
-        html+=`<div class="chip ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${awStr}</span></span></div>`;
-      }
+      const awM=Math.max(0,Math.floor(awMs/60000));
+      const awStr=awM<60?awM+'min':Math.floor(awM/60)+'h'+(awM%60?' '+awM%60+'min':'');
+      html+=`<div class="chip ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${awStr}</span></span></div>`;
     }
   }
 
   document.getElementById('statusRow').innerHTML=html;
 }
+
 
 
 function renderTodayList(){
