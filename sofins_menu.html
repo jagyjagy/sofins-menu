@@ -1088,8 +1088,8 @@ function fmtDuration(ms){
 }
 function getSleepEndTs(entry){
   const sub=entry.sub||'';
-  // ignoruj live záznamy
-  if(sub.includes('probíhá')||entry.live) return entry.ts;
+  // ignoruj live záznamy a "probíhá"
+  if(entry.live||sub.includes('probíhá')) return 0;
   // Formát 1: "14:15 – 15:50" nebo "14:15–15:50"
   const rangeMatch=sub.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
   if(rangeMatch){
@@ -1188,7 +1188,7 @@ function renderStatus(){
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    const allS=allToday.filter(e=>e.type==='sleep'&&!e.live);
+    const allS=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
     if(allS.length){
       allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const awMs=now-getSleepEndTs(allS[0]);
