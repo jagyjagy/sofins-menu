@@ -1165,7 +1165,7 @@ function renderStatus(){
   const foodElapsed=lastFood?now-lastFood.ts:null;
   const foodMins=foodElapsed?Math.floor(foodElapsed/60000):null;
   let html='';
-  if(foodElapsed) html+=`<div class="chip ${foodMins>180?'warn':''}"><span>🍽</span><span>jídlo <span class="chip-val">${fmtElapsed(foodElapsed)}</span></span></div>`;
+  if(foodElapsed) html+=`<div class="chip ${foodMins>180?'warn':''}"><span>🍽</span><span>jídlo od <span class="chip-val">${fmtElapsed(foodElapsed)}</span></span></div>`;
 
   // spánek — jen dnešní záznamy, ignoruj záznamy kde sub je prázdný nebo "<1min"
   const sleepEntries=state.todayLog.filter(e=>{
@@ -1214,7 +1214,7 @@ function renderStatus(){
       const aw=now-sleepEndTs;
       if(aw>0){
         const awMins=Math.floor(aw/60000);
-        html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
+        html+=`<div class="chip ${awMins>120?'warn':''}"><span>👀</span><span>vzhůru od <span class="chip-val">${fmtElapsed(aw)}</span></span></div>`;
       }
     }
   }
