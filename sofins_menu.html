@@ -426,7 +426,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       <div id="foodSelBar" class="sel-bar">
         <span class="sel-count" id="foodSelCount">0 vybráno</span>
         <div style="display:flex;gap:6px">
-          <button class="sel-action-btn" style="background:var(--rose-light);color:var(--rose-dark);border:.5px solid var(--rose-mid)" onclick="openBulkStatusModal()">✏ Změnit status</button>
+          <button class="sel-action-btn" style="background:var(--rose-light);color:var(--rose-dark);border:.5px solid var(--rose-mid)" onclick="openBulkStatusModal()">✏ Status</button>
+          <button class="sel-action-btn sel-del" onclick="deleteSelectedFoods()">🗑 Smazat</button>
           <button class="sel-action-btn sel-cancel" onclick="toggleFoodSelect()">Zrušit</button>
         </div>
       </div>
@@ -1193,10 +1194,20 @@ function renderStatus(){
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    // vezmeme poslední ukončený spánek z celého todayLog (bez live)
-    const allSleep=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+    // hledej spánky v todayLog i v calData pro dnešek
+    const todayKey=dateKey(TODAY);
+    const fromLog=state.todayLog.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+    const fromCal=((state.calData[todayKey]||{}).entries||[]).filter(e=>e.type==='sleep');
+    console.log('SLEEP DEBUG todayLog sleep:',fromLog.map(e=>({sub:e.sub,ts:new Date(e.ts).toLocaleTimeString(),end:new Date(getSleepEndTs(e)).toLocaleTimeString()})));
+    console.log('SLEEP DEBUG calData sleep:',fromCal.map(e=>({sub:e.sub,ts:new Date(e.ts).toLocaleTimeString()})));
+    // merge, deduplikuj podle ts
+    const seen=new Set();
+    const allSleep=[...fromLog,...fromCal].filter(e=>{
+      const k=e.ts+'_'+e.type;
+      if(seen.has(k))return false;
+      seen.add(k);return true;
+    });
     if(allSleep.length){
-      // seřadit podle konce spánku — chceme ten s nejpozdějším koncem
       allSleep.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const ls=allSleep[0];
       const sleepEndTs=getSleepEndTs(ls);
@@ -2360,7 +2371,31 @@ function toggleFoodItemSelect(name){
   updateFoodSelCount();renderFoods();
 }
 function updateFoodSelCount(){document.getElementById('foodSelCount').textContent=selectedFoodNames.size+' vybráno';}
-function openBulkStatusModal(){
+function deleteSelectedFoods(){
+  if(!selectedFoodNames.size)return;
+  if(!confirm('Smazat '+selectedFoodNames.size+' potravin?'))return;
+  // lze smazat jen vlastní potraviny (custom), FDB potraviny jen reset statusu
+  const canDelete=[...(state.customFoods||[])].map(f=>f.name);
+  const toDelete=[...selectedFoodNames].filter(n=>canDelete.includes(n));
+  const onlyFDB=[...selectedFoodNames].filter(n=>!canDelete.includes(n));
+  if(toDelete.length){
+    state.customFoods=state.customFoods.filter(f=>!toDelete.includes(f.name));
+    // odebrat z alergií
+    toDelete.forEach(name=>{state.settings.allergens=state.settings.allergens.filter(a=>a.toLowerCase()!==name.toLowerCase());});
+    // odebrat overrides
+    toDelete.forEach(name=>{if(state.foodOverrides)delete state.foodOverrides[name];});
+  }
+  if(onlyFDB.length){
+    // FDB potraviny nelze smazat — reset na výchozí status
+    if(!state.foodOverrides)state.foodOverrides={};
+    onlyFDB.forEach(name=>{delete state.foodOverrides[name];});
+  }
+  selectedFoodNames=new Set();foodSelectMode=false;
+  document.getElementById('foodSelectBtn').classList.remove('active');
+  document.getElementById('foodSelectBtn').textContent='Vybrat';
+  document.getElementById('foodSelBar').classList.remove('show');
+  renderFoods();saveAll();
+}
   const names=[...selectedFoodNames];
   if(!names.length)return;
   document.getElementById('bulkStatusInfo').textContent=names.length+' potravin: '+names.slice(0,5).join(', ')+(names.length>5?'…':'');
