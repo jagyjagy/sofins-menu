@@ -1086,17 +1086,25 @@ function fmtDuration(ms){
   return h+'h'+(m?' '+m+'min':'');
 }
 function getSleepEndTs(entry){
-  // parsuj konec z "HH:MM – HH:MM · ..." formátu
-  const subMatch=(entry.sub||'').match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/);
-  if(!subMatch) return entry.ts;
-  const [eh,em]=subMatch[2].split(':').map(Number);
-  // použij datum začátku spánku jako základ
-  const startD=new Date(entry.ts);
-  const endD=new Date(entry.ts);
-  endD.setHours(eh,em,0,0);
-  // pokud konec vychází PŘED začátkem, přidej den (přes půlnoc)
-  if(endD.getTime()<=startD.getTime()) endD.setDate(endD.getDate()+1);
-  return endD.getTime();
+  const sub=entry.sub||'';
+  // Formát 1: "14:15 – 15:50 · 1h 35min"
+  const rangeMatch=sub.match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);
+  if(rangeMatch){
+    const startD=new Date(entry.ts);
+    const endD=new Date(entry.ts);
+    endD.setHours(parseInt(rangeMatch[3]),parseInt(rangeMatch[4]),0,0);
+    if(endD.getTime()<=startD.getTime()) endD.setDate(endD.getDate()+1);
+    return endD.getTime();
+  }
+  // Formát 2: délka "1h 35min" nebo "45min" nebo "<1min"
+  let totalMins=0;
+  const hMatch=sub.match(/(\d+)h/);
+  const mMatch=sub.match(/(\d+)min/);
+  if(hMatch) totalMins+=parseInt(hMatch[1])*60;
+  if(mMatch) totalMins+=parseInt(mMatch[1]);
+  if(totalMins>0) return entry.ts+totalMins*60000;
+  // fallback — neznámý formát
+  return entry.ts;
 }
 function fmtDate(str){if(!str)return'';const d=new Date(str);return d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();}
 function calcAge(b){const birth=new Date(b),now=new Date();let m=(now.getFullYear()-birth.getFullYear())*12+(now.getMonth()-birth.getMonth());if(now.getDate()<birth.getDate())m--;if(m>=12){const y=Math.floor(m/12),rm=m%12;return y+'r '+(rm?rm+'m':'');}return m+' měsíců';}
@@ -1168,7 +1176,7 @@ function renderStatus(){
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    const ls=sleepEntries.sort((a,b)=>b.ts-a.ts)[0];
+    const ls=sleepEntries.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a))[0];
     if(ls){
       const sleepEndTs=getSleepEndTs(ls);
       const aw=now-sleepEndTs;
