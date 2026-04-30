@@ -735,12 +735,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 // IDENTITY (localStorage — per device)
 // ============================================================
 let myIdentity = localStorage.getItem('sofin:identity') || null;
+let appInitialized = false;
 
 function setIdentity(who) {
   myIdentity = who;
   localStorage.setItem('sofin:identity', who);
   document.getElementById('onboard').style.display = 'none';
   document.getElementById('identityVal').textContent = who === 'mama' ? '🤱 Mama' : '👨 Táta';
+  if(!appInitialized) initApp();
 }
 
 function resetIdentity() {
@@ -2027,6 +2029,38 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 function selType(btn){btn.closest('.type-btns').querySelectorAll('.type-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
 function selSrc(t){document.getElementById('srcOwn').classList.toggle('sel',t==='own');document.getElementById('srcBought').classList.toggle('sel',t==='bought');document.getElementById('rowBrand').style.display=t==='bought'?'block':'none';}
 
+function initApp(){
+  if(appInitialized) return;
+  appInitialized = true;
+  const savedState=localStorage.getItem(STORAGE_KEY);
+  if(savedState){
+    try{
+      const s=JSON.parse(savedState);
+      if(s.todayLog!==undefined)state.todayLog=s.todayLog;
+      if(s.sleep!==undefined)state.sleep=s.sleep;
+      if(s.freezer!==undefined)state.freezer=s.freezer;
+      if(s.fzNextId!==undefined)state.fzNextId=s.fzNextId;
+      if(s.foodOverrides!==undefined)state.foodOverrides=s.foodOverrides;
+      if(s.customFoods!==undefined)state.customFoods=s.customFoods;
+      if(s.settings){
+        state.settings={...state.settings,...s.settings};
+        if(s.settings.allergens!==undefined)state.settings.allergens=s.settings.allergens;
+        if(s.settings.doctors!==undefined)state.settings.doctors=s.settings.doctors;
+      }
+      if(s.calData&&Object.keys(s.calData).length>0){
+        state.calData=s.calData;
+        seedMissingCalData();
+      } else {
+        seedCalData();
+      }
+      lastRemoteTs=s.ts||0;
+    }catch(e){seedCalData();}
+  } else {
+    seedCalData();
+  }
+  renderAll();
+}
+
 // ============================================================
 // CLOCK + INIT
 // ============================================================
@@ -2034,40 +2068,12 @@ function updateClock(){const n=new Date();document.getElementById('clockEl').tex
 setInterval(updateClock,1000);updateClock();
 setInterval(renderStatus,30000);
 
-// Init — localStorage má VŽDY přednost před DEFAULT_STATE
-if(myIdentity){document.getElementById('onboard').style.display='none';}
-const savedState=localStorage.getItem(STORAGE_KEY);
-if(savedState){
-  try{
-    const s=JSON.parse(savedState);
-    // deep merge — localStorage přepíše vše co tam je
-    if(s.todayLog!==undefined)state.todayLog=s.todayLog;
-    if(s.sleep!==undefined)state.sleep=s.sleep;
-    if(s.freezer!==undefined)state.freezer=s.freezer;
-    if(s.fzNextId!==undefined)state.fzNextId=s.fzNextId;
-    if(s.foodOverrides!==undefined)state.foodOverrides=s.foodOverrides;
-    // settings — merge jen co je uloženo, nepřepisovat výchozí pokud chybí
-    if(s.settings){
-      state.settings={...state.settings,...s.settings};
-      // alergie a lékaři — localStorage má absolutní přednost
-      if(s.settings.allergens!==undefined)state.settings.allergens=s.settings.allergens;
-      if(s.settings.doctors!==undefined)state.settings.doctors=s.settings.doctors;
-    }
-    // calData — načíst uložená, doplnit chybějící seedem
-    if(s.calData&&Object.keys(s.calData).length>0){
-      state.calData=s.calData;
-      // doplnit pouze chybějící dny (budoucí plánování)
-      seedMissingCalData();
-    } else {
-      seedCalData();
-    }
-    lastRemoteTs=s.ts||0;
-  }catch(e){seedCalData();}
-} else {
-  // první spuštění — seed demo data
-  seedCalData();
+// Spustit hned pokud identita už je uložená, jinak čekat na onboarding
+if(myIdentity){
+  document.getElementById('onboard').style.display='none';
+  initApp();
 }
-renderAll();
+// Jinak onboard čeká na klik — setIdentity() zavolá initApp()
 </script>
 </body>
 </html>
