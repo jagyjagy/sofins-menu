@@ -1174,7 +1174,7 @@ function renderStatus(){
   const lastFood=allToday.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
   if(lastFood){
     const el=now-lastFood.ts,mins=Math.floor(el/60000);
-    html+=`<div class="chip ${mins>180?'warn':''}"><span>🍽</span><span>jídlo od <span class="chip-val">${fmtElapsed(el)}</span></span></div>`;
+    html+=`<div class="chip ${mins>180?'warn':''}"><span>🍽</span><span>nejedla už <span class="chip-val">${fmtElapsed(el)}</span></span></div>`;
   }
 
   // 😴 naspala
