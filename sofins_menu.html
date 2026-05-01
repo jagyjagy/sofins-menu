@@ -1481,7 +1481,12 @@ function openEditEntryModal(e){
   if(e.type==='food'){
     const typeNames=['Snídaně','Oběd','Svačina','Večeře'];
     html+=`<div class="mrow"><label>Typ</label><div class="type-btns">${typeNames.map(n=>`<button class="type-btn${e.name===n?' sel':''}" onclick="selType(this)">${n}</button>`).join('')}</div></div>`;
-    (e.sub||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
+    // sub může být "🏪 Značka · složka1, složka2" nebo jen "složka1, složka2"
+    let foodSubPart=e.sub||'';
+    if(foodSubPart.includes('🏪')&&foodSubPart.includes('·')){
+      foodSubPart=foodSubPart.split('·').slice(1).join('·').trim();
+    }
+    foodSubPart.split(',').map(s=>s.trim()).filter(s=>s&&!s.startsWith('🏪')).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
     html+=`<div class="mrow"><label>Složky</label>
       <input type="text" id="editIngInput" placeholder="začni psát..." oninput="showEditSuggest(this.value)" autocomplete="off"/>
       <div class="fsug" id="editFoodSug" style="display:none"></div>
@@ -1617,6 +1622,15 @@ function saveEditEntry(){
     }
   }
   closeModal('mEditEntry');renderTodayList();renderStatus();saveAll();
+  if(curScreen==='plan'){
+    // znovu otevři detail pokud byl otevřený
+    if(planSelDate&&planDetOpen){
+      const d=planSelDate;
+      selDay(d.getFullYear(),d.getMonth(),d.getDate());
+    } else {
+      renderCal();
+    }
+  }
 }
 
 function openEntryDetail(id){
