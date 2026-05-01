@@ -799,8 +799,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
   <div id="edBody"></div>
   <div style="display:flex;gap:8px;margin-top:12px">
-    <button class="msave" style="background:var(--rose-light);color:var(--rose-dark);flex:1" onclick="editCurrentEntry()">✏ Upravit</button>
-    <button class="msave" style="background:var(--red-bg);color:var(--red);border:.5px solid #f09595;flex:1" onclick="deleteCurrentEntry()">🗑 Smazat</button>
+    <button id="edEditBtn" class="msave" style="background:var(--rose-light);color:var(--rose-dark);flex:1" onclick="editCurrentEntry()">✏ Upravit</button>
+    <button id="edDeleteBtn" class="msave" style="background:var(--red-bg);color:var(--red);border:.5px solid #f09595;flex:1" onclick="deleteCurrentEntry()">🗑 Smazat</button>
   </div>
   <button class="mcancel" onclick="closeModal('mEntryDetail')">Zavřít</button>
 </div></div></div>
@@ -1635,6 +1635,11 @@ function saveEditEntry(){
 
 function openEntryDetail(id){
   currentEntryId=id;
+  // obnovit tlačítka Upravit a Smazat
+  const editBtn=document.getElementById('edEditBtn');
+  const delBtn=document.getElementById('edDeleteBtn');
+  if(editBtn)editBtn.style.display='';
+  if(delBtn)delBtn.style.display='';
   const e=state.todayLog.find(x=>x.id===id);
   if(!e)return;
   const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
@@ -1775,21 +1780,31 @@ function syncTodayToCalData(){
   }));
 }
 function openPlanEntryDetail(e){
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
-  const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)'};
+  // Toto je detail pro záznamy z calData (minulé dny) — bez editace
+  currentEntryId=null;
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':e.type==='reaction'?'⚠️':'🍽';
+  const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',reaction:'var(--red-bg)'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
   document.getElementById('edTitle').textContent=e.name;
   document.getElementById('edTime').textContent=fmtTime(e.ts);
   let body='';
   if(e.type==='food'){
-    const foods=(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean);
-    body+=`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${foods.map(f=>`<span class="sfp" style="cursor:default">${f}</span>`).join('')}</div>`;
+    // Parsuj složky — ignoruj brand prefix
+    let subPart=e.sub||'';
+    if(subPart.includes('🏪')&&subPart.includes('·'))subPart=subPart.split('·').slice(1).join('·').trim();
+    const foods=subPart.split(',').map(s=>s.trim()).filter(Boolean);
+    if(foods.length)body+=`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${foods.map(f=>`<span class="sfp" style="cursor:default">${f}</span>`).join('')}</div>`;
     if(e.reaction)body+=`<div style="background:var(--red-bg);border-radius:10px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500">⚠ K tomuto jídlu je zaznamenaná reakce</div>`;
   } else {
     body+=`<div style="background:#f2f5fa;border-radius:9px;padding:10px 12px;font-size:13px;color:var(--slate-dark)">${e.sub||''}</div>`;
   }
   document.getElementById('edBody').innerHTML=body;
+  // skrýt tlačítka Upravit a Smazat pro záznamy z minulosti (nejsou v todayLog)
+  const editBtn=document.getElementById('edEditBtn');
+  const delBtn=document.getElementById('edDeleteBtn');
+  if(editBtn)editBtn.style.display='none';
+  if(delBtn)delBtn.style.display='none';
   openModal('mEntryDetail');
 }
 
