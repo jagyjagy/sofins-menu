@@ -509,6 +509,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">👶</div><div class="set-lbl"><div class="set-lbl-t">Jméno</div></div><span class="set-val" id="svName">Sofinka</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">🎂</div><div class="set-lbl"><div class="set-lbl-t">Datum narození</div></div><span class="set-val" id="svBirth">14. 8. 2024</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">⚖️</div><div class="set-lbl"><div class="set-lbl-t">Váha</div></div><span class="set-val" id="svWeight">7,8 kg</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">🌙</div><div class="set-lbl"><div class="set-lbl-t">Večerka</div><div class="set-lbl-s">čas pro odpočet</div></div><span class="set-val" id="svBedtime">—</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
       <div class="set-sec">
@@ -558,7 +559,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
     <button class="type-btn sel" id="srcOwn" onclick="selSrc('own')">🏠 Vlastní</button>
     <button class="type-btn" id="srcBought" onclick="selSrc('bought')">🏪 Kupované</button>
   </div></div>
-  <div class="mrow" id="rowBrand" style="display:none"><label>Značka</label><input type="text" id="brandInput" placeholder="HiPP Bio hruška 125g"/></div>
+  <div class="mrow" id="rowBrand" style="display:none">
+    <label>Značka</label>
+    <input type="text" id="brandInput" placeholder="HiPP Bio hruška..." oninput="showBrandSuggestFood(this.value)" autocomplete="off"/>
+    <div class="fsug" id="brandFoodSug" style="display:none"></div>
+  </div>
   <div class="mrow"><label>Složky</label>
     <input type="text" id="ingInput" placeholder="začni psát..." oninput="showSuggest(this.value)" autocomplete="off"/>
     <div class="fsug" id="foodSug" style="display:none"></div>
@@ -650,6 +655,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <div class="mrow"><label>Jméno</label><input type="text" id="cName" value="Sofinka"/></div>
   <div class="mrow"><label>Datum narození</label><input type="date" id="cBirth" value="2024-08-14"/></div>
   <div class="mrow"><label>Váha (kg)</label><input type="number" id="cWeight" value="7.8" step="0.1"/></div>
+  <div class="mrow"><label>Večerka (čas)</label><input type="time" id="cBedtime" value="19:30"/></div>
   <button class="msave" onclick="saveChild()">Uložit</button>
   <button class="mcancel" onclick="closeModal('mChild')">Zrušit</button>
 </div></div></div>
@@ -1198,13 +1204,40 @@ function renderStatus(){
     }
   }
 
+  // 🍽 nejedla už (jen jídlo, bez kojení)
+  const lastMeal=allToday.filter(e=>e.type==='food').sort((a,b)=>b.ts-a.ts)[0];
+  if(lastMeal){
+    const el2=now-lastMeal.ts,m2=Math.floor(el2/60000);
+    html+=`<div class="chip ${m2>180?'warn':''}"><span>🥣</span><span>nejedla už <span class="chip-val">${m2<60?m2+'min':Math.floor(m2/60)+'h'+(m2%60?' '+m2%60+'min':'')}</span></span></div>`;
+  }
+
+  // 🤱 nekojila už
+  const lastBreast=allToday.filter(e=>e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
+  if(lastBreast){
+    const el3=now-lastBreast.ts,m3=Math.floor(el3/60000);
+    html+=`<div class="chip ${m3>180?'warn':''}"><span>🤱</span><span>nekojila už <span class="chip-val">${m3<60?m3+'min':Math.floor(m3/60)+'h'+(m3%60?' '+m3%60+'min':'')}</span></span></div>`;
+  }
+
+  // 🌙 do večerky
+  const bedtime=state.settings.bedtime;
+  if(bedtime){
+    const[bh,bm]=bedtime.split(':').map(Number);
+    const bt=new Date();bt.setHours(bh,bm,0,0);
+    if(bt.getTime()<now)bt.setDate(bt.getDate()+1);
+    const diff=Math.floor((bt.getTime()-now)/60000);
+    if(diff>=0&&diff<360){
+      const dStr=diff<60?diff+'min':Math.floor(diff/60)+'h'+(diff%60?' '+diff%60+'min':'');
+      html+=`<div class="chip ${diff<60?'warn':''}"><span>🌙</span><span>večerka za <span class="chip-val">${dStr}</span></span></div>`;
+    }
+  }
+
   document.getElementById('statusRow').innerHTML=html;
 }
 
 
 
 function renderTodayList(){
-  const sorted=[...state.todayLog].sort((a,b)=>a.ts-b.ts);
+  const sorted=[...state.todayLog].sort((a,b)=>b.ts-a.ts);
   const byMap={'mama':'who-mama','tata':'who-tata'};
   const el=document.getElementById('todayList');
   el.innerHTML=sorted.map(e=>{
@@ -1317,7 +1350,9 @@ function saveFood(){
   const typeBtn=document.querySelector('#mFood .type-btn.sel');
   const name=typeBtn?typeBtn.textContent:'Jídlo';
   const ts=parseTimeToTs(document.getElementById('foodTime').value);
-  state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub:selFoods.join(', '),reaction:false,by:whoAmI()});
+  const brand=document.getElementById('brandInput')?.value.trim()||'';
+  const sub=[brand?'🏪 '+brand:'',selFoods.join(', ')].filter(Boolean).join(' · ');
+  state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub,brand:brand||null,reaction:false,by:whoAmI()});
   selFoods.forEach(food=>{const fz=state.freezer.find(f=>f.foods.includes(food)&&f.amount>0);if(fz)fz.amount=Math.max(0,fz.amount-1);});
   state.freezer=state.freezer.filter(f=>f.amount>0);
   selFoods=[];renderSelFoodsEl();renderTodayList();renderStatus();closeModal('mFood');saveAll();
@@ -1765,7 +1800,7 @@ function renderFreezer(){
     const mx=maxDays(item.type);
     const dl=daysLeft(item.frozen,item.type);const st=dl<=0?'expired':dl<=14?'expiring':'fresh';
     const pct=Math.max(0,Math.min(100,Math.round((dl/mx)*100)));const clr=dl<=0?'#e24b4a':dl<=14?'#EF9F27':'#639922';
-    const dtxt=dl<=0?'prošlé!':dl===1?'1 den':dl+' dní';const dcls=dl<=0?'bad':dl<=14?'warn':'ok';
+    const dtxt=dl<=0?'prošlé o '+Math.abs(dl)+' dní':dl===1?'1 den':dl+' dní';const dcls=dl<=0?'bad':dl<=14?'warn':'ok';
     const maxLbl=item.type==='mleko'?'max 6 měs.':item.type==='prikrm'||item.type==='kase'?'max 2 měs.':'max 2 měs.';
     const[tl,tc]=tMap[item.type]||['Jiné','tp-p'];
     return`<div class="swipe-wrap" id="sww-${item.id}">
@@ -1916,7 +1951,23 @@ function renderWeek(){
       const pi=dd.plannedItems||[];
       body=pi.length?`<div class="wc-foods" style="color:var(--rose-dark)">${pi.map(p=>p.foods.join(', ')).join(' · ')}</div>`:`<div class="wc-foods" style="color:var(--text-3);font-style:italic">prázdný</div>`;
     }
-    else{const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',dd.sleep?`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek</div>`:''].filter(Boolean).join('');if(st)body+=`<div class="wc-stats">${st}</div>`;if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;}
+    else{
+      // sleep total
+      let sleepStr='';
+      if(dd.sleep){
+        let totalM=0;
+        (dd.entries||[]).filter(e=>e.type==='sleep').forEach(e=>{
+          const dur=getSleepEndTs(e)-e.ts;
+          if(dur>60000&&dur<12*3600000)totalM+=Math.floor(dur/60000);
+        });
+        const sh=Math.floor(totalM/60),sm=totalM%60;
+        const durStr=totalM>0?(sh>0?sh+'h'+(sm?' '+sm+'min':''):sm+'min'):'';
+        sleepStr=`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek${durStr?' ('+durStr+')':''}</div>`;
+      }
+      const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',sleepStr].filter(Boolean).join('');
+      if(st)body+=`<div class="wc-stats">${st}</div>`;
+      if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;
+    }
     const clickFn=planSelectMode?`toggleDaySelect('${k}')`:`selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})`;
     const selBorder=isDaySel?'border-color:var(--rose-btn);background:var(--rose-light)':isSelDay?'border-color:var(--rose-btn);border-width:2px':'';
     html+=`<div class="${cls}" style="${selBorder}" onclick="${clickFn}"><div class="wc-head">${chk}<span class="wc-dn">${DAYS_MON[dowIdx]}</span><div style="display:flex;align-items:center;gap:3px"><span class="wc-date">${d.getDate()}.</span>${rb}${tb}</div></div>${body}</div>`;
@@ -1961,7 +2012,7 @@ function selDay(y,m,day){
         const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':'';
         const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
         const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
-        html+=`<div class="ecard${cc}" onclick="openPlanEntryDetailByIdx('${k}',${i})">
+        html+=`<div class="ecard${cc}" onclick="openPlanEntryDetailWithEdit('${k}',${i})">
           <span class="etime">${fmtTime(e.ts)}</span>
           <div class="eicon ${ic}">${em}</div>
           <div class="einfo"><div class="ename">${e.name}</div><div class="esub">${e.sub}</div></div>
@@ -1987,15 +2038,62 @@ function openPlanEntryDetailByIdx(dayKey,idx){
 }
 
 function openPlanReactionDetail(dayKey){
-  // show a simple reaction info from calData
   const dd=state.calData[dayKey]||{};
-  document.getElementById('rdTime').textContent=DAYS_MON[(new Date(dayKey+' 12:00')).getDay()===0?6:(new Date(dayKey+' 12:00')).getDay()-1];
-  document.getElementById('rdTypes').innerHTML=`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">Reakce</span>`;
-  document.getElementById('rdSuspect').style.display='none';
+  const reaction=(dd.entries||[]).find(e=>e.type==='reaction');
+  const reactionTs=reaction?reaction.ts:null;
+  const d=new Date(dayKey+' 12:00');
+  const dowIdx=d.getDay()===0?6:d.getDay()-1;
+  document.getElementById('rdTime').textContent=DAYS_MON[dowIdx]+' '+d.getDate()+'. '+MONTHS_GEN[d.getMonth()];
+  // typy reakce
+  const types=reaction?(reaction.sub||'').split('·')[0].split(',').map(s=>s.trim()).filter(Boolean):[];
+  document.getElementById('rdTypes').innerHTML=types.length?types.map(t=>`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">${t}</span>`).join(''):`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">Reakce</span>`;
+  const suspectEl=document.getElementById('rdSuspect');
+  const suspect=reaction?(reaction.sub||'').split('·').find(p=>p.includes('Podezřelé:')):'';
+  if(suspect){suspectEl.style.display='block';suspectEl.textContent='🔍 '+suspect.trim();}else{suspectEl.style.display='none';}
   document.getElementById('rdNote').style.display='none';
-  const hist=(dd.entries||[]).filter(e=>e.type==='food'||e.type==='breast').slice(-6);
-  document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>`<div class="rh-item"><div style="min-width:58px;text-align:right"><div style="font-size:11px;font-weight:600;color:var(--text-2)">${fmtTime(h.ts)}</div></div><div><div style="font-size:12px;color:var(--text)">${h.sub||h.name}</div></div></div>`).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy</div>`;
+  // historie jídel před reakcí — zobraz čas od reakce
+  const hist=(dd.entries||[]).filter(e=>(e.type==='food'||e.type==='breast')&&(!reactionTs||e.ts<=reactionTs)).slice(-6).reverse();
+  document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
+    const minBefore=reactionTs?Math.round((reactionTs-h.ts)/60000):null;
+    const timeStr=minBefore!==null?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+minBefore%60+'min před'):fmtTime(h.ts);
+    const isClose=minBefore!==null&&minBefore<=120;
+    return`<div class="rh-item ${isClose?'close-r':''}">
+      <div style="min-width:70px;text-align:right"><div style="font-size:11px;font-weight:600;color:${isClose?'var(--red)':'var(--text-2)'}">${timeStr}</div></div>
+      <div><div style="font-size:12px;color:var(--text)">${h.sub||h.name}</div></div>
+    </div>`;
+  }).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy</div>`;
   openModal('mReactionDetail');
+}
+
+// Brand suggest pro pole Značka
+function showBrandSuggestFood(val){
+  const sg=document.getElementById('brandFoodSug');
+  if(!val){sg.style.display='none';return;}
+  const brands=(state.brands||[]).filter(b=>b.name.toLowerCase().includes(val.toLowerCase()));
+  if(!brands.length){sg.style.display='none';return;}
+  sg.style.display='block';
+  sg.innerHTML=brands.map(b=>`<div class="fsug-item" onclick="selectBrandForFood('${b.name.replace(/'/g,"\\'")}')">
+    ${b.emoji||'🏪'} <strong>${b.name}</strong> <span style="font-size:10px;color:var(--text-3)">${b.ingredients.join(', ')}</span>
+  </div>`).join('');
+}
+function selectBrandForFood(name){
+  const b=(state.brands||[]).find(x=>x.name===name);
+  if(!b)return;
+  document.getElementById('brandInput').value=name;
+  document.getElementById('brandFoodSug').style.display='none';
+  b.ingredients.forEach(ing=>{if(!selFoods.includes(ing))selFoods.push(ing);});
+  renderSelFoodsEl();checkFzSug();
+}
+
+// Fix plan entry edit - set currentEntryId for calData entries
+function openPlanEntryDetailWithEdit(dayKey,idx){
+  const dd=state.calData[dayKey];
+  if(!dd||!dd.entries||!dd.entries[idx])return;
+  const e=dd.entries[idx];
+  // Try to find matching entry in todayLog for edit capability
+  const match=state.todayLog.find(x=>x.type===e.type&&Math.abs(x.ts-e.ts)<60000);
+  if(match)currentEntryId=match.id;
+  openPlanEntryDetail(e);
 }
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
@@ -2180,10 +2278,16 @@ function renderSettings(){
   document.getElementById('svName').textContent=s.name;
   document.getElementById('svBirth').textContent=fmtDate(s.birth);
   document.getElementById('svWeight').textContent=s.weight+' kg';
+  document.getElementById('svBedtime').textContent=s.bedtime||'—';
   document.getElementById('appSubtitle').textContent=s.name+' · '+calcAge(s.birth);
   document.getElementById('foodSubtitle').textContent=calcAge(s.birth)+' · zavádění';
   document.getElementById('identityVal').textContent=myIdentity==='mama'?'🤱 Mama':myIdentity==='tata'?'👨 Táta':'—';
   document.getElementById('alWrap').innerHTML=s.allergens.map((a,i)=>`<div class="al-pill">${a}<span style="font-size:13px;opacity:.6;line-height:1;cursor:pointer" onclick="removeAllergen(${i})">×</span></div>`).join('')+`<div class="al-add" onclick="addAllergenPrompt()">+ přidat</div>`;
+  // pre-fill child modal
+  document.getElementById('cName').value=s.name;
+  document.getElementById('cBirth').value=s.birth;
+  document.getElementById('cWeight').value=s.weight.replace(',','.');
+  document.getElementById('cBedtime').value=s.bedtime||'19:30';
   const icons={pediatr:'👩‍⚕️',alergolog:'🔬',gastroenterolog:'🩺',jiný:'👨‍⚕️'};
   const labels={pediatr:'Pediatr',alergolog:'Alergolog',gastroenterolog:'Gastroenterolog',jiný:'Jiný'};
   document.getElementById('docList').innerHTML=s.doctors.map((d,i)=>`
@@ -2201,7 +2305,13 @@ function renderSettings(){
 }
 function removeAllergen(i){state.settings.allergens.splice(i,1);renderSettings();saveAll();}
 function addAllergenPrompt(){const v=prompt('Přidat alergii:');if(v){state.settings.allergens.push(v);renderSettings();saveAll();}}
-function saveChild(){state.settings.name=document.getElementById('cName').value||'Sofinka';state.settings.birth=document.getElementById('cBirth').value||'2024-08-14';state.settings.weight=document.getElementById('cWeight').value.replace('.',',')||'7,8';closeModal('mChild');renderSettings();saveAll();}
+function saveChild(){
+  state.settings.name=document.getElementById('cName').value||'Sofinka';
+  state.settings.birth=document.getElementById('cBirth').value||'2024-08-14';
+  state.settings.weight=document.getElementById('cWeight').value.replace('.',',')||'7,8';
+  state.settings.bedtime=document.getElementById('cBedtime').value||'';
+  closeModal('mChild');renderSettings();saveAll();
+}
 
 function editDoctor(i){
   editDoctorIdx=i;
