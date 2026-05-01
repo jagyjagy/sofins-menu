@@ -63,7 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .chip.orange{background:#faeeda;border-color:#e8b870;color:#854f0b}
 .chip.bedtime{background:#fff0f0;border-color:#f5b8b8;color:#c0504d}
 .action-row{padding:0 16px 8px;display:flex;flex-direction:column;gap:5px}
-.act-btn{width:100%;padding:7px 13px;border-radius:12px;border:0.5px solid transparent;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s}
+.act-btn{width:100%;padding:5px 13px;border-radius:12px;border:0.5px solid transparent;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s}
 .act-btn:active{opacity:.8}
 .btn-food{background:var(--rose-light);color:var(--rose-dark);border-color:var(--rose-mid)}
 .btn-breast{background:#f3eef8;color:var(--purple-dark);border-color:#d9c8ee}
@@ -2053,24 +2053,30 @@ function openPlanEntryDetailByIdx(dayKey,idx){
 }
 
 function openPlanReactionDetail(dayKey){
+  const todayKey=dateKey(TODAY);
+  // Pro dnešek vezmi data z todayLog, pro ostatní dny z calData
+  let entries;
+  if(dayKey===todayKey){
+    entries=state.todayLog.filter(e=>!e.live);
+  } else {
+    entries=(state.calData[dayKey]||{}).entries||[];
+  }
   const dd=state.calData[dayKey]||{};
-  const reaction=(dd.entries||[]).find(e=>e.type==='reaction');
+  const reaction=entries.find(e=>e.type==='reaction');
   const reactionTs=reaction?reaction.ts:null;
   const d=new Date(dayKey+' 12:00');
   const dowIdx=d.getDay()===0?6:d.getDay()-1;
   document.getElementById('rdTime').textContent=DAYS_MON[dowIdx]+' '+d.getDate()+'. '+MONTHS_GEN[d.getMonth()];
-  // typy reakce
   const types=reaction?(reaction.sub||'').split('·')[0].split(',').map(s=>s.trim()).filter(Boolean):[];
   document.getElementById('rdTypes').innerHTML=types.length?types.map(t=>`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">${t}</span>`).join(''):`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">Reakce</span>`;
   const suspectEl=document.getElementById('rdSuspect');
   const suspect=reaction?(reaction.sub||'').split('·').find(p=>p.includes('Podezřelé:')):'';
   if(suspect){suspectEl.style.display='block';suspectEl.textContent='🔍 '+suspect.trim();}else{suspectEl.style.display='none';}
   document.getElementById('rdNote').style.display='none';
-  // historie jídel před reakcí — zobraz čas od reakce
-  const hist=(dd.entries||[]).filter(e=>(e.type==='food'||e.type==='breast')&&(reactionTs===null||e.ts<reactionTs)).sort((a,b)=>b.ts-a.ts).slice(0,6);
+  const hist=entries.filter(e=>(e.type==='food'||e.type==='breast')&&(reactionTs===null||e.ts<reactionTs)).sort((a,b)=>b.ts-a.ts).slice(0,6);
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
     const minBefore=reactionTs?Math.round((reactionTs-h.ts)/60000):null;
-    const timeStr=minBefore!==null?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+minBefore%60+'min před'):fmtTime(h.ts);
+    const timeStr=minBefore!==null?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+(minBefore%60)+'min před'):fmtTime(h.ts);
     const isClose=minBefore!==null&&minBefore<=120;
     return`<div class="rh-item ${isClose?'close-r':''}">
       <div style="min-width:70px;text-align:right"><div style="font-size:11px;font-weight:600;color:${isClose?'var(--red)':'var(--text-2)'}">${timeStr}</div></div>
@@ -2105,15 +2111,18 @@ function openPlanEntryDetailWithEdit(dayKey,idx){
   const dd=state.calData[dayKey];
   if(!dd||!dd.entries||dd.entries[idx]===undefined)return;
   const e=dd.entries[idx];
-  // hledej v todayLog
-  const match=state.todayLog.find(x=>x.type===e.type&&Math.abs(x.ts-e.ts)<60000&&!x.live);
-  if(match){
-    currentEntryId=match.id;
-    openEntryDetail(match.id);
-  } else {
-    // pro minulé dny — zobraz detail bez možnosti editace z todayLog
-    openPlanEntryDetail(e);
+  const todayKey=dateKey(TODAY);
+  // Pro dnešek hledej v todayLog (umožní editaci)
+  if(dayKey===todayKey){
+    const match=state.todayLog.find(x=>x.type===e.type&&x.ts===e.ts&&!x.live);
+    if(match){
+      currentEntryId=match.id;
+      openEntryDetail(match.id);
+      return;
+    }
   }
+  // Pro minulé/budoucí dny — zobraz detail přímo z calData (bez editace)
+  openPlanEntryDetail(e);
 }
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
