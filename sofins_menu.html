@@ -1176,21 +1176,9 @@ function renderStatus(){
     dedup.add(k);return true;
   });
 
-  // 🍽 jídlo od
-  const lastFood=allToday.filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
-  if(lastFood){
-    const el=now-lastFood.ts,mins=Math.floor(el/60000);
-    html+=`<div class="chip ${mins>180?'warn':''}"><span>🍽</span><span>nejedla už <span class="chip-val">${fmtElapsed(el)}</span></span></div>`;
-  }
+  function mStr(ms){const m=Math.max(0,Math.floor(ms/60000));return m<60?m+'min':Math.floor(m/60)+'h'+(m%60?' '+m%60+'min':'');}
 
-  // 😴 naspala
-  const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min'));
-  let totalMs=0;
-  sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
-  if(state.sleep.active)totalMs+=now-state.sleep.startTs;
-  if(totalMs>=60000)html+=`<div class="chip sleeping"><span>😴</span><span>naspala <span class="chip-val">${fmtDuration(totalMs)}</span></span></div>`;
-
-  // 💤 právě spí / 👀 vzhůru už
+  // 1. 👀 vzhůru už / 💤 právě spí
   if(state.sleep.active){
     html+=`<div class="chip sleeping"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
@@ -1199,26 +1187,32 @@ function renderStatus(){
       allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const awMs=now-getSleepEndTs(allS[0]);
       const awM=Math.max(0,Math.floor(awMs/60000));
-      const awStr=awM<60?awM+'min':Math.floor(awM/60)+'h'+(awM%60?' '+awM%60+'min':'');
-      html+=`<div class="chip ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${awStr}</span></span></div>`;
+      html+=`<div class="chip ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${mStr(awMs)}</span></span></div>`;
     }
   }
 
-  // 🍽 nejedla už (jen jídlo, bez kojení)
-  const lastMeal=allToday.filter(e=>e.type==='food').sort((a,b)=>b.ts-a.ts)[0];
-  if(lastMeal){
-    const el2=now-lastMeal.ts,m2=Math.floor(el2/60000);
-    html+=`<div class="chip ${m2>180?'warn':''}"><span>🥣</span><span>nejedla už <span class="chip-val">${m2<60?m2+'min':Math.floor(m2/60)+'h'+(m2%60?' '+m2%60+'min':'')}</span></span></div>`;
-  }
-
-  // 🤱 nekojila už
+  // 2. 🤱 nekojila už
   const lastBreast=allToday.filter(e=>e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
   if(lastBreast){
-    const el3=now-lastBreast.ts,m3=Math.floor(el3/60000);
-    html+=`<div class="chip ${m3>180?'warn':''}"><span>🤱</span><span>nekojila už <span class="chip-val">${m3<60?m3+'min':Math.floor(m3/60)+'h'+(m3%60?' '+m3%60+'min':'')}</span></span></div>`;
+    const el=now-lastBreast.ts,m=Math.floor(el/60000);
+    html+=`<div class="chip ${m>180?'warn':''}"><span>🤱</span><span>nekojila už <span class="chip-val">${mStr(el)}</span></span></div>`;
   }
 
-  // 🌙 do večerky
+  // 3. 🥣 nejedla už (jen jídlo, bez kojení)
+  const lastMeal=allToday.filter(e=>e.type==='food').sort((a,b)=>b.ts-a.ts)[0];
+  if(lastMeal){
+    const el=now-lastMeal.ts,m=Math.floor(el/60000);
+    html+=`<div class="chip ${m>180?'warn':''}"><span>🥣</span><span>nejedla už <span class="chip-val">${mStr(el)}</span></span></div>`;
+  }
+
+  // 4. 😴 naspala
+  const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min')&&!(e.sub||'').includes('probíhá'));
+  let totalMs=0;
+  sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
+  if(state.sleep.active&&state.sleep.startTs)totalMs+=now-state.sleep.startTs;
+  if(totalMs>=60000)html+=`<div class="chip sleeping"><span>😴</span><span>naspala <span class="chip-val">${fmtDuration(totalMs)}</span></span></div>`;
+
+  // 5. ⏰ večerka
   const bedtime=state.settings.bedtime;
   if(bedtime){
     const[bh,bm]=bedtime.split(':').map(Number);
@@ -1226,8 +1220,8 @@ function renderStatus(){
     if(bt.getTime()<now)bt.setDate(bt.getDate()+1);
     const diff=Math.floor((bt.getTime()-now)/60000);
     if(diff>=0&&diff<360){
-      const dStr=diff<60?diff+'min':Math.floor(diff/60)+'h'+(diff%60?' '+diff%60+'min':'');
-      html+=`<div class="chip ${diff<60?'warn':''}"><span>🌙</span><span>večerka za <span class="chip-val">${dStr}</span></span></div>`;
+      const dStr=mStr(diff*60000);
+      html+=`<div class="chip ${diff<60?'warn':''}"><span>⏰</span><span>večerka za <span class="chip-val">${dStr}</span></span></div>`;
     }
   }
 
@@ -1800,7 +1794,7 @@ function renderFreezer(){
     const mx=maxDays(item.type);
     const dl=daysLeft(item.frozen,item.type);const st=dl<=0?'expired':dl<=14?'expiring':'fresh';
     const pct=Math.max(0,Math.min(100,Math.round((dl/mx)*100)));const clr=dl<=0?'#e24b4a':dl<=14?'#EF9F27':'#639922';
-    const dtxt=dl<=0?'prošlé o '+Math.abs(dl)+' dní':dl===1?'1 den':dl+' dní';const dcls=dl<=0?'bad':dl<=14?'warn':'ok';
+    const dtxt=dl<=0?'prošlé '+Math.abs(dl)+' dní':dl===1?'1 den':dl+' dní';const dcls=dl<=0?'bad':dl<=14?'warn':'ok';
     const maxLbl=item.type==='mleko'?'max 6 měs.':item.type==='prikrm'||item.type==='kase'?'max 2 měs.':'max 2 měs.';
     const[tl,tc]=tMap[item.type]||['Jiné','tp-p'];
     return`<div class="swipe-wrap" id="sww-${item.id}">
@@ -2052,7 +2046,7 @@ function openPlanReactionDetail(dayKey){
   if(suspect){suspectEl.style.display='block';suspectEl.textContent='🔍 '+suspect.trim();}else{suspectEl.style.display='none';}
   document.getElementById('rdNote').style.display='none';
   // historie jídel před reakcí — zobraz čas od reakce
-  const hist=(dd.entries||[]).filter(e=>(e.type==='food'||e.type==='breast')&&(!reactionTs||e.ts<=reactionTs)).slice(-6).reverse();
+  const hist=(dd.entries||[]).filter(e=>(e.type==='food'||e.type==='breast')&&(reactionTs===null||e.ts<reactionTs)).sort((a,b)=>b.ts-a.ts).slice(0,6);
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
     const minBefore=reactionTs?Math.round((reactionTs-h.ts)/60000):null;
     const timeStr=minBefore!==null?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+minBefore%60+'min před'):fmtTime(h.ts);
