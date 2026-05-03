@@ -400,8 +400,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       </div>
       <div id="calControls">
         <div class="view-toggle">
-          <button class="vt" id="vtM" onclick="setCalView('month')">Měsíc</button>
           <button class="vt active" id="vtW" onclick="setCalView('week')">Týden</button>
+          <button class="vt" id="vtM" onclick="setCalView('month')">Měsíc</button>
         </div>
         <div class="cal-nav">
           <button class="nav-btn" onclick="navPrev()">&#8592;</button>
@@ -561,7 +561,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
             <canvas id="weightChart" height="60" style="width:100%;display:block"></canvas>
           </div>
           <div id="weightList" style="padding:0 12px 8px"></div>
-          <div class="set-row" onclick="openModal('mAddWeight')" style="border-top:.5px solid var(--rose-mid)">
+          <div class="set-row" onclick="openAddWeightModal()" style="border-top:.5px solid var(--rose-mid)">
             <div class="si si-r">➕</div>
             <div class="set-lbl"><div class="set-lbl-t">Přidat vážení</div></div>
           </div>
@@ -2530,9 +2530,8 @@ function openPlanEntryDetailWithEdit(dayKey,idx){
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){
   calView=v;
-  document.getElementById('vtM').classList.toggle('active',v==='month');
   document.getElementById('vtW').classList.toggle('active',v==='week');
-  // synchronizuj stats toggle
+  document.getElementById('vtM').classList.toggle('active',v==='month');
   statsView=v;
   document.getElementById('vsW').classList.toggle('active',v==='week');
   document.getElementById('vsM').classList.toggle('active',v==='month');
@@ -2747,6 +2746,11 @@ function renderSettings(){
         <button class="doc-edit-btn del" onclick="deleteDoctor(${i})">🗑 Smazat</button>
       </div>
     </div>`).join('');
+  // Váhový deník
+  setTimeout(()=>{renderWeightChart();renderWeightList();},0);
+  // init weight modal datum
+  const wDateEl=document.getElementById('wDate');
+  if(wDateEl&&!wDateEl.value)wDateEl.value=new Date().toISOString().slice(0,10);
 }
 function removeAllergen(i){state.settings.allergens.splice(i,1);renderSettings();saveAll();}
 function addAllergenPrompt(){const v=prompt('Přidat alergii:');if(v){state.settings.allergens.push(v);renderSettings();saveAll();}}
@@ -3207,24 +3211,29 @@ function exportAlergolog(){
     lines.push('');
   }
 
-  // Sbíráme reakce ze všech dnů — bez duplikátů
+  // Sbíráme reakce ze všech dnů — vždy z aktuálního calData (po editacích)
   const reactions=[];
   const todayKey=dateKey(TODAY);
 
-  // z calData (pouze minulé dny, ne dnešek)
+  // z calData — všechny dny včetně dnešku (má nejaktuálnější entries po syncTodayToCalData)
   Object.entries(state.calData||{}).sort().forEach(([k,day])=>{
-    if(k===todayKey)return; // dnešek bereme z todayLog
-    (day.entries||[]).filter(e=>e.type==='reaction').forEach(e=>{
-      reactions.push({date:k,ts:e.ts,sub:e.sub,dayEntries:day.entries||[]});
+    // pro dnešek preferuj todayLog pokud calData nemá entries
+    let entries=day.entries||[];
+    if(k===todayKey&&(!entries.length||entries.length<state.todayLog.filter(e=>!e.live).length)){
+      entries=state.todayLog.filter(e=>!e.live);
+    }
+    entries.filter(e=>e.type==='reaction').forEach(e=>{
+      reactions.push({date:k,ts:e.ts,sub:e.sub,allEntries:entries});
     });
   });
 
-  // z todayLog (dnešní den)
+  // z todayLog — reakce které ještě nejsou v calData
   state.todayLog.filter(e=>e.type==='reaction').forEach(e=>{
-    reactions.push({date:todayKey,ts:e.ts,sub:e.sub,dayEntries:state.todayLog});
+    if(!reactions.some(r=>r.date===todayKey&&Math.abs(r.ts-e.ts)<60000)){
+      reactions.push({date:todayKey,ts:e.ts,sub:e.sub,allEntries:state.todayLog.filter(x=>!x.live)});
+    }
   });
 
-  // seřadit podle data
   reactions.sort((a,b)=>a.ts-b.ts);
 
   if(!reactions.length){
@@ -3241,21 +3250,30 @@ function exportAlergolog(){
       lines.push('');
       lines.push((i+1)+'. '+datum+' v '+cas);
 
-      // typ reakce + poznámka
       const parts=(r.sub||'').split('·').map(s=>s.trim()).filter(Boolean);
       parts.forEach(p=>lines.push('   '+p));
 
-      // co jedla předtím — max 6 hodin zpět
-      const before=r.dayEntries
-        .filter(e=>(e.type==='food'||e.type==='breast')&&e.ts<r.ts&&(r.ts-e.ts)<6*3600000)
-        .sort((a,b)=>b.ts-a.ts);
+      // co jedla předtím — porovnej čas v daném dni (jako v openPlanReactionDetail)
+      const reactionMins=new Date(r.ts).getHours()*60+new Date(r.ts).getMinutes();
+      const before=r.allEntries
+        .filter(e=>{
+          if(e.type!=='food'&&e.type!=='breast')return false;
+          const em=new Date(e.ts).getHours()*60+new Date(e.ts).getMinutes();
+          return em<reactionMins&&(reactionMins-em)<360; // max 6h před
+        })
+        .sort((a,b)=>{
+          const ma=new Date(a.ts).getHours()*60+new Date(a.ts).getMinutes();
+          const mb=new Date(b.ts).getHours()*60+new Date(b.ts).getMinutes();
+          return mb-ma;
+        });
 
       if(before.length){
         lines.push('   Co jedla předtím:');
         before.forEach(e=>{
-          const minAgo=Math.round((r.ts-e.ts)/60000);
-          const kdy=minAgo<60?minAgo+'min před':Math.round(minAgo/60)+'h před';
-          const co=e.type==='breast'?'kojení':e.sub||e.name;
+          const em=new Date(e.ts).getHours()*60+new Date(e.ts).getMinutes();
+          const minAgo=reactionMins-em;
+          const kdy=minAgo<60?minAgo+'min před':Math.floor(minAgo/60)+'h'+(minAgo%60?' '+minAgo%60+'min':'')+'před';
+          const co=e.type==='breast'?'kojení':(e.sub||e.name);
           lines.push('   – '+co+' ('+kdy+')');
         });
       }
@@ -3654,6 +3672,13 @@ function getPrevDays(n,offset){
 // ============================================================
 // VÁHOVÝ DENÍK
 // ============================================================
+function openAddWeightModal(){
+  document.getElementById('wDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('wKg').value='';
+  document.getElementById('wCm').value='';
+  document.getElementById('wNote').value='';
+  openModal('mAddWeight');
+}
 function saveWeightEntry(){
   const date=document.getElementById('wDate').value;
   const kgRaw=document.getElementById('wKg').value.replace(',','.');
@@ -3743,16 +3768,6 @@ function renderWeightList(){
       ${w.note?`<span style="font-size:10px;color:var(--text-3);margin-left:auto">${w.note}</span>`:''}
     </div>`;
   }).join('');
-}
-
-// Patch renderSettings to include weight
-const _origRenderSettings=renderSettings;
-function renderSettings(){
-  _origRenderSettings();
-  renderWeightChart();
-  renderWeightList();
-  // init weight modal
-  document.getElementById('wDate').value=new Date().toISOString().slice(0,10);
 }
 
 renderAll();
