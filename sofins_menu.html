@@ -917,8 +917,9 @@ const FDB = [
   {name:'květák',cat:'zelenina',month:4,status:'new'},{name:'máslová dýně',cat:'zelenina',month:4,status:'ok'},
   {name:'mrkev',cat:'zelenina',month:4,status:'ok'},{name:'petržel',cat:'zelenina',month:4,status:'new'},
   {name:'pastinák',cat:'zelenina',month:4,status:'new'},{name:'špenát',cat:'zelenina',month:4,status:'new'},
-  {name:'celer',cat:'zelenina',month:6,status:'new'},{name:'okurka',cat:'zelenina',month:6,status:'new'},
-  {name:'rajče',cat:'zelenina',month:6,status:'new'},{name:'zelené fazolky',cat:'zelenina',month:6,status:'new'},
+  {name:'celer',cat:'zelenina',month:6,status:'new',allergen:true,allergenNo:9},
+  {name:'okurka',cat:'zelenina',month:6,status:'new'},{name:'rajče',cat:'zelenina',month:6,status:'new'},
+  {name:'zelené fazolky',cat:'zelenina',month:6,status:'new'},
   {name:'kapusta',cat:'zelenina',month:7,status:'new'},{name:'kedlubna',cat:'zelenina',month:7,status:'new'},
   {name:'pórek',cat:'zelenina',month:7,status:'new'},{name:'paprika',cat:'zelenina',month:8,status:'new'},
   {name:'kuřecí',cat:'bilkoviny',month:5,status:'ok'},{name:'kuřecí vývar',cat:'bilkoviny',month:5,status:'ok'},
@@ -927,10 +928,13 @@ const FDB = [
   {name:'telecí',cat:'bilkoviny',month:5,status:'new'},{name:'telecí vývar',cat:'bilkoviny',month:5,status:'new'},
   {name:'vepřové',cat:'bilkoviny',month:5,status:'new'},{name:'vepřový vývar',cat:'bilkoviny',month:5,status:'new'},
   {name:'jehněčí',cat:'bilkoviny',month:5,status:'new'},
-  {name:'hovězí',cat:'bilkoviny',month:5,status:'no',allergen:true},
-  {name:'kapr',cat:'bilkoviny',month:7,status:'new'},{name:'rybí vývar',cat:'bilkoviny',month:7,status:'new'},
-  {name:'losos',cat:'bilkoviny',month:7,status:'new'},
-  {name:'treska',cat:'bilkoviny',month:7,status:'new'},{name:'čočka červená',cat:'bilkoviny',month:8,status:'new'},
+  {name:'hovězí',cat:'bilkoviny',month:5,status:'no'},
+  {name:'kapr',cat:'bilkoviny',month:7,status:'new',allergen:true,allergenNo:4},
+  {name:'rybí vývar',cat:'bilkoviny',month:7,status:'new',allergen:true,allergenNo:4},
+  {name:'losos',cat:'bilkoviny',month:7,status:'new',allergen:true,allergenNo:4},
+  {name:'treska',cat:'bilkoviny',month:7,status:'new',allergen:true,allergenNo:4},
+  {name:'čočka červená',cat:'bilkoviny',month:8,status:'new'},
+  {name:'arašídy',cat:'bilkoviny',month:12,status:'new',allergen:true,allergenNo:5},
   {name:'avokádo',cat:'ovoce',month:5,status:'ok'},{name:'banán',cat:'ovoce',month:5,status:'ok'},
   {name:'borůvka',cat:'ovoce',month:5,status:'new'},{name:'broskev',cat:'ovoce',month:5,status:'new'},
   {name:'hruška',cat:'ovoce',month:5,status:'ok'},{name:'jablko',cat:'ovoce',month:5,status:'ok'},
@@ -940,16 +944,25 @@ const FDB = [
   {name:'kiwi',cat:'ovoce',month:6,status:'new'},{name:'meloun',cat:'ovoce',month:6,status:'new'},
   {name:'třešně',cat:'ovoce',month:6,status:'new'},
   {name:'rýže',cat:'obiloviny',month:5,status:'ok'},{name:'kukuřice',cat:'obiloviny',month:5,status:'ok'},
-  {name:'oves',cat:'obiloviny',month:5,status:'warn'},{name:'pohanka',cat:'obiloviny',month:5,status:'new'},
-  {name:'proso',cat:'obiloviny',month:5,status:'new'},{name:'amarant',cat:'obiloviny',month:5,status:'new'},
-  {name:'ječmen',cat:'obiloviny',month:5,status:'new'},{name:'pšenice',cat:'obiloviny',month:5,status:'new'},
-  {name:'žito',cat:'obiloviny',month:5,status:'new'},{name:'jáhly',cat:'obiloviny',month:8,status:'new'},
-  {name:'olivový olej',cat:'tuky',month:4,status:'ok'},{name:'máslo',cat:'tuky',month:6,status:'warn'},
-  {name:'bílý jogurt',cat:'tuky',month:6,status:'new'},{name:'žloutek',cat:'tuky',month:6,status:'new'},
+  {name:'oves',cat:'obiloviny',month:5,status:'warn',allergen:true,allergenNo:1},
+  {name:'pohanka',cat:'obiloviny',month:5,status:'new'},{name:'proso',cat:'obiloviny',month:5,status:'new'},
+  {name:'amarant',cat:'obiloviny',month:5,status:'new'},
+  {name:'ječmen',cat:'obiloviny',month:5,status:'new',allergen:true,allergenNo:1},
+  {name:'pšenice',cat:'obiloviny',month:5,status:'new',allergen:true,allergenNo:1},
+  {name:'žito',cat:'obiloviny',month:5,status:'new',allergen:true,allergenNo:1},
+  {name:'jáhly',cat:'obiloviny',month:8,status:'new'},
+  {name:'olivový olej',cat:'tuky',month:4,status:'ok'},
+  {name:'máslo',cat:'tuky',month:6,status:'warn',allergen:true,allergenNo:7},
+  {name:'bílý jogurt',cat:'tuky',month:6,status:'new',allergen:true,allergenNo:7},
+  {name:'žloutek',cat:'tuky',month:6,status:'new',allergen:true,allergenNo:3},
+  {name:'vejce',cat:'tuky',month:12,status:'no',allergen:true,allergenNo:3},
   {name:'mateřské mléko',cat:'tuky',month:4,status:'ok'},
-  {name:'sója',cat:'tuky',month:5,status:'no',allergen:true},
-  {name:'sezam',cat:'tuky',month:6,status:'no',allergen:true},
-  {name:'vejce',cat:'tuky',month:12,status:'no',allergen:true},
+  {name:'sója',cat:'tuky',month:5,status:'no',allergen:true,allergenNo:6},
+  {name:'sezam',cat:'tuky',month:6,status:'no',allergen:true,allergenNo:11},
+  {name:'vlašské ořechy',cat:'tuky',month:12,status:'new',allergen:true,allergenNo:8},
+  {name:'lískové ořechy',cat:'tuky',month:12,status:'new',allergen:true,allergenNo:8},
+  {name:'mandle',cat:'tuky',month:12,status:'new',allergen:true,allergenNo:8},
+  {name:'kešu',cat:'tuky',month:12,status:'new',allergen:true,allergenNo:8},
 ];
 
 // ============================================================
@@ -2478,7 +2491,7 @@ function renderFoods(){
       const status=ov.status||f.status||'new';
       const cls=status==='ok'?'ok':status==='warn'?'warn':status==='no'?'no':'';
       const dot=status==='ok'?'ok':status==='warn'?'warn':status==='no'?'no':'new';
-      const at=f.allergen?'<span style="font-size:9px;background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:7px;margin-left:3px">alergen</span>':'';
+      const at=f.allergen?`<span style="font-size:9px;background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:7px;margin-left:3px">⚠ alergen ${f.allergenNo||''}</span>`:'';
       const customBadge=f.custom?'<span style="font-size:9px;background:var(--slate-light);color:var(--slate-dark);padding:1px 5px;border-radius:7px;margin-left:3px">vlastní</span>':'';
       const lastUsed=ov.lastUsed?`<span style="font-size:10px;color:var(--text-3);margin-right:4px">${fmtDateShort(ov.lastUsed)}</span>`:'';
       const isChecked=foodSelectMode&&selectedFoodNames.has(f.name);
@@ -2511,7 +2524,7 @@ function renderFoods(){
         else cls+=' new-pill'; // nezkoušeno = vždy modrá
         const clickFn=foodSelectMode?`toggleFoodItemSelect('${f.name}',this)`:`openFoodDetail('${f.name}')`;
         const selStyle=selectedFoodNames.has(f.name)?'outline:2px solid var(--rose-btn);':'';
-        return`<span class="${cls}" style="${selStyle}" onclick="${clickFn}">${(f.allergen||st==='no')?'⚠ ':''}${f.name}</span>`;
+        return`<span class="${cls}" style="${selStyle}" onclick="${clickFn}">${f.allergen?`⚠${f.allergenNo||''} `:''}${f.name}</span>`;
       }).join('');
       return`<div class="tl-month"><div class="tl-ml">${m}. měsíc <span class="tl-b ${bc}">${badge}</span></div><div class="tl-pills">${pills}</div></div>`;
     }).join('');
