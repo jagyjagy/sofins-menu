@@ -1615,19 +1615,26 @@ function deleteCurrentEntry(){
 
 function editCurrentEntry(){
   if(currentEntryId){
-    // dnešní záznam
     const e=state.todayLog.find(x=>x.id===currentEntryId);
     if(!e)return;
-    closeModal('mEntryDetail');editSelFoods=[];
+    closeModal('mEntryDetail');
+    // wakeup/bedtime — jednoduchý modal s časem
+    if(e.type==='wakeup'||e.type==='bedtime'){
+      const newTime=prompt(e.name+' — změnit čas:', fmtTime(e.ts));
+      if(!newTime)return;
+      const ts=parseTimeToTs(newTime);
+      if(ts)e.ts=ts;
+      renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
+      return;
+    }
+    editSelFoods=[];
     openEditEntryModal(e);
   } else if(currentCalEntry){
-    // minulý záznam — otevři editaci z calData
     const day=state.calData[currentCalEntry.dayKey];
     if(!day)return;
     const e=day.entries.find(x=>x.ts===currentCalEntry.ts&&x.type===currentCalEntry.type);
     if(!e)return;
     closeModal('mEntryDetail');editSelFoods=[];
-    // vytvoř pseudo-entry pro editaci
     currentEditingCalEntry={dayKey:currentCalEntry.dayKey,ts:currentCalEntry.ts,type:currentCalEntry.type};
     openEditEntryModal({...e,id:'cal-edit'});
   }
@@ -1817,8 +1824,8 @@ function openEntryDetail(id){
   document.getElementById('edIcon').textContent=em;
   document.getElementById('edTitle').textContent=e.name;
   document.getElementById('edTime').textContent=fmtTime(e.ts)+(e.by?' · '+e.by:'');
-  // skrýt Upravit pro wakeup/bedtime
-  if(editBtn&&(isWakeup||isBedtime))editBtn.style.display='none';
+  // skrýt Upravit jen pro typy bez editace — wakeup/bedtime mají časovou editaci
+  // takže Upravit necháme viditelný pro všechno
   let body='';
   if(e.type==='food'){
     body+=`<div style="margin-bottom:10px"><div style="font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Složky</div>`;
