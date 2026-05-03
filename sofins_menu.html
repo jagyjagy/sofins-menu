@@ -551,7 +551,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <div class="set-card">
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">👶</div><div class="set-lbl"><div class="set-lbl-t">Jméno</div></div><span class="set-val" id="svName">Sofinka</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">🎂</div><div class="set-lbl"><div class="set-lbl-t">Datum narození</div></div><span class="set-val" id="svBirth">14. 8. 2024</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
-          <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">⚖️</div><div class="set-lbl"><div class="set-lbl-t">Váha</div></div><span class="set-val" id="svWeight">7,8 kg</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">⏰</div><div class="set-lbl"><div class="set-lbl-t">Večerka</div><div class="set-lbl-s">čas pro odpočet</div></div><span class="set-val" id="svBedtime">—</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
@@ -2398,9 +2397,11 @@ function selDay(y,m,day){
       html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;
       entries.forEach((e,i)=>{
         const isReaction=e.type==='reaction';
+        const isWakeup=e.type==='wakeup';
+        const isBedtime=e.type==='bedtime';
         const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':isReaction?' style="background:#fff5f5;border-color:#f09595"':'';
-        const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
-        const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':'🍽';
+        const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
+        const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':'🍽';
         const origTs=e.ts;const origType=e.type;
         html+=`<div class="ecard${isReaction?'':cc}" ${isReaction?'style="background:#fff5f5;border-color:#f09595"':''} onclick="${isReaction?`openPlanReactionDetail('${k}')`:`openPlanEntryDetailByTsType('${k}',${origTs},'${origType}')`}">
           <span class="etime">${fmtTime(e.ts)}</span>
@@ -2527,7 +2528,16 @@ function openPlanEntryDetailWithEdit(dayKey,idx){
   openPlanEntryDetailByTsType(dayKey,e.ts,e.type);
 }
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
-function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
+function setCalView(v){
+  calView=v;
+  document.getElementById('vtM').classList.toggle('active',v==='month');
+  document.getElementById('vtW').classList.toggle('active',v==='week');
+  // synchronizuj stats toggle
+  statsView=v;
+  document.getElementById('vsW').classList.toggle('active',v==='week');
+  document.getElementById('vsM').classList.toggle('active',v==='month');
+  closePlanDetail();renderCal();
+}
 function navPrev(){if(calView==='month'){curMonth--;if(curMonth<0){curMonth=11;curYear--;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()-7);renderWeek();}}
 function navNext(){if(calView==='month'){curMonth++;if(curMonth>11){curMonth=0;curYear++;}renderMonth();}else{curWeekStart.setDate(curWeekStart.getDate()+7);renderWeek();}}
 
@@ -2712,7 +2722,7 @@ function renderSettings(){
   document.getElementById('avAge').textContent=calcAge(s.birth)+' · '+fmtDate(s.birth);
   document.getElementById('svName').textContent=s.name;
   document.getElementById('svBirth').textContent=fmtDate(s.birth);
-  document.getElementById('svWeight').textContent=s.weight+' kg';
+  if(document.getElementById('svWeight'))document.getElementById('svWeight').textContent=s.weight+' kg';
   document.getElementById('svBedtime').textContent=s.bedtime||'—';
   document.getElementById('appSubtitle').textContent=s.name+' · '+calcAge(s.birth);
   document.getElementById('foodSubtitle').textContent=calcAge(s.birth)+' · zavádění';
@@ -3431,13 +3441,22 @@ let statsOffset=0; // 0=aktuální, -1=předchozí...
 
 function togglePlanStats(){
   statsMode=!statsMode;
-  document.getElementById('statsBtn').classList.toggle('active',statsMode);
+  const btn=document.getElementById('statsBtn');
+  btn.textContent=statsMode?'← Plán':'📊 Statistiky';
   document.getElementById('calView').style.display=statsMode?'none':'block';
   document.getElementById('statsView').style.display=statsMode?'block':'none';
   document.getElementById('calControls').style.display=statsMode?'none':'block';
   document.getElementById('statsControls').style.display=statsMode?'block':'none';
   document.getElementById('planSelectBtn').style.display=statsMode?'none':'block';
-  if(statsMode){statsOffset=0;renderStats();}
+  if(statsMode){
+    // Synchronizuj view s plánem (calView)
+    const isMonth=calView==='month';
+    statsView=isMonth?'month':'week';
+    document.getElementById('vsW').classList.toggle('active',!isMonth);
+    document.getElementById('vsM').classList.toggle('active',isMonth);
+    statsOffset=0;
+    renderStats();
+  }
 }
 
 function setStatsView(v){
@@ -3453,13 +3472,14 @@ function statsNavNext(){if(statsOffset<0){statsOffset++;renderStats();}}
 function getStatsDays(){
   const days=[];
   if(statsView==='week'){
-    const start=new Date(TODAY);
-    start.setDate(start.getDate()-start.getDay()+1+statsOffset*7); // Po
-    if(start.getDay()===0)start.setDate(start.getDate()-6);
-    for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);days.push(d);}
-    const end=new Date(days[6]);
+    // Pondělí aktuálního týdne + offset
+    const now=new Date(TODAY);
+    const dow=now.getDay()===0?6:now.getDay()-1; // 0=Po, 6=Ne
+    const monday=new Date(now);
+    monday.setDate(now.getDate()-dow+statsOffset*7);
+    for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);days.push(d);}
     const fmt=d=>d.getDate()+'.'+(d.getMonth()+1)+'.';
-    document.getElementById('statsLbl').textContent=fmt(days[0])+' – '+fmt(end);
+    document.getElementById('statsLbl').textContent=fmt(days[0])+' – '+fmt(days[6]);
   } else {
     const d=new Date(TODAY.getFullYear(),TODAY.getMonth()+statsOffset,1);
     const dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
@@ -3541,30 +3561,6 @@ function renderStats(){
   function fmtDur(ms){if(!ms)return'—';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h>0?h+'h'+(m?' '+m+'min':''):m+'min';}
   function fmtNum(n,dec=1){return Number(n.toFixed(dec)).toLocaleString('cs-CZ');}
 
-  // Váha pro měsíční view
-  let weightBlock='';
-  if(statsView==='month'){
-    const wLog=(state.weightLog||[]).filter(w=>{
-      const d=new Date(w.date);
-      return keys.includes(dateKey(d));
-    });
-    if(wLog.length){
-      const latest=wLog[wLog.length-1];
-      const prev=wLog.length>1?wLog[wLog.length-2]:null;
-      const gain=prev?(latest.kg-prev.kg)*1000:null;
-      weightBlock=`
-      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px">
-        <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">⚖️ Váha</div>
-        <div style="display:flex;align-items:baseline;gap:6px">
-          <span style="font-size:28px;font-weight:600">${latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})}</span>
-          <span style="font-size:13px;color:var(--text-2)">kg</span>
-          ${gain!==null?`<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:${gain>0?'#eaf3de':'#fcebeb'};color:${gain>0?'#27500a':'#a32d2d'}">${gain>0?'+':''}${Math.round(gain)}g</span>`:''}
-        </div>
-        ${latest.cm?`<div style="font-size:11px;color:var(--text-3);margin-top:3px">Výška: ${latest.cm} cm</div>`:''}
-      </div>`;
-    }
-  }
-
   const statCard=(icon,label,val,dlt)=>`
     <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;flex:1;min-width:0">
       <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${icon} ${label}</div>
@@ -3574,18 +3570,65 @@ function renderStats(){
       </div>
     </div>`;
 
+  // Váha — zobraz v obou pohledech
+  const allWeight=state.weightLog||[];
+  let weightBlock='';
+  {
+    // nejnovější vážení celkově (nebo v tomto období)
+    const latestW=allWeight.length?allWeight[allWeight.length-1]:null;
+    const prevW=allWeight.length>1?allWeight[allWeight.length-2]:null;
+    if(latestW){
+      const gain=prevW?(latestW.kg-prevW.kg)*1000:null;
+      weightBlock=`
+      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px;cursor:pointer" onclick="switchTab('settings')">
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">⚖️ Aktuální váha</div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-size:26px;font-weight:600">${latestW.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})}</span>
+          <span style="font-size:13px;color:var(--text-2)">kg</span>
+          ${gain!==null?`<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:${gain>0?'#eaf3de':'#fcebeb'};color:${gain>0?'#27500a':'#a32d2d'}">${gain>0?'+':''}${Math.round(gain)}g</span>`:''}
+          ${latestW.cm?`<span style="font-size:11px;color:var(--text-3)">${latestW.cm} cm</span>`:''}
+        </div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Váženo ${new Date(latestW.date+' 12:00').getDate()}.${new Date(latestW.date+' 12:00').getMonth()+1}. · klikni pro deník</div>
+      </div>`;
+    }
+  }
+
+  // Reakce — klikatelný seznam
+  const reactionList=[];
+  keys.forEach(k=>{
+    const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+    entries.filter(e=>e.type==='reaction').forEach(e=>{
+      const d=new Date(k+' 12:00');
+      reactionList.push(`<div style="padding:5px 0;border-bottom:.5px solid var(--rose-mid);font-size:12px">
+        <span style="color:var(--text-3)">${d.getDate()}.${d.getMonth()+1}. ${fmtTime(e.ts)}</span>
+        <span style="margin-left:8px;color:var(--red)">${(e.sub||'Reakce').split('·')[0].trim()}</span>
+      </div>`);
+    });
+  });
+
+  const reactionCard=reactions>0
+    ?`<div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">⚠️ Reakce</div>
+        <div style="font-size:18px;font-weight:600;color:var(--red);margin-bottom:6px">${reactions}×</div>
+        <div style="max-height:120px;overflow-y:auto">${reactionList.join('')}</div>
+      </div>`
+    :statCard('⚠️','Reakce','0×','');
+
+  const avgBreast=n?breastCount/n:0;
+  const pAvgBreast=prevDays.length?pBreast/prevDays.length:0;
+
   document.getElementById('statsContent').innerHTML=`
     ${weightBlock}
     <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${statCard('😴','Průměrný spánek',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000))}
+      ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000))}
       ${statCard('🌙','Nejdelší spánek',fmtDur(maxSleep),'')}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       ${statCard('🍽','Jídla / den',avgFood?fmtNum(avgFood)+'×':'—',delta(avgFood,pAvgFood))}
-      ${statCard('🤱','Kojení celkem',breastCount+'×',delta(breastCount,pBreast))}
+      ${statCard('🤱','Kojení / den',avgBreast?fmtNum(avgBreast,1)+'×':'—',delta(avgBreast,pAvgBreast))}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${statCard('⚠️','Reakce',reactions+'×',delta(reactions,pReactions,false))}
+      ${reactionCard}
       ${statCard('🥣','Nové pot.',newFoods.size+'','')}
     </div>
     <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:4px">
@@ -3613,16 +3656,16 @@ function getPrevDays(n,offset){
 // ============================================================
 function saveWeightEntry(){
   const date=document.getElementById('wDate').value;
-  const kg=parseFloat(document.getElementById('wKg').value);
-  const cm=parseFloat(document.getElementById('wCm').value)||null;
+  const kgRaw=document.getElementById('wKg').value.replace(',','.');
+  const kg=parseFloat(kgRaw);
+  const cmRaw=document.getElementById('wCm').value.replace(',','.');
+  const cm=parseFloat(cmRaw)||null;
   const note=document.getElementById('wNote').value.trim();
-  if(!date||isNaN(kg)){closeModal('mAddWeight');return;}
+  if(!date||isNaN(kg)||kg<=0){alert('Zadej prosím datum a hmotnost.');return;}
   if(!state.weightLog)state.weightLog=[];
-  // odstraň duplicitu stejného dne
   state.weightLog=state.weightLog.filter(w=>w.date!==date);
-  state.weightLog.push({date,kg,cm,note});
+  state.weightLog.push({date,kg:Math.round(kg*100)/100,cm:cm?Math.round(cm*10)/10:null,note});
   state.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
-  // aktualizuj váhu v profilu (nejnovější záznam)
   const latest=state.weightLog[state.weightLog.length-1];
   state.settings.weight=latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2});
   closeModal('mAddWeight');renderSettings();saveAll();
@@ -3631,27 +3674,53 @@ function saveWeightEntry(){
 function renderWeightChart(){
   const log=state.weightLog||[];
   const canvas=document.getElementById('weightChart');
-  if(!canvas||!log.length){if(canvas)canvas.style.display='none';return;}
+  if(!canvas){return;}
+  if(!log.length){canvas.style.display='none';return;}
   canvas.style.display='block';
-  const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||300,H=60;
+  const W=(canvas.parentElement?canvas.parentElement.offsetWidth-24:0)||280,H=100;
   canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
-  const vals=log.map(w=>w.kg);
-  const mn=Math.min(...vals)-0.2,mx=Math.max(...vals)+0.2;
-  const px=(i)=>i*(W-20)/(log.length-1||1)+10;
-  const py=(v)=>H-8-(v-mn)/(mx-mn||1)*(H-16);
-  // linie
-  ctx.strokeStyle='#d4948a';ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
-  ctx.beginPath();log.forEach((w,i)=>{i===0?ctx.moveTo(px(i),py(w.kg)):ctx.lineTo(px(i),py(w.kg));});ctx.stroke();
-  // tečky
-  log.forEach((w,i)=>{ctx.fillStyle='#d4948a';ctx.beginPath();ctx.arc(px(i),py(w.kg),3,0,Math.PI*2);ctx.fill();});
-  // popisky
-  ctx.fillStyle='#b89390';ctx.font='10px -apple-system,sans-serif';ctx.textAlign='center';
-  log.forEach((w,i)=>{
-    if(i===0||i===log.length-1||log.length<=4)
-      ctx.fillText(w.kg.toLocaleString('cs-CZ',{minimumFractionDigits:1}),px(i),py(w.kg)-7);
+  // WHO střední hodnoty pro dívky (kg) po měsících 0-36
+  const WHO=[3.2,4.2,5.1,5.8,6.4,6.9,7.3,7.6,7.9,8.2,8.5,8.7,8.9,9.2,9.4,9.6,9.8,10.0,10.2,10.4,10.6,10.9,11.1,11.3,11.5,11.7,11.9,12.1,12.3,12.5,12.7,12.9,13.1,13.3,13.5,13.6,13.8];
+  const birth=state.settings.birth||'2024-08-14';
+  const bDate=new Date(birth+' 12:00');
+  const pts=log.map(w=>{
+    const d=new Date(w.date+' 12:00');
+    const age=(d.getFullYear()-bDate.getFullYear())*12+(d.getMonth()-bDate.getMonth());
+    return{kg:w.kg,age:Math.max(0,age)};
   });
+  const minAge=Math.max(0,(pts.length?Math.min(...pts.map(p=>p.age)):0)-1);
+  const maxAge=Math.min(36,(pts.length?Math.max(...pts.map(p=>p.age)):12)+1);
+  const whoSlice=WHO.slice(minAge,maxAge+1);
+  const allKg=[...pts.map(p=>p.kg),...whoSlice];
+  const mn=Math.min(...allKg)-0.3,mx=Math.max(...allKg)+0.3;
+  const pxA=age=>(age-minAge)/(maxAge-minAge||1)*(W-20)+10;
+  const pyK=kg=>H-18-(kg-mn)/(mx-mn||1)*(H-26);
+  // WHO křivka
+  if(whoSlice.length>1){
+    ctx.setLineDash([4,4]);ctx.strokeStyle='#b5d4f4';ctx.lineWidth=1.5;
+    ctx.beginPath();whoSlice.forEach((kg,i)=>{i===0?ctx.moveTo(pxA(minAge+i),pyK(kg)):ctx.lineTo(pxA(minAge+i),pyK(kg));});ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // Sofinkina linie
+  if(pts.length>1){
+    ctx.strokeStyle='#d4948a';ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.beginPath();pts.forEach((p,i)=>{i===0?ctx.moveTo(pxA(p.age),pyK(p.kg)):ctx.lineTo(pxA(p.age),pyK(p.kg));});ctx.stroke();
+  }
+  // Tečky
+  pts.forEach(p=>{ctx.fillStyle='#d4948a';ctx.beginPath();ctx.arc(pxA(p.age),pyK(p.kg),3.5,0,Math.PI*2);ctx.fill();});
+  // Popisky krajních bodů
+  ctx.fillStyle='#7a5c59';ctx.font='10px -apple-system,sans-serif';ctx.textAlign='center';
+  [0,pts.length-1].filter((v,i,a)=>a.indexOf(v)===i).forEach(i=>{
+    if(pts[i])ctx.fillText(pts[i].kg.toLocaleString('cs-CZ',{minimumFractionDigits:1})+'kg',pxA(pts[i].age),pyK(pts[i].kg)-7);
+  });
+  // Legenda
+  ctx.font='9px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#d4948a';ctx.fillRect(10,H-8,14,2);ctx.fillStyle='#7a5c59';ctx.fillText('Sofinka',28,H-5);
+  ctx.strokeStyle='#b5d4f4';ctx.setLineDash([3,3]);ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(78,H-7);ctx.lineTo(92,H-7);ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle='#7a5c59';ctx.fillText('WHO průměr',96,H-5);
 }
 
 function renderWeightList(){
