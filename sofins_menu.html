@@ -1032,7 +1032,7 @@ function applyRemoteState(remote) {
   state.freezer = remote.freezer || state.freezer;
   state.settings = remote.settings || state.settings;
   state.foodOverrides = remote.foodOverrides || state.foodOverrides;
-  state.customFoods = remote.customFoods || state.customFoods;
+  state.customFoods = (remote.customFoods&&remote.customFoods.length) ? remote.customFoods : state.customFoods;
   state.brands = remote.brands || state.brands;
   if (remote.calData) state.calData = remote.calData;
   // pokud se změnil stav spánku, aktualizuj UI okamžitě
@@ -2354,7 +2354,6 @@ function openPlanEntryDetailByIdx(dayKey,idx){
 
 function openPlanReactionDetail(dayKey){
   const todayKey=dateKey(TODAY);
-  // Pro dnešek vezmi data z todayLog, pro ostatní dny z calData
   let entries;
   if(dayKey===todayKey){
     entries=state.todayLog.filter(e=>!e.live);
@@ -2368,21 +2367,30 @@ function openPlanReactionDetail(dayKey){
   const dowIdx=d.getDay()===0?6:d.getDay()-1;
   document.getElementById('rdTime').textContent=DAYS_MON[dowIdx]+' '+d.getDate()+'. '+MONTHS_GEN[d.getMonth()];
   const types=reaction?(reaction.sub||'').split('·')[0].split(',').map(s=>s.trim()).filter(Boolean):[];
-  document.getElementById('rdTypes').innerHTML=types.length?types.map(t=>`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">${t}</span>`).join(''):`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">Reakce</span>`;
+  document.getElementById('rdTypes').innerHTML=types.length?
+    types.map(t=>`<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">${t}</span>`).join(''):
+    `<span style="background:var(--red-bg);color:var(--red);font-size:11px;padding:3px 9px;border-radius:16px;border:.5px solid #f09595;font-weight:500">Reakce</span>`;
   const suspectEl=document.getElementById('rdSuspect');
   const suspect=reaction?(reaction.sub||'').split('·').find(p=>p.includes('Podezřelé:')):'';
-  if(suspect){suspectEl.style.display='block';suspectEl.textContent='🔍 '+suspect.trim();}else{suspectEl.style.display='none';}
+  if(suspect){suspectEl.style.display='block';suspectEl.textContent='🔍 '+suspect.trim();}
+  else{suspectEl.style.display='none';}
   document.getElementById('rdNote').style.display='none';
-  const hist=entries.filter(e=>(e.type==='food'||e.type==='breast')&&(reactionTs===null||e.ts<reactionTs)).sort((a,b)=>b.ts-a.ts).slice(0,8);
+  // Jídla před reakcí — pokud nemáme reactionTs, ukažeme všechna jídla daného dne
+  const foodEntries=entries.filter(e=>e.type==='food'||e.type==='breast');
+  const hist=reactionTs
+    ? foodEntries.filter(e=>e.ts<reactionTs).sort((a,b)=>b.ts-a.ts).slice(0,8)
+    : foodEntries.sort((a,b)=>b.ts-a.ts).slice(0,8);
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
     const minBefore=reactionTs?Math.round((reactionTs-h.ts)/60000):null;
-    const timeStr=minBefore!==null?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+(minBefore%60)+'min před'):fmtTime(h.ts);
+    const timeStr=minBefore!==null
+      ?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+(minBefore%60?minBefore%60+'min ':'')+'před')
+      :fmtTime(h.ts);
     const isClose=minBefore!==null&&minBefore<=120;
     return`<div class="rh-item ${isClose?'close-r':''}">
-      <div style="min-width:70px;text-align:right"><div style="font-size:11px;font-weight:600;color:${isClose?'var(--red)':'var(--text-2)'}">${timeStr}</div></div>
+      <div style="min-width:80px;text-align:right"><div style="font-size:11px;font-weight:600;color:${isClose?'var(--red)':'var(--text-2)'}">${timeStr}</div></div>
       <div><div style="font-size:12px;color:var(--text)">${h.sub||h.name}</div></div>
     </div>`;
-  }).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy</div>`;
+  }).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy v tento den</div>`;
   openModal('mReactionDetail');
 }
 
@@ -2737,6 +2745,8 @@ if(savedState){
     if(s.freezer!==undefined)state.freezer=s.freezer;
     if(s.fzNextId!==undefined)state.fzNextId=s.fzNextId;
     if(s.foodOverrides!==undefined)state.foodOverrides=s.foodOverrides;
+    if(s.customFoods&&s.customFoods.length)state.customFoods=s.customFoods;
+    if(s.brands&&s.brands.length)state.brands=s.brands;
     // settings — merge jen co je uloženo, nepřepisovat výchozí pokud chybí
     if(s.settings){
       state.settings={...state.settings,...s.settings};
