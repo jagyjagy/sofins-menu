@@ -1024,7 +1024,7 @@ function applyRemoteState(remote) {
   if (!remote || !remote.ts) return;
   if (remote.ts <= lastRemoteTs) return;
   lastRemoteTs = remote.ts;
-  const wasMe = (Date.now() - remote.ts) < 300;
+  const wasMe = (Date.now() - remote.ts) < 10000; // 10s okno
   if (wasMe) return;
   const sleepWasActive = state.sleep && state.sleep.active;
   state.todayLog = remote.todayLog || state.todayLog;
@@ -1032,14 +1032,17 @@ function applyRemoteState(remote) {
   state.freezer = remote.freezer || state.freezer;
   state.settings = remote.settings || state.settings;
   state.foodOverrides = remote.foodOverrides || state.foodOverrides;
-  state.customFoods = (remote.customFoods&&remote.customFoods.length) ? remote.customFoods : state.customFoods;
-  state.brands = remote.brands || state.brands;
-  if (remote.calData) state.calData = remote.calData;
-  // pokud se změnil stav spánku, aktualizuj UI okamžitě
-  const sleepNowActive = state.sleep && state.sleep.active;
-  if (sleepWasActive !== sleepNowActive) {
-    updateSleepUI();
+  // customFoods — merge: zachovej lokální pokud remote nemá nebo má méně
+  if(remote.customFoods&&remote.customFoods.length>=((state.customFoods||[]).length)){
+    state.customFoods = remote.customFoods;
   }
+  // brands — stejně
+  if(remote.brands&&remote.brands.length>=((state.brands||[]).length)){
+    state.brands = remote.brands;
+  }
+  if (remote.calData) state.calData = remote.calData;
+  const sleepNowActive = state.sleep && state.sleep.active;
+  if (sleepWasActive !== sleepNowActive) updateSleepUI();
   renderAll();
   setSyncStatus('ok');
 }
@@ -1440,24 +1443,22 @@ function saveFood(){
   checkWarnFoods(savedFoods);
 }
 
-// Spočítá kolikrát byla potravina přidána do jídla napříč vší historií
+function getFoodsFromSub(sub){
+  let s=sub||'';
+  // ignoruj brand prefix "🏪 Název · "
+  if(s.includes('·'))s=s.split('·').slice(1).join('·');
+  return s.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+}
+
 function countFoodUsage(foodName){
+  const name=foodName.toLowerCase().trim();
   let count=0;
-  const name=foodName.toLowerCase();
   state.todayLog.forEach(e=>{
-    if(e.type==='food'){
-      let sub=e.sub||'';
-      if(sub.includes('🏪')&&sub.includes('·'))sub=sub.split('·').slice(1).join('·').trim();
-      if(sub.split(',').some(s=>s.trim().toLowerCase()===name))count++;
-    }
+    if(e.type==='food'&&getFoodsFromSub(e.sub).includes(name))count++;
   });
   Object.values(state.calData||{}).forEach(day=>{
     (day.entries||[]).forEach(e=>{
-      if(e.type==='food'){
-        let sub=e.sub||'';
-        if(sub.includes('🏪')&&sub.includes('·'))sub=sub.split('·').slice(1).join('·').trim();
-        if(sub.split(',').some(s=>s.trim().toLowerCase()===name))count++;
-      }
+      if(e.type==='food'&&getFoodsFromSub(e.sub).includes(name))count++;
     });
   });
   return count;
