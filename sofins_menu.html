@@ -95,6 +95,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .etime{font-size:11px;color:var(--text-3);min-width:34px;flex-shrink:0}
 .eicon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .i-food{background:var(--rose-light)}.i-breast{background:#ede4f7}.i-sleep{background:#dde5f0}
+.i-wakeup{background:#fef3b0}.i-bedtime{background:#e4e0f7}
 .einfo{flex:1;min-width:0}
 .ename{font-size:13px;font-weight:500;color:var(--text)}
 .esub{font-size:11px;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -337,6 +338,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <div class="subtitle" id="appSubtitle">Sofinka · 8 měsíců</div>
         <div class="status-row" id="statusRow"></div>
       </div>
+      <div style="padding:0 16px 6px">
+        <button id="btnSleepToggle" onclick="toggleWakeSleep()" class="act-btn" style="width:100%;background:#fffbe6;border-color:#f5d87a">
+          <div class="act-icon" id="wakeSlpIcon" style="background:#fef3b0">🌅</div>
+          <span class="act-label" id="wakeSlpLabel" style="color:#7a5c00">Vstala</span>
+        </button>
+      </div>
       <div class="action-row">
         <button class="act-btn btn-food" onclick="openModal('mFood')">
           <div class="act-icon">+</div>
@@ -446,6 +453,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <button class="ftab" onclick="filterFood('obiloviny',this)">Obiloviny</button>
         <button class="ftab" onclick="filterFood('bilkoviny',this)">Bílkoviny</button>
         <button class="ftab" onclick="filterFood('tuky',this)">Tuky & jiné</button>
+      </div>
+      <div class="food-tabs" id="foodStatusBar" style="margin-top:0;border-top:.5px solid var(--rose-mid)">
+        <button class="ftab active" onclick="filterFoodStatus('vse',this)">Vše</button>
+        <button class="ftab" onclick="filterFoodStatus('new',this)">🔵 Nezk.</button>
+        <button class="ftab" onclick="filterFoodStatus('warn',this)">🟡 Sleduj.</button>
+        <button class="ftab" onclick="filterFoodStatus('no',this)">🔴 Elim.</button>
+        <button class="ftab" onclick="filterFoodStatus('ok',this)">✅ OK</button>
       </div>
     </div>
     <div class="scroll-area">
@@ -690,6 +704,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <div id="exportCopied" style="display:none;font-size:11px;color:var(--green);margin-bottom:8px;text-align:center">✓ Zkopírováno do schránky</div>
   <textarea id="exportText" readonly style="width:100%;min-height:320px;border-radius:11px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--text);font-size:11px;font-family:monospace;padding:10px;resize:none;line-height:1.6"></textarea>
   <button class="mcancel" onclick="closeModal('mExport')">Zavřít</button>
+</div></div></div>
+
+<!-- MODAL přezkum statusu potraviny -->
+<div class="modal-wrap" id="mStatusReview"><div class="movl" onclick="closeStatusReview()"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div style="font-size:13px;color:var(--text-2);margin-bottom:4px" id="srSubtitle"></div>
+  <div class="mtitle" id="srTitle"></div>
+  <div style="font-size:13px;color:var(--text-2);margin:8px 0 14px" id="srMsg"></div>
+  <div style="display:flex;flex-direction:column;gap:8px" id="srButtons"></div>
+</div></div></div>
+
+<!-- MODAL upravit potravinu -->
+<div class="modal-wrap" id="mEditFood"><div class="movl" onclick="closeModal('mEditFood')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle" id="mEditFoodTitle">Upravit potravinu</div>
+  <div class="mrow"><label>Název</label><input type="text" id="efName" placeholder="název potraviny"/></div>
+  <div class="mrow"><label>Kategorie</label>
+    <div class="type-btns">
+      <button class="type-btn" onclick="selType(this)">Zelenina</button>
+      <button class="type-btn" onclick="selType(this)">Ovoce</button>
+      <button class="type-btn" onclick="selType(this)">Obiloviny</button>
+      <button class="type-btn" onclick="selType(this)">Bílkoviny</button>
+      <button class="type-btn" onclick="selType(this)">Tuky & jiné</button>
+      <button class="type-btn" onclick="selType(this)">Nezařazeno</button>
+    </div>
+  </div>
+  <div class="mrow"><label>Status</label>
+    <div class="type-btns">
+      <button class="type-btn" onclick="selType(this)">🔵 Nezkoušeno</button>
+      <button class="type-btn" onclick="selType(this)">🟡 Sledujeme</button>
+      <button class="type-btn" onclick="selType(this)">🔴 Eliminováno</button>
+      <button class="type-btn" onclick="selType(this)">✅ Bez reakce</button>
+    </div>
+  </div>
+  <div class="mrow"><label>Poznámka</label><input type="text" id="efNote" placeholder="volitelně..."/></div>
+  <button class="msave" onclick="saveEditFood()">Uložit změny</button>
+  <button class="mcancel" onclick="closeModal('mEditFood')">Zrušit</button>
 </div></div></div>
 
 <!-- MODAL přidat potravinu -->
@@ -1149,7 +1199,7 @@ function showScreen(n){
 // RENDER ALL
 // ============================================================
 function renderAll(){
-  renderTodayBadge();renderStatus();renderTodayList();updateSleepUI();
+  renderTodayBadge();renderStatus();renderTodayList();updateSleepUI();updateWakeSleepBtn();
   if(curScreen==='plan')renderCal();
   if(curScreen==='food')renderFoods();
   if(curScreen==='freezer')renderFreezer();
@@ -1241,9 +1291,11 @@ function renderTodayList(){
   const el=document.getElementById('todayList');
   el.innerHTML=sorted.map(e=>{
     const isReaction=e.type==='reaction';
+    const isWakeup=e.type==='wakeup';
+    const isBedtime=e.type==='bedtime';
     const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):isReaction?' reaction-card':'';
-    const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
-    const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':'🍽';
+    const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
+    const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':'🍽';
     const who=e.by?`<span class="who ${byMap[e.by]||'who-tata'}">${e.by}</span>`:'';
     const rd=e.reaction&&!isReaction?`<div class="rdot">⚠</div>`:'';
     const lb=e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'';
@@ -1352,9 +1404,84 @@ function saveFood(){
   const brand=document.getElementById('brandInput')?.value.trim()||'';
   const sub=[brand?'🏪 '+brand:'',selFoods.join(', ')].filter(Boolean).join(' · ');
   state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub,brand:brand||null,reaction:false,by:whoAmI()});
-  selFoods.forEach(food=>{const fz=state.freezer.find(f=>f.foods.includes(food)&&f.amount>0);if(fz)fz.amount=Math.max(0,fz.amount-1);});
+  const savedFoods=[...selFoods];
+  selFoods.forEach(food=>{
+    const fz=state.freezer.find(f=>f.foods.includes(food)&&f.amount>0);
+    if(fz)fz.amount=Math.max(0,fz.amount-1);
+    // auto-změna statusu: nezkoušeno → sledujeme
+    const ov=(state.foodOverrides||{})[food]||{};
+    const fdbEntry=FDB.find(f=>f.name===food)||(state.customFoods||[]).find(f=>f.name===food);
+    const currentStatus=ov.status||(fdbEntry?fdbEntry.status:'new');
+    if(currentStatus==='new'){
+      if(!state.foodOverrides)state.foodOverrides={};
+      state.foodOverrides[food]={...ov,status:'warn',lastUsed:new Date().toISOString().slice(0,10)};
+    } else {
+      if(!state.foodOverrides)state.foodOverrides={};
+      state.foodOverrides[food]={...ov,lastUsed:new Date().toISOString().slice(0,10)};
+    }
+  });
   state.freezer=state.freezer.filter(f=>f.amount>0);
   selFoods=[];renderSelFoodsEl();renderTodayList();renderStatus();closeModal('mFood');saveAll();
+  // zkontroluj potraviny ve statusu "sledujeme" s 3+ záznamy
+  checkWarnFoods(savedFoods);
+}
+
+function checkWarnFoods(foods){
+  if(!foods||!foods.length)return;
+  const warnFoods=foods.filter(food=>{
+    const ov=(state.foodOverrides||{})[food]||{};
+    const fdb=FDB.find(f=>f.name===food)||(state.customFoods||[]).find(f=>f.name===food);
+    const status=ov.status||(fdb?fdb.status:'new');
+    if(status!=='warn')return false;
+    let count=0;
+    state.todayLog.forEach(e=>{if(e.type==='food'&&(e.sub||'').includes(food))count++;});
+    Object.values(state.calData||{}).forEach(day=>{(day.entries||[]).forEach(e=>{if(e.type==='food'&&(e.sub||'').includes(food))count++;});});
+    return count>=3;
+  });
+  if(warnFoods.length) showStatusReview(warnFoods);
+}
+
+let reviewFoodQueue=[];
+function showStatusReview(foods){
+  reviewFoodQueue=[...foods];
+  showNextReview();
+}
+
+function showNextReview(){
+  if(!reviewFoodQueue.length)return;
+  const food=reviewFoodQueue[0];
+  let count=0;
+  state.todayLog.forEach(e=>{if(e.type==='food'&&(e.sub||'').includes(food))count++;});
+  Object.values(state.calData||{}).forEach(day=>{(day.entries||[]).forEach(e=>{if(e.type==='food'&&(e.sub||'').includes(food))count++;});});
+  document.getElementById('srSubtitle').textContent='Potravina ve sledování';
+  document.getElementById('srTitle').textContent=food;
+  document.getElementById('srMsg').textContent=`Přidáno ${count}× — chceš změnit status?`;
+  document.getElementById('srButtons').innerHTML=`
+    <button onclick="applyReviewStatus('ok')" style="padding:10px;border-radius:12px;background:#eaf3de;border:.5px solid #c0dd97;color:#3b6d11;font-size:13px;font-weight:600;cursor:pointer">✅ Bez reakce — toleruje dobře</button>
+    <button onclick="applyReviewStatus('no')" style="padding:10px;border-radius:12px;background:var(--red-bg);border:.5px solid #f09595;color:var(--red);font-size:13px;font-weight:600;cursor:pointer">🔴 Eliminovat — měla reakci</button>
+    <button onclick="closeStatusReview()" style="padding:10px;border-radius:12px;background:var(--rose-light);border:.5px solid var(--rose-mid);color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer">🟡 Stále sledujeme</button>
+  `;
+  openModal('mStatusReview');
+}
+
+function applyReviewStatus(status){
+  const food=reviewFoodQueue.shift();
+  if(!food){closeModal('mStatusReview');return;}
+  if(!state.foodOverrides)state.foodOverrides={};
+  state.foodOverrides[food]={...(state.foodOverrides[food]||{}),status};
+  if(status==='no'&&!state.settings.allergens.some(a=>a.toLowerCase()===food.toLowerCase()))
+    state.settings.allergens.push(food);
+  else if(status!=='no')
+    state.settings.allergens=state.settings.allergens.filter(a=>a.toLowerCase()!==food.toLowerCase());
+  closeModal('mStatusReview');
+  saveAll();
+  if(reviewFoodQueue.length) setTimeout(()=>showNextReview(),300);
+}
+
+function closeStatusReview(){
+  reviewFoodQueue.shift();
+  closeModal('mStatusReview');
+  if(reviewFoodQueue.length) setTimeout(()=>showNextReview(),300);
 }
 function saveBreast(){
   const ts=parseTimeToTs(document.getElementById('breastTime').value);
@@ -1382,8 +1509,9 @@ function saveReaction(){
 
 // food suggest
 function allFoods(){
-  // všechny dostupné potraviny: FDB + vlastní
-  return [...FDB,...(state.customFoods||[])];
+  const fdb=FDB.filter(f=>f.month<=CM);
+  const custom=(state.customFoods||[]);
+  return [...fdb,...custom];
 }
 
 function showSuggest(val){
@@ -1429,6 +1557,8 @@ function checkFzSug(){
 // ENTRY DETAIL
 // ============================================================
 let currentEntryId=null;
+let currentCalEntry=null;    // pro záznamy z calData (minulé dny)
+let currentEditingCalEntry=null;
 let editSelFoods=[];
 
 function initEntrySwipe(id){
@@ -1458,20 +1588,49 @@ function initEntrySwipe(id){
 }
 
 function deleteCurrentEntry(){
-  if(!currentEntryId)return;
-  if(confirm('Smazat záznam?')){
-    state.todayLog=state.todayLog.filter(x=>x.id!==currentEntryId);
-    closeModal('mEntryDetail');renderTodayList();renderStatus();saveAll();
+  if(currentEntryId){
+    // dnešní záznam — smaž z todayLog
+    if(confirm('Smazat záznam?')){
+      state.todayLog=state.todayLog.filter(x=>x.id!==currentEntryId);
+      closeModal('mEntryDetail');renderTodayList();renderStatus();saveAll();
+    }
+  } else if(currentCalEntry){
+    // minulý záznam — smaž z calData
+    if(confirm('Smazat záznam?')){
+      const day=state.calData[currentCalEntry.dayKey];
+      if(day&&day.entries){
+        day.entries=day.entries.filter(e=>!(e.ts===currentCalEntry.ts&&e.type===currentCalEntry.type));
+        // přepočítej stats
+        day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+        day.breast=day.entries.filter(e=>e.type==='breast').length;
+        day.sleep=day.entries.filter(e=>e.type==='sleep').length;
+        day.reaction=day.entries.some(e=>e.type==='reaction');
+      }
+      closeModal('mEntryDetail');
+      if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
+      saveAll();
+    }
   }
 }
 
 function editCurrentEntry(){
-  if(!currentEntryId)return;
-  const e=state.todayLog.find(x=>x.id===currentEntryId);
-  if(!e)return;
-  closeModal('mEntryDetail');
-  editSelFoods=[];
-  openEditEntryModal(e);
+  if(currentEntryId){
+    // dnešní záznam
+    const e=state.todayLog.find(x=>x.id===currentEntryId);
+    if(!e)return;
+    closeModal('mEntryDetail');editSelFoods=[];
+    openEditEntryModal(e);
+  } else if(currentCalEntry){
+    // minulý záznam — otevři editaci z calData
+    const day=state.calData[currentCalEntry.dayKey];
+    if(!day)return;
+    const e=day.entries.find(x=>x.ts===currentCalEntry.ts&&x.type===currentCalEntry.type);
+    if(!e)return;
+    closeModal('mEntryDetail');editSelFoods=[];
+    // vytvoř pseudo-entry pro editaci
+    currentEditingCalEntry={dayKey:currentCalEntry.dayKey,ts:currentCalEntry.ts,type:currentCalEntry.type};
+    openEditEntryModal({...e,id:'cal-edit'});
+  }
 }
 
 function openEditEntryModal(e){
@@ -1621,33 +1780,45 @@ function saveEditEntry(){
       e.sub=start+' – '+end+' · '+durStr+(note?' · '+note:'');
     }
   }
-  closeModal('mEditEntry');renderTodayList();renderStatus();saveAll();
-  if(curScreen==='plan'){
-    // znovu otevři detail pokud byl otevřený
-    if(planSelDate&&planDetOpen){
-      const d=planSelDate;
-      selDay(d.getFullYear(),d.getMonth(),d.getDate());
-    } else {
-      renderCal();
+  closeModal('mEditEntry');renderTodayList();renderStatus();
+  // Pokud editujeme záznam z calData (minulý den), ulož i tam
+  if(currentEditingCalEntry){
+    const day=state.calData[currentEditingCalEntry.dayKey];
+    if(day&&day.entries){
+      const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type===currentEditingCalEntry.type);
+      if(idx>=0){
+        day.entries[idx]={...day.entries[idx],ts:e.ts,name:e.name,sub:e.sub};
+        day.entries.sort((a,b)=>a.ts-b.ts);
+      }
     }
+    currentEditingCalEntry=null;
+  }
+  saveAll();
+  if(curScreen==='plan'&&planSelDate&&planDetOpen){
+    const d=planSelDate;
+    selDay(d.getFullYear(),d.getMonth(),d.getDate());
+  } else if(curScreen==='plan'){
+    renderCal();
   }
 }
 
 function openEntryDetail(id){
   currentEntryId=id;
-  // obnovit tlačítka Upravit a Smazat
   const editBtn=document.getElementById('edEditBtn');
   const delBtn=document.getElementById('edDeleteBtn');
   if(editBtn)editBtn.style.display='';
   if(delBtn)delBtn.style.display='';
   const e=state.todayLog.find(x=>x.id===id);
   if(!e)return;
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':'🍽';
-  const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)'};
+  const isWakeup=e.type==='wakeup',isBedtime=e.type==='bedtime';
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isWakeup?'🌅':isBedtime?'🌙':'🍽';
+  const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',wakeup:'#fef3b0',bedtime:'#e4e0f7'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
   document.getElementById('edTitle').textContent=e.name;
   document.getElementById('edTime').textContent=fmtTime(e.ts)+(e.by?' · '+e.by:'');
+  // skrýt Upravit pro wakeup/bedtime
+  if(editBtn&&(isWakeup||isBedtime))editBtn.style.display='none';
   let body='';
   if(e.type==='food'){
     body+=`<div style="margin-bottom:10px"><div style="font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Složky</div>`;
@@ -1661,6 +1832,8 @@ function openEntryDetail(id){
     body+=`</div>`;
   } else if(e.type==='sleep'){
     body+=`<div style="background:#f2f5fa;border-radius:9px;padding:10px 12px;font-size:13px;color:var(--slate-dark)">${e.sub||''}</div>`;
+  } else {
+    body+=`<div style="background:#f2f5fa;border-radius:9px;padding:10px 12px;font-size:13px;color:var(--text-2)">${fmtTime(e.ts)}</div>`;
   }
   document.getElementById('edBody').innerHTML=body;
   openModal('mEntryDetail');
@@ -1687,9 +1860,10 @@ function openReactionDetail(id){
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
     const el=e.ts-h.ts;const mins=Math.floor(el/60000);
     const clr=mins<=120?'var(--red)':mins<=240?'var(--amber)':'var(--text-2)';
-    const warn=h.type==='food'&&mins<=120?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;margin-left:4px">⚠ blízko</span>':'';
+    const timeStr=mins<60?mins+'min před':Math.floor(mins/60)+'h '+(mins%60?mins%60+'min ':'')+'před';
+    const warn=h.type==='food'&&mins<=120?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;margin-left:4px">⚠</span>':'';
     return`<div class="rh-item ${h.type==='food'&&mins<=120?'close-r':''}">
-      <div style="min-width:58px;text-align:right"><div style="font-size:11px;font-weight:600;color:${clr}">${fmtElapsed(el)}</div><div style="font-size:10px;color:var(--text-3)">${fmtTime(h.ts)}</div></div>
+      <div style="min-width:70px;text-align:right"><div style="font-size:11px;font-weight:600;color:${clr}">${timeStr}</div></div>
       <div><div style="font-size:12px;color:${h.type==='breast'?'#5c3d8a':'var(--text)'}">${h.type==='breast'?'🤱 ':''} ${h.sub||h.name}${warn}</div></div>
     </div>`;
   }).join(''):`<div style="font-size:13px;color:var(--text-3);font-style:italic">Žádné záznamy před reakcí</div>`;
@@ -1779,9 +1953,9 @@ function syncTodayToCalData(){
     type:e.type,ts:e.ts,name:e.name,sub:e.sub,reaction:e.reaction||e.type==='reaction'
   }));
 }
-function openPlanEntryDetail(e){
-  // Toto je detail pro záznamy z calData (minulé dny) — bez editace
+function openPlanEntryDetail(e, dayKey){
   currentEntryId=null;
+  currentCalEntry=dayKey?{dayKey,ts:e.ts,type:e.type}:null;
   const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':e.type==='reaction'?'⚠️':'🍽';
   const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',reaction:'var(--red-bg)'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
@@ -1790,7 +1964,6 @@ function openPlanEntryDetail(e){
   document.getElementById('edTime').textContent=fmtTime(e.ts);
   let body='';
   if(e.type==='food'){
-    // Parsuj složky — ignoruj brand prefix
     let subPart=e.sub||'';
     if(subPart.includes('🏪')&&subPart.includes('·'))subPart=subPart.split('·').slice(1).join('·').trim();
     const foods=subPart.split(',').map(s=>s.trim()).filter(Boolean);
@@ -1800,11 +1973,10 @@ function openPlanEntryDetail(e){
     body+=`<div style="background:#f2f5fa;border-radius:9px;padding:10px 12px;font-size:13px;color:var(--slate-dark)">${e.sub||''}</div>`;
   }
   document.getElementById('edBody').innerHTML=body;
-  // skrýt tlačítka Upravit a Smazat pro záznamy z minulosti (nejsou v todayLog)
   const editBtn=document.getElementById('edEditBtn');
   const delBtn=document.getElementById('edDeleteBtn');
-  if(editBtn)editBtn.style.display='none';
-  if(delBtn)delBtn.style.display='none';
+  if(editBtn)editBtn.style.display='';
+  if(delBtn)delBtn.style.display='';
   openModal('mEntryDetail');
 }
 
@@ -2136,8 +2308,8 @@ function openPlanEntryDetailWithEdit(dayKey,idx){
       return;
     }
   }
-  // Pro minulé/budoucí dny — zobraz detail přímo z calData (bez editace)
-  openPlanEntryDetail(e);
+  // Pro minulé/budoucí dny — zobraz detail přímo z calData
+  openPlanEntryDetail(e, dayKey);
 }
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
@@ -2147,7 +2319,7 @@ function navNext(){if(calView==='month'){curMonth++;if(curMonth>11){curMonth=0;c
 // ============================================================
 // POTRAVINY
 // ============================================================
-let foodCat='vse',foodView='list',foodSearchQuery='';
+let foodCat='vse',foodView='list',foodSearchQuery='',foodStatusFilter='vse';
 let currentFoodDetail=null; // {name, idx in FDB}
 
 function getFoodOverride(name){return (state.foodOverrides||{})[name]||{};}
@@ -2161,6 +2333,8 @@ function renderFoods(){
     const customList=foodCat==='vse'?custom:custom.filter(f=>f.cat===foodCat||f.cat==='nezařazeno');
     let fullList=[...list,...customList];
     if(foodSearchQuery)fullList=fullList.filter(f=>f.name.toLowerCase().includes(foodSearchQuery));
+    // status filter
+    if(foodStatusFilter!=='vse')fullList=fullList.filter(f=>{const st=(getFoodOverride(f.name).status||f.status||'new');return st===foodStatusFilter;});
     // seřadit: nezkoušeno → sledujeme → eliminováno → bez reakce
     const sortOrder={new:0,warn:1,no:2,ok:3};
     fullList.sort((a,b)=>{
@@ -2185,7 +2359,8 @@ function renderFoods(){
         <span class="fname">${f.name}${at}${customBadge}</span>
         ${lastUsed}
         <span class="fst st-${status}">${stL[status]}</span>
-        ${foodSelectMode?'':'<svg class="ch" style="margin-left:4px" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg>'}
+        ${foodSelectMode?'':`<button onclick="event.stopPropagation();openEditFoodModal('${f.name}')" style="padding:2px 8px;border-radius:7px;border:.5px solid var(--rose-mid);background:transparent;font-size:11px;color:var(--text-2);cursor:pointer;flex-shrink:0">✏</button>`}
+        ${foodSelectMode?'':'<svg class="ch" style="margin-left:2px" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg>'}
       </div>`;
     }).join('');
   } else {
@@ -2234,6 +2409,7 @@ function clearFoodSearch(){
   document.getElementById('foodSearchClear').style.display='none';
   renderFoods();
 }
+function filterFoodStatus(s,btn){foodStatusFilter=s;document.querySelectorAll('#foodStatusBar .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFoods();}
 function filterFood(cat,btn){foodCat=cat;document.querySelectorAll('.food-tabs .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFoods();}
 function setFoodView(v){
   foodView=v;
@@ -2878,6 +3054,113 @@ function copyExport(){
     document.getElementById('exportCopied').style.display='block';
     setTimeout(()=>document.getElementById('exportCopied').style.display='none',2000);
   }
+}
+
+// ============================================================
+// VSTALA / ŠLA SPÁT
+// ============================================================
+function toggleWakeSleep(){
+  // Výchozí: "Šla spát". Po kliknutí → zapíše a přepne.
+  const todayKey=dateKey(TODAY);
+  const lastEntry=state.todayLog.filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&dateKey(new Date(e.ts))===todayKey).sort((a,b)=>b.ts-a.ts)[0];
+  // Pokud poslední je bedtime nebo žádný → "Vstala"
+  if(lastEntry&&lastEntry.type==='bedtime'){
+    logWakeUp();
+  } else {
+    logBedtime();
+  }
+}
+
+function updateWakeSleepBtn(){
+  const todayKey=dateKey(TODAY);
+  const lastEntry=state.todayLog.filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&dateKey(new Date(e.ts))===todayKey).sort((a,b)=>b.ts-a.ts)[0];
+  const isBedtime=lastEntry&&lastEntry.type==='bedtime'; // poslední byl bedtime → čekáme na vstala
+  const icon=document.getElementById('wakeSlpIcon');
+  const label=document.getElementById('wakeSlpLabel');
+  const btn=document.getElementById('btnSleepToggle');
+  if(!icon||!label||!btn)return;
+  if(isBedtime){
+    // čekáme na vstávání
+    icon.textContent='🌅';icon.style.background='#fef3b0';
+    label.textContent='Vstala';label.style.color='#7a5c00';
+    btn.style.background='#fffbe6';btn.style.borderColor='#f5d87a';
+  } else {
+    // výchozí — čekáme na usnutí
+    icon.textContent='🌙';icon.style.background='#e4e0f7';
+    label.textContent='Šla spát';label.style.color='#4a3d8f';
+    btn.style.background='#f0f0fa';btn.style.borderColor='#c5c0e8';
+  }
+}
+
+function logWakeUp(){
+  const now=Date.now();
+  // Zapiš noční spánek do včerejška
+  const yesterday=new Date(TODAY);yesterday.setDate(yesterday.getDate()-1);
+  const yKey=dateKey(yesterday);
+  const allBedtime=[...state.todayLog,...((state.calData[yKey]||{}).entries||[])].filter(e=>e.type==='bedtime').sort((a,b)=>b.ts-a.ts)[0];
+  if(allBedtime){
+    const dur=now-allBedtime.ts;
+    const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+    const durStr=h>0?h+'h'+(m?' '+m+'min':''):m+'min';
+    if(!state.calData[yKey])state.calData[yKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+    // odstraň předchozí noční spánek
+    state.calData[yKey].entries=state.calData[yKey].entries.filter(e=>e.sub&&!e.sub.includes('Noční'));
+    state.calData[yKey].entries.push({type:'sleep',ts:allBedtime.ts,name:'Noční spánek',sub:fmtTime(allBedtime.ts)+' – '+fmtTime(now)+' · '+durStr,reaction:false});
+    state.calData[yKey].sleep=(state.calData[yKey].entries||[]).filter(e=>e.type==='sleep').length;
+  }
+  renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
+}
+
+function logBedtime(){
+  const now=Date.now();
+  const todayKey=dateKey(TODAY);
+  state.todayLog=state.todayLog.filter(e=>e.type!=='bedtime'||dateKey(new Date(e.ts))!==todayKey);
+  state.todayLog.push({id:'bt'+now,type:'bedtime',ts:now,name:'Šla spát',sub:'večerní usnutí',reaction:false,by:whoAmI()});
+  renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
+}
+
+// ============================================================
+// EDIT POTRAVINY
+// ============================================================
+let editFoodName=null;
+
+function openEditFoodModal(name){
+  editFoodName=name;
+  const fdb=FDB.find(f=>f.name===name);
+  const custom=(state.customFoods||[]).find(f=>f.name===name);
+  const f=fdb||custom||{name,cat:'nezařazeno',status:'new'};
+  const ov=(state.foodOverrides||{})[name]||{};
+  const status=ov.status||f.status||'new';
+  const catMap={zelenina:'Zelenina',ovoce:'Ovoce',obiloviny:'Obiloviny',bilkoviny:'Bílkoviny',tuky:'Tuky & jiné',nezařazeno:'Nezařazeno'};
+  const statusMap={new:'🔵 Nezkoušeno',warn:'🟡 Sledujeme',no:'🔴 Eliminováno',ok:'✅ Bez reakce'};
+  document.getElementById('efName').value=name;
+  document.getElementById('efNote').value=ov.note||f.note||'';
+  document.querySelectorAll('#mEditFood .mrow:nth-child(2) .type-btn').forEach(b=>b.classList.toggle('sel',b.textContent===(catMap[f.cat]||'Nezařazeno')));
+  document.querySelectorAll('#mEditFood .mrow:nth-child(3) .type-btn').forEach(b=>b.classList.toggle('sel',b.textContent===statusMap[status]));
+  openModal('mEditFood');
+}
+
+function saveEditFood(){
+  if(!editFoodName)return;
+  const newName=document.getElementById('efName').value.trim()||editFoodName;
+  const catMap={'Zelenina':'zelenina','Ovoce':'ovoce','Obiloviny':'obiloviny','Bílkoviny':'bilkoviny','Tuky & jiné':'tuky','Nezařazeno':'nezařazeno'};
+  const statusMap={'🔵 Nezkoušeno':'new','🟡 Sledujeme':'warn','🔴 Eliminováno':'no','✅ Bez reakce':'ok'};
+  const catBtn=document.querySelector('#mEditFood .mrow:nth-child(2) .type-btn.sel');
+  const statusBtn=document.querySelector('#mEditFood .mrow:nth-child(3) .type-btn.sel');
+  const cat=catMap[catBtn?catBtn.textContent:'Nezařazeno']||'nezařazeno';
+  const status=statusMap[statusBtn?statusBtn.textContent:'🔵 Nezkoušeno']||'new';
+  const note=document.getElementById('efNote').value;
+  if(!state.foodOverrides)state.foodOverrides={};
+  if(newName!==editFoodName){delete state.foodOverrides[editFoodName];}
+  state.foodOverrides[newName]={...(state.foodOverrides[editFoodName]||{}),status,note};
+  const cidx=(state.customFoods||[]).findIndex(f=>f.name===editFoodName);
+  if(cidx>=0)state.customFoods[cidx]={...state.customFoods[cidx],name:newName,cat,note};
+  if(status==='no'&&!state.settings.allergens.some(a=>a.toLowerCase()===newName.toLowerCase()))
+    state.settings.allergens.push(newName);
+  else if(status!=='no')
+    state.settings.allergens=state.settings.allergens.filter(a=>a.toLowerCase()!==newName.toLowerCase());
+  editFoodName=null;
+  closeModal('mEditFood');renderFoods();saveAll();
 }
 
 renderAll();
