@@ -1232,14 +1232,28 @@ function renderStatus(){
 
   // === MODRÉ — vzhůru + naspala ===
 
-  // 👀 vzhůru už / 💤 právě spí
-  if(state.sleep.active){
+  // Poslední bedtime/wakeup záznam dnešku
+  const wbEntries=allToday.filter(e=>e.type==='bedtime'||e.type==='wakeup').sort((a,b)=>b.ts-a.ts);
+  const lastWB=wbEntries[0];
+  const isSleeping=state.sleep.active||(lastWB&&lastWB.type==='bedtime');
+
+  // 💤 právě spí / 👀 vzhůru už
+  if(isSleeping){
     html+=`<div class="chip blue"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    const allS=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
-    if(allS.length){
-      allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
-      const awMs=now-getSleepEndTs(allS[0]);
+    // "Vzhůru od" — od wakeup nebo od konce posledního spánku
+    let awakeFrom=null;
+    if(lastWB&&lastWB.type==='wakeup'){
+      awakeFrom=lastWB.ts;
+    } else {
+      const allS=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+      if(allS.length){
+        allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
+        awakeFrom=getSleepEndTs(allS[0]);
+      }
+    }
+    if(awakeFrom){
+      const awMs=now-awakeFrom;
       const awM=Math.max(0,Math.floor(awMs/60000));
       html+=`<div class="chip blue ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${mStr(awMs)}</span></span></div>`;
     }
@@ -1618,13 +1632,16 @@ function editCurrentEntry(){
     const e=state.todayLog.find(x=>x.id===currentEntryId);
     if(!e)return;
     closeModal('mEntryDetail');
-    // wakeup/bedtime — jednoduchý modal s časem
     if(e.type==='wakeup'||e.type==='bedtime'){
-      const newTime=prompt(e.name+' — změnit čas:', fmtTime(e.ts));
-      if(!newTime)return;
-      const ts=parseTimeToTs(newTime);
-      if(ts)e.ts=ts;
-      renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
+      const curTime=fmtTime(e.ts);
+      document.getElementById('editEntryTitle').textContent=e.name;
+      document.getElementById('editEntryBody').innerHTML=`<div class="mrow"><label>Čas</label><input type="time" id="wbEditTime" value="${curTime}"/></div>`;
+      document.getElementById('editEntryTime').style.display='none';
+      openModal('mEditEntry');
+      return;
+    }
+    if(e.type==='reaction'){
+      editReaction();
       return;
     }
     editSelFoods=[];
@@ -1634,8 +1651,17 @@ function editCurrentEntry(){
     if(!day)return;
     const e=day.entries.find(x=>x.ts===currentCalEntry.ts&&x.type===currentCalEntry.type);
     if(!e)return;
-    closeModal('mEntryDetail');editSelFoods=[];
+    closeModal('mEntryDetail');
+    // Pro reakci — otevři reaction modal prefilled
+    if(e.type==='reaction'){
+      currentEditingCalEntry={dayKey:currentCalEntry.dayKey,ts:currentCalEntry.ts,type:currentCalEntry.type};
+      openCalReactionEdit(e);
+      return;
+    }
+    editSelFoods=[];
+    // Nastav currentEditingCalEntry PŘED voláním openEditEntryModal
     currentEditingCalEntry={dayKey:currentCalEntry.dayKey,ts:currentCalEntry.ts,type:currentCalEntry.type};
+    // Předej KOPII s id pro zobrazení, ale uložení půjde přes currentEditingCalEntry
     openEditEntryModal({...e,id:'cal-edit'});
   }
 }
@@ -1740,18 +1766,34 @@ function recalcSleepDur(){
 }
 
 function saveEditEntry(){
-  const e=state.todayLog.find(x=>x.id===currentEntryId);
+  // Zjisti zdroj záznamu
+  let e=null;
+  if(currentEditingCalEntry){
+    const day=state.calData[currentEditingCalEntry.dayKey];
+    if(day&&day.entries){
+      e=day.entries.find(x=>x.ts===currentEditingCalEntry.ts&&x.type===currentEditingCalEntry.type);
+    }
+  } else {
+    e=state.todayLog.find(x=>x.id===currentEntryId);
+  }
   if(!e){closeModal('mEditEntry');return;}
 
+  // wakeup/bedtime — jen čas
+  if(e.type==='wakeup'||e.type==='bedtime'){
+    const t=document.getElementById('wbEditTime')?.value;
+    if(t)e.ts=parseTimeToTs(t);
+    closeModal('mEditEntry');renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
+    return;
+  }
+
+  const timeInp=document.getElementById('editEntryTime');
   if(e.type==='food'){
-    const timeInp=document.getElementById('editEntryTime');
     if(timeInp)e.ts=parseTimeToTs(timeInp.value);
     const typeBtn=document.querySelector('#mEditEntry .type-btn.sel');
     if(typeBtn&&!typeBtn.id.startsWith('sleepEdit'))e.name=typeBtn.textContent;
     if(editSelFoods.length)e.sub=editSelFoods.join(', ');
     editSelFoods=[];
   } else if(e.type==='breast'){
-    const timeInp=document.getElementById('editEntryTime');
     if(timeInp)e.ts=parseTimeToTs(timeInp.value);
     const side=document.querySelector('#mEditEntry .type-btn.sel');
     const dur=document.getElementById('editBreastDur')?.value||'15';
@@ -1788,15 +1830,19 @@ function saveEditEntry(){
     }
   }
   closeModal('mEditEntry');renderTodayList();renderStatus();
-  // Pokud editujeme záznam z calData (minulý den), ulož i tam
+  // calData — aktualizuj přímo záznam v day.entries
   if(currentEditingCalEntry){
     const day=state.calData[currentEditingCalEntry.dayKey];
     if(day&&day.entries){
       const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type===currentEditingCalEntry.type);
       if(idx>=0){
+        // aplikuj změny z e na originální záznam
         day.entries[idx]={...day.entries[idx],ts:e.ts,name:e.name,sub:e.sub};
-        day.entries.sort((a,b)=>a.ts-b.ts);
       }
+      day.entries.sort((a,b)=>a.ts-b.ts);
+      day.foods=[...new Set(day.entries.filter(x=>x.type==='food').flatMap(x=>(x.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+      day.breast=day.entries.filter(x=>x.type==='breast').length;
+      day.sleep=day.entries.filter(x=>x.type==='sleep').length;
     }
     currentEditingCalEntry=null;
   }
@@ -3168,6 +3214,43 @@ function saveEditFood(){
     state.settings.allergens=state.settings.allergens.filter(a=>a.toLowerCase()!==newName.toLowerCase());
   editFoodName=null;
   closeModal('mEditFood');renderFoods();saveAll();
+}
+
+function openCalReactionEdit(e){
+  const parts=(e.sub||'').split('·').map(s=>s.trim());
+  const types=parts[0]?parts[0].split(',').map(s=>s.trim()).filter(Boolean):[];
+  const suspect=parts.find(p=>p.startsWith('Podezřelé:'));
+  const note=parts.find(p=>p&&!p.startsWith('Podezřelé:')&&parts.indexOf(p)>0);
+  document.querySelectorAll('#mReaction .type-btn').forEach(b=>b.classList.toggle('sel',types.includes(b.textContent)));
+  document.getElementById('reactionTime').value=fmtTime(e.ts);
+  if(document.getElementById('suspectFood'))document.getElementById('suspectFood').value=suspect?suspect.replace('Podezřelé:','').trim():'';
+  if(document.getElementById('reactionNote'))document.getElementById('reactionNote').value=note||'';
+  openModal('mReaction');
+}
+
+// Override saveReaction to handle calData edits
+const _origSaveReaction=saveReaction;
+function saveReaction(){
+  if(currentEditingCalEntry){
+    const day=state.calData[currentEditingCalEntry.dayKey];
+    if(day&&day.entries){
+      const types=[...document.querySelectorAll('#mReaction .type-btn.sel')].map(b=>b.textContent);
+      const suspect=document.getElementById('suspectFood')?.value.trim()||'';
+      const note=document.getElementById('reactionNote')?.value.trim()||'';
+      const newTs=parseTimeToTs(document.getElementById('reactionTime').value)||currentEditingCalEntry.ts;
+      const sub=[types.join(', '),suspect?'Podezřelé: '+suspect:'',note].filter(Boolean).join(' · ');
+      const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type==='reaction');
+      if(idx>=0)day.entries[idx]={...day.entries[idx],ts:newTs,sub};
+      else day.entries.push({type:'reaction',ts:newTs,name:'Reakce',sub,reaction:true});
+      day.reaction=true;
+    }
+    currentEditingCalEntry=null;
+    closeModal('mReaction');
+    if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
+    saveAll();
+  } else {
+    _origSaveReaction();
+  }
 }
 
 renderAll();
