@@ -550,7 +550,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.0 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.14 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1636,7 +1636,6 @@ function editCurrentEntry(){
       const curTime=fmtTime(e.ts);
       document.getElementById('editEntryTitle').textContent=e.name;
       document.getElementById('editEntryBody').innerHTML=`<div class="mrow"><label>Čas</label><input type="time" id="wbEditTime" value="${curTime}"/></div>`;
-      document.getElementById('editEntryTime').style.display='none';
       openModal('mEditEntry');
       return;
     }
@@ -1739,10 +1738,11 @@ function renderEditSelFoods(){
 function showEditSuggest(val){
   const sg=document.getElementById('editFoodSug');
   if(!val){sg.style.display='none';return;}
-  const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&f.month<=CM&&!editSelFoods.includes(f.name)).slice(0,5);
-  if(!m.length){sg.style.display='none';return;}
+  const v=val.toLowerCase();
+  const all=allFoods().filter(f=>f.name.toLowerCase().includes(v)&&!editSelFoods.includes(f.name)).slice(0,6);
+  if(!all.length){sg.style.display='none';return;}
   sg.style.display='block';
-  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addEditFood('${f.name}')">${f.name}</div>`).join('');
+  sg.innerHTML=all.map(f=>`<div class="fsug-item" onclick="addEditFood('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||''}</span></div>`).join('');
 }
 function addEditFood(name){if(!editSelFoods.includes(name))editSelFoods.push(name);document.getElementById('editIngInput').value='';document.getElementById('editFoodSug').style.display='none';renderEditSelFoods();}
 function removeEditFood(name){editSelFoods=editSelFoods.filter(f=>f!==name);renderEditSelFoods();}
@@ -2266,8 +2266,8 @@ function selDay(y,m,day){
         const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':isReaction?' style="background:#fff5f5;border-color:#f09595"':'';
         const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':'i-food';
         const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':'🍽';
-        const origIdx=(dd.entries||[]).findIndex(x=>x.ts===e.ts&&x.type===e.type);
-        html+=`<div class="ecard${isReaction?'':cc}" ${isReaction?'style="background:#fff5f5;border-color:#f09595"':''} onclick="${isReaction?`openPlanReactionDetail('${k}')`:`openPlanEntryDetailWithEdit('${k}',${origIdx})`}">
+        const origTs=e.ts;const origType=e.type;
+        html+=`<div class="ecard${isReaction?'':cc}" ${isReaction?'style="background:#fff5f5;border-color:#f09595"':''} onclick="${isReaction?`openPlanReactionDetail('${k}')`:`openPlanEntryDetailByTsType('${k}',${origTs},'${origType}')`}">
           <span class="etime">${fmtTime(e.ts)}</span>
           <div class="eicon ${ic}" ${isReaction?'style="background:var(--red-bg)"':''}>${em}</div>
           <div class="einfo"><div class="ename" ${isReaction?'style="color:var(--red);font-weight:600"':''}>${e.name}</div><div class="esub">${e.sub||''}</div></div>
@@ -2347,22 +2347,23 @@ function selectBrandForFood(name){
 }
 
 // Fix plan entry edit - set currentEntryId for calData entries
+function openPlanEntryDetailByTsType(dayKey,ts,type){
+  const dd=state.calData[dayKey];
+  if(!dd||!dd.entries)return;
+  const e=dd.entries.find(x=>x.ts===ts&&x.type===type);
+  if(!e)return;
+  const todayKey=dateKey(TODAY);
+  if(dayKey===todayKey){
+    const match=state.todayLog.find(x=>x.type===e.type&&x.ts===e.ts&&!x.live);
+    if(match){currentEntryId=match.id;openEntryDetail(match.id);return;}
+  }
+  openPlanEntryDetail(e,dayKey);
+}
 function openPlanEntryDetailWithEdit(dayKey,idx){
   const dd=state.calData[dayKey];
   if(!dd||!dd.entries||dd.entries[idx]===undefined)return;
   const e=dd.entries[idx];
-  const todayKey=dateKey(TODAY);
-  // Pro dnešek hledej v todayLog (umožní editaci)
-  if(dayKey===todayKey){
-    const match=state.todayLog.find(x=>x.type===e.type&&x.ts===e.ts&&!x.live);
-    if(match){
-      currentEntryId=match.id;
-      openEntryDetail(match.id);
-      return;
-    }
-  }
-  // Pro minulé/budoucí dny — zobraz detail přímo z calData
-  openPlanEntryDetail(e, dayKey);
+  openPlanEntryDetailByTsType(dayKey,e.ts,e.type);
 }
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){calView=v;document.getElementById('vtM').classList.toggle('active',v==='month');document.getElementById('vtW').classList.toggle('active',v==='week');closePlanDetail();renderCal();}
