@@ -2314,7 +2314,12 @@ function selDay(y,m,day){
 
   if(!isFut){
     if(dd.reaction)html+=`<div style="margin:6px 16px;background:#fff5f5;border-radius:11px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500;cursor:pointer" onclick="openPlanReactionDetail('${k}')">⚠ Reakce zaznamenaná v tento den — klikni pro detail</div>`;
-    const entries=[...(dd.entries||[])].sort((a,b)=>b.ts-a.ts);
+    const entries=[...(dd.entries||[])].sort((a,b)=>{
+      // Řaď podle času v daném dni (HH:MM), ne absolutního ts
+      const timeA=a.ts%(24*3600000);
+      const timeB=b.ts%(24*3600000);
+      return timeB-timeA; // nejnovější nahoře
+    });
     if(entries.length){
       html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;
       entries.forEach((e,i)=>{
@@ -2373,14 +2378,22 @@ function openPlanReactionDetail(dayKey){
   document.getElementById('rdNote').style.display='none';
   // Jídla před reakcí — pokud nemáme reactionTs, ukažeme všechna jídla daného dne
   const foodEntries=entries.filter(e=>e.type==='food'||e.type==='breast');
-  const hist=reactionTs
-    ? foodEntries.filter(e=>e.ts<reactionTs).sort((a,b)=>b.ts-a.ts).slice(0,8)
-    : foodEntries.sort((a,b)=>b.ts-a.ts).slice(0,8);
+  // Pokud entries neobsahují jídla, zkus rekonstruovat z day.foods (starší data bez entries)
+  let hist;
+  if(foodEntries.length===0&&dd.foods&&dd.foods.length){
+    // Starší formát — day.foods je seznam názvů bez timestamps
+    // Zobraz je bez časového údaje
+    hist=dd.foods.map(f=>({type:'food',ts:0,name:'Jídlo',sub:f}));
+  } else {
+    hist=reactionTs
+      ? foodEntries.filter(e=>e.ts<reactionTs).sort((a,b)=>b.ts-a.ts).slice(0,8)
+      : foodEntries.sort((a,b)=>b.ts-a.ts).slice(0,8);
+  }
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
-    const minBefore=reactionTs?Math.round((reactionTs-h.ts)/60000):null;
+    const minBefore=reactionTs&&h.ts>0?Math.round((reactionTs-h.ts)/60000):null;
     const timeStr=minBefore!==null
       ?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+(minBefore%60?minBefore%60+'min ':'')+'před')
-      :fmtTime(h.ts);
+      :(h.ts>0?fmtTime(h.ts):'tentýž den');
     const isClose=minBefore!==null&&minBefore<=120;
     return`<div class="rh-item ${isClose?'close-r':''}">
       <div style="min-width:80px;text-align:right"><div style="font-size:11px;font-weight:600;color:${isClose?'var(--red)':'var(--text-2)'}">${timeStr}</div></div>
