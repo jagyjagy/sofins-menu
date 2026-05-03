@@ -1440,19 +1440,65 @@ function saveFood(){
   checkWarnFoods(savedFoods);
 }
 
-function checkWarnFoods(foods){
-  if(!foods||!foods.length)return;
-  const warnFoods=foods.filter(food=>{
-    const ov=(state.foodOverrides||{})[food]||{};
-    const fdb=FDB.find(f=>f.name===food)||(state.customFoods||[]).find(f=>f.name===food);
-    const status=ov.status||(fdb?fdb.status:'new');
-    if(status!=='warn')return false;
-    let count=0;
-    state.todayLog.forEach(e=>{if(e.type==='food'&&(e.sub||'').includes(food))count++;});
-    Object.values(state.calData||{}).forEach(day=>{(day.entries||[]).forEach(e=>{if(e.type==='food'&&(e.sub||'').includes(food))count++;});});
-    return count>=3;
+// Spočítá kolikrát byla potravina přidána do jídla napříč vší historií
+function countFoodUsage(foodName){
+  let count=0;
+  const name=foodName.toLowerCase();
+  state.todayLog.forEach(e=>{
+    if(e.type==='food'){
+      let sub=e.sub||'';
+      if(sub.includes('🏪')&&sub.includes('·'))sub=sub.split('·').slice(1).join('·').trim();
+      if(sub.split(',').some(s=>s.trim().toLowerCase()===name))count++;
+    }
   });
-  if(warnFoods.length) showStatusReview(warnFoods);
+  Object.values(state.calData||{}).forEach(day=>{
+    (day.entries||[]).forEach(e=>{
+      if(e.type==='food'){
+        let sub=e.sub||'';
+        if(sub.includes('🏪')&&sub.includes('·'))sub=sub.split('·').slice(1).join('·').trim();
+        if(sub.split(',').some(s=>s.trim().toLowerCase()===name))count++;
+      }
+    });
+  });
+  return count;
+}
+
+function runFoodStatusCheck(showReview=true){
+  if(!state.foodOverrides)state.foodOverrides={};
+  const allFoodNames=[...FDB,...(state.customFoods||[])].map(f=>f.name);
+  let changed=false;
+  const toReview=[];
+
+  allFoodNames.forEach(foodName=>{
+    const fdb=FDB.find(f=>f.name===foodName)||(state.customFoods||[]).find(f=>f.name===foodName);
+    const ov=state.foodOverrides[foodName]||{};
+    const status=ov.status||(fdb?fdb.status:'new');
+    const count=countFoodUsage(foodName);
+    if(count===0)return; // nikdy nepřidáno
+
+    if(status==='new'){
+      // Automaticky přejde na sledujeme
+      state.foodOverrides[foodName]={...ov,status:'warn'};
+      changed=true;
+    } else if(status==='warn'&&count>=3){
+      toReview.push(foodName);
+    }
+  });
+
+  if(changed)saveAll();
+  if(showReview&&toReview.length){
+    // Přidej jen ty co ještě nejsou ve frontě
+    const newToReview=toReview.filter(f=>!reviewFoodQueue.includes(f));
+    if(newToReview.length){
+      reviewFoodQueue=[...reviewFoodQueue,...newToReview];
+      if(reviewFoodQueue.length===newToReview.length)showNextReview();
+    }
+  }
+}
+
+function checkWarnFoods(foods){
+  // Spusť plný check po přidání jídla
+  runFoodStatusCheck(true);
 }
 
 let reviewFoodQueue=[];
@@ -1528,14 +1574,22 @@ function allFoods(){
   return [...fdb,...custom];
 }
 
+// Normalizace pro vyhledávání — odstraní diakritiku
+function norm(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function normMatch(text,query){
+  return norm(text).includes(norm(query));
+}
+
 function showSuggest(val){
   const sg=document.getElementById('foodSug');
   if(!val){sg.style.display='none';checkFzSug();return;}
   const v=val.toLowerCase();
   // nejdřív hledej značky
-  const brands=(state.brands||[]).filter(b=>b.name.toLowerCase().includes(v)&&!b.ingredients.every(i=>selFoods.includes(i)));
+  const brands=(state.brands||[]).filter(b=>normMatch(b.name,val)&&!b.ingredients.every(i=>selFoods.includes(i)));
   // pak potraviny
-  const foods=allFoods().filter(f=>f.name.toLowerCase().includes(v)&&!selFoods.includes(f.name));
+  const foods=allFoods().filter(f=>normMatch(f.name,val)&&!selFoods.includes(f.name));
   if(!brands.length&&!foods.length){sg.style.display='none';return;}
   sg.style.display='block';
   let html='';
@@ -1739,7 +1793,7 @@ function showEditSuggest(val){
   const sg=document.getElementById('editFoodSug');
   if(!val){sg.style.display='none';return;}
   const v=val.toLowerCase();
-  const all=allFoods().filter(f=>f.name.toLowerCase().includes(v)&&!editSelFoods.includes(f.name)).slice(0,6);
+  const all=allFoods().filter(f=>normMatch(f.name,val)&&!editSelFoods.includes(f.name)).slice(0,6);
   if(!all.length){sg.style.display='none';return;}
   sg.style.display='block';
   sg.innerHTML=all.map(f=>`<div class="fsug-item" onclick="addEditFood('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||''}</span></div>`).join('');
@@ -1836,20 +1890,26 @@ function saveEditEntry(){
     if(day&&day.entries){
       const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type===currentEditingCalEntry.type);
       if(idx>=0){
-        // aplikuj změny z e na originální záznam
         day.entries[idx]={...day.entries[idx],ts:e.ts,name:e.name,sub:e.sub};
       }
+      // seřaď záznamy chronologicky
       day.entries.sort((a,b)=>a.ts-b.ts);
-      day.foods=[...new Set(day.entries.filter(x=>x.type==='food').flatMap(x=>(x.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+      // přepočítej stats
+      day.foods=[...new Set(day.entries.filter(x=>x.type==='food').flatMap(x=>{
+        let sub=x.sub||'';
+        if(sub.includes('🏪')&&sub.includes('·'))sub=sub.split('·').slice(1).join('·').trim();
+        return sub.split(',').map(s=>s.trim()).filter(Boolean);
+      }))];
       day.breast=day.entries.filter(x=>x.type==='breast').length;
       day.sleep=day.entries.filter(x=>x.type==='sleep').length;
+      day.reaction=day.entries.some(x=>x.type==='reaction');
     }
     currentEditingCalEntry=null;
   }
   saveAll();
   if(curScreen==='plan'&&planSelDate&&planDetOpen){
-    const d=planSelDate;
-    selDay(d.getFullYear(),d.getMonth(),d.getDate());
+    // Znovu vykresli detail dne s aktualizovanými daty
+    selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
   } else if(curScreen==='plan'){
     renderCal();
   }
@@ -2108,7 +2168,7 @@ function initSwipe(id){
 
 function fzChange(e,id,d){e.stopPropagation();const item=state.freezer.find(i=>i.id===id);if(!item)return;item.amount=Math.max(0,item.amount+d);if(item.amount===0)state.freezer=state.freezer.filter(i=>i.id!==id);renderFreezer();saveAll();}
 function filterFz(f,btn){fzFilter=f;document.querySelectorAll('#scr-freezer .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFreezer();}
-function showFzSuggest(val){const sg=document.getElementById('fzFoodSug');if(!val){sg.style.display='none';return;}const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!fzSelFoodsArr.includes(f.name)).slice(0,5);if(!m.length){sg.style.display='none';return;}sg.style.display='block';sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addFzFood('${f.name}')">${f.name}</div>`).join('');}
+function showFzSuggest(val){const sg=document.getElementById('fzFoodSug');if(!val){sg.style.display='none';return;}const m=FDB.filter(f=>normMatch(f.name,val)&&!fzSelFoodsArr.includes(f.name)).slice(0,5);if(!m.length){sg.style.display='none';return;}sg.style.display='block';sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addFzFood('${f.name}')">${f.name}</div>`).join('');}
 function addFzFood(name){if(!fzSelFoodsArr.includes(name))fzSelFoodsArr.push(name);document.getElementById('fzIngInput').value='';document.getElementById('fzFoodSug').style.display='none';document.getElementById('fzSelFoods').innerHTML=fzSelFoodsArr.map(n=>`<span class="sfp" onclick="removeFzFood('${n}')">${n} ×</span>`).join('');updateFzExpiryPreview();}
 function removeFzFood(name){fzSelFoodsArr=fzSelFoodsArr.filter(f=>f!==name);document.getElementById('fzSelFoods').innerHTML=fzSelFoodsArr.map(n=>`<span class="sfp" onclick="removeFzFood('${n}')">${n} ×</span>`).join('');updateFzExpiryPreview();}
 function toggleFzIngredients(btn){
@@ -2313,7 +2373,7 @@ function openPlanReactionDetail(dayKey){
   const suspect=reaction?(reaction.sub||'').split('·').find(p=>p.includes('Podezřelé:')):'';
   if(suspect){suspectEl.style.display='block';suspectEl.textContent='🔍 '+suspect.trim();}else{suspectEl.style.display='none';}
   document.getElementById('rdNote').style.display='none';
-  const hist=entries.filter(e=>(e.type==='food'||e.type==='breast')&&(reactionTs===null||e.ts<reactionTs)).sort((a,b)=>b.ts-a.ts).slice(0,6);
+  const hist=entries.filter(e=>(e.type==='food'||e.type==='breast')&&(reactionTs===null||e.ts<reactionTs)).sort((a,b)=>b.ts-a.ts).slice(0,8);
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
     const minBefore=reactionTs?Math.round((reactionTs-h.ts)/60000):null;
     const timeStr=minBefore!==null?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+(minBefore%60)+'min před'):fmtTime(h.ts);
@@ -2330,7 +2390,7 @@ function openPlanReactionDetail(dayKey){
 function showBrandSuggestFood(val){
   const sg=document.getElementById('brandFoodSug');
   if(!val){sg.style.display='none';return;}
-  const brands=(state.brands||[]).filter(b=>b.name.toLowerCase().includes(val.toLowerCase()));
+  const brands=(state.brands||[]).filter(b=>normMatch(b.name,val));
   if(!brands.length){sg.style.display='none';return;}
   sg.style.display='block';
   sg.innerHTML=brands.map(b=>`<div class="fsug-item" onclick="selectBrandForFood('${b.name.replace(/'/g,"\\'")}')">
@@ -2386,7 +2446,7 @@ function renderFoods(){
     const custom=state.customFoods||[];
     const customList=foodCat==='vse'?custom:custom.filter(f=>f.cat===foodCat||f.cat==='nezařazeno');
     let fullList=[...list,...customList];
-    if(foodSearchQuery)fullList=fullList.filter(f=>f.name.toLowerCase().includes(foodSearchQuery));
+    if(foodSearchQuery)fullList=fullList.filter(f=>normMatch(f.name,foodSearchQuery));
     // status filter
     if(foodStatusFilter!=='vse')fullList=fullList.filter(f=>{const st=(getFoodOverride(f.name).status||f.status||'new');return st===foodStatusFilter;});
     // seřadit: nezkoušeno → sledujeme → eliminováno → bez reakce
@@ -2453,7 +2513,7 @@ function renderFoods(){
   }
 }
 function filterFoodSearch(val){
-  foodSearchQuery=val.trim().toLowerCase();
+  foodSearchQuery=val.trim();
   document.getElementById('foodSearchClear').style.display=val?'block':'none';
   renderFoods();
 }
@@ -2661,6 +2721,9 @@ function selSrc(t){document.getElementById('srcOwn').classList.toggle('sel',t===
 function updateClock(){const n=new Date();document.getElementById('clockEl').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
 setInterval(updateClock,1000);updateClock();
 setInterval(renderStatus,30000);
+// Food status check — 4x denně (každých 6 hodin) + při načtení
+setInterval(()=>runFoodStatusCheck(false), 6*60*60*1000); // 6h, bez review dialogu
+setTimeout(()=>runFoodStatusCheck(false), 5000); // po načtení za 5s (silent)
 
 // Init — localStorage má VŽDY přednost před DEFAULT_STATE
 if(myIdentity){document.getElementById('onboard').style.display='none';}
@@ -2829,7 +2892,7 @@ function openPlanFoodModal(dk){
 function showPlanSuggest(val){
   const sg=document.getElementById('planFoodSug');
   if(!val){sg.style.display='none';return;}
-  const m=FDB.filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!planFoodSelFoods.includes(f.name)).slice(0,5);
+  const m=FDB.filter(f=>normMatch(f.name,val)&&!planFoodSelFoods.includes(f.name)).slice(0,5);
   sg.style.display=m.length?'block':'none';
   sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addPlanFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat}</span></div>`).join('');
 }
@@ -2911,7 +2974,7 @@ function selectBrandEmoji(el,emoji){
 function showBrandSuggest(val){
   const sg=document.getElementById('brandIngSug');
   if(!val){sg.style.display='none';return;}
-  const m=allFoods().filter(f=>f.name.toLowerCase().includes(val.toLowerCase())&&!abSelFoods.includes(f.name)).slice(0,6);
+  const m=allFoods().filter(f=>normMatch(f.name,val)&&!abSelFoods.includes(f.name)).slice(0,6);
   if(!m.length){sg.style.display='none';return;}
   sg.style.display='block';
   sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addBrandIng('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||''}</span></div>`).join('');
