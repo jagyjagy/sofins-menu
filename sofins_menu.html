@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.32 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.33 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -765,6 +765,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <button class="msave" onclick="saveWeightEntry()">Uložit vážení</button>
   <button class="mcancel" onclick="closeModal('mAddWeight')">Zrušit</button>
 </div></div></div>
+
+<!-- DENNÍ KARTA -->
+
+<div id="dailyCardOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(245,235,232,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:cardFadeIn .35s ease">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;text-align:center">
+    <button onclick="closeDailyCard()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--rose-dark);opacity:.6;padding:8px">✕</button>
+    <div id="dcEmoji" style="font-size:52px;margin-bottom:16px;animation:cardSlideUp .4s ease .1s both"></div>
+    <div id="dcType" style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--rose-dark);opacity:.6;margin-bottom:8px"></div>
+    <div id="dcTitle" style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px;line-height:1.3;animation:cardSlideUp .4s ease .15s both"></div>
+    <div id="dcText" style="font-size:15px;color:var(--text-2);line-height:1.65;max-width:320px;animation:cardSlideUp .4s ease .2s both"></div>
+    <div id="dcDay" style="font-size:11px;color:var(--text-3);margin-top:20px;animation:cardSlideUp .4s ease .25s both"></div>
+    <button onclick="closeDailyCard()" style="margin-top:32px;padding:13px 36px;border-radius:99px;background:var(--rose-btn);border:none;color:#fff;font-size:15px;font-weight:600;cursor:pointer;animation:cardSlideUp .4s ease .3s both">Jdu na to 🌸</button>
+  </div>
+</div>
+<style>
+@keyframes cardFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes cardSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+</style>
 
 <!-- MODAL přezkum statusu potraviny -->
 
@@ -3415,6 +3433,8 @@ function logWakeUp(){
     state.calData[bedtimeDay].sleep=(state.calData[bedtimeDay].entries||[]).filter(e=>e.type==='sleep').length;
   }
   renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
+  // Zobraz denní kartu
+  setTimeout(()=>showDailyCard(),400);
 }
 
 function logBedtime(){
@@ -3926,6 +3946,172 @@ function saveWeightEntry(){
   } else {
     _origSaveWeightEntry();
   }
+}
+
+
+// ============================================================
+// DENNÍ KARTY
+// ============================================================
+
+const SPECIAL_CARDS = {
+  7:  {emoji:'🌙', type:'✦', title:'Týden.', text:'Zvládla jsi to. Sedm dní bez manuálu, bez spánku, bez sebe. A Sofinka je tady a dobře.'},
+  14: {emoji:'👁️', type:'✦', title:'Dva týdny.', text:'Sofinka tě už poznává po hlase. Kdykoli mluvíš, otáčí hlavičku. Jsi její kotva.'},
+  30: {emoji:'🌕', type:'✦', title:'Měsíc.', text:'720 hodin péče bez manuálu — a šlo to. Ne dokonale. Ale dost dobře. Přesně tak jak má.'},
+  60: {emoji:'💪', type:'✦', title:'Dva měsíce.', text:'Pravděpodobně jsi prošla první spánkovou regresí. Přežila jsi. To samo o sobě je hodně.'},
+  100:{emoji:'💯', type:'✦', title:'100 dní.', text:'Sofinka si vybrala dobře. Fakt.'},
+  180:{emoji:'🌗', type:'✦', title:'Půl roku.', text:'Pamatuješ co ses bála před porodem? Podívej se na sebe teď. Tamta ty tě nerozeznala.'},
+  365:{emoji:'🎂', type:'✦', title:'Rok.', text:'Pamatuješ na ten první den? Podívej jak daleko jste obě došly. Rok. Celý rok.'},
+  500:{emoji:'⚡', type:'✦', title:'500 dní.', text:'Tři spánkové regrese, zuby, vývojové skoky. Pořád tady. Pořád jdeš.'},
+  730:{emoji:'🌳', type:'✦', title:'Dva roky.', text:'Udělala jsi z miminka člověka. Opravdově. Tohle nikdo jiný neudělal tak jako ty.'},
+};
+
+const DAILY_CARDS = [
+  // 0–13 dní
+  {mn:0,mx:13,t:0,e:'🌱',ti:'Sofince je dnes {age}',tx:'Její mozek je teď nejplastičtější za celý život. Každý dotek, hlas a pohled zanechává stopu, která tam zůstane navždy.'},
+  {mn:0,mx:13,t:1,e:'🤲',ti:'Moment dne',tx:'Při přebalování jí povídej co děláš. Tvůj hlas je pro ni teď nejlepší stimulace na světě — lepší než jakákoli hračka.'},
+  {mn:0,mx:13,t:2,e:'👁️',ti:'Jak vidí svět',tx:'Vidí jen na 20–30 cm. Přesně na vzdálenost tvého obličeje při kojení. Evoluce tohle neudělala náhodou.'},
+  {mn:0,mx:13,t:3,e:'💬',ti:'Zkus říct',tx:'Mluv pomalu a přehananě artikuluj. Říká se tomu "motherese" a mozek miminka je na tenhle styl řeči doslova naprogramovaný.'},
+  {mn:0,mx:13,t:4,e:'🫶',ti:'Dnes pro tebe',tx:'Jsi pár dní bez spánku, bez rutiny, bez sebe. To není slabost — to je přesně tak těžké jak to zní. A zvládáš to.'},
+  {mn:0,mx:13,t:5,e:'🧠',ti:'Biologický fakt',tx:'Novorozenec má 100 miliard neuronů — stejně jako dospělý. Rozdíl je v počtu spojení. Ta teprve budujete spolu.'},
+  {mn:0,mx:13,t:6,e:'🌍',ti:'Velký obraz',tx:'Bezpečná vazba v prvních týdnech není o dokonalosti. Je o tom být dost dobrá. A ty jsi.'},
+
+  // 14–29 dní
+  {mn:14,mx:29,t:0,e:'✨',ti:'Sofince je dnes {age}',tx:'Začíná rozlišovat obličeje od jiných objektů. Tvůj obličej je pro ni nejzajímavější věc na světě.'},
+  {mn:14,mx:29,t:1,e:'😮',ti:'Moment dne',tx:'Udělej obličej — vyplaz jazyk, počkej 20 sekund. Sofinka možná zopakuje. V tomhle věku to děti skutečně umí.'},
+  {mn:14,mx:29,t:2,e:'🌊',ti:'Jak vidí svět',tx:'Svět je pro ni proud vjemů bez hranic. Neví kde končí ona a kde začínáš ty. Jste stále jedno.'},
+  {mn:14,mx:29,t:3,e:'💬',ti:'Zkus říct',tx:'"Vidím že máš hlad." "Vím že tě to bolí." Pojmenování pocitů funguje od prvního dne — mozek to zpracovává.'},
+  {mn:14,mx:29,t:4,e:'🛁',ti:'Dnes pro tebe',tx:'Pokud máš 10 minut — jen pro sebe — dnes je to tvoje oprávnění. Ne odměna. Oprávnění.'},
+  {mn:14,mx:29,t:5,e:'🧠',ti:'Biologický fakt',tx:'Pláč miminka aktivuje v mozku rodiče stejné okruhy jako bolest. Nejde ho ignorovat biologicky. Ty to nevymýšlíš.'},
+  {mn:14,mx:29,t:6,e:'🌍',ti:'Velký obraz',tx:'Každá chvíle kdy Sofinka pláče a ty přijdeš, buduje v jejím mozku model světa: "Pomoc přichází." To je základ všeho.'},
+
+  // 30–59 dní
+  {mn:30,mx:59,t:0,e:'😊',ti:'Sofince je dnes {age}',tx:'Brzy přijde první sociální úsměv — ne reflex, ale odpověď na tebe. Čekej na něj. Stojí za to.'},
+  {mn:30,mx:59,t:1,e:'🎮',ti:'Hra dne',tx:'Drž ji tak aby viděla tvůj obličej a střídej výrazy — překvapení, radost, zamyšlení. Je to její první divadlo.'},
+  {mn:30,mx:59,t:2,e:'🌈',ti:'Jak vidí svět',tx:'Začíná vnímat kontrast a pohyb. Stromy ve větru, stíny na stěně — to jsou pro ni fascinující show.'},
+  {mn:30,mx:59,t:3,e:'💬',ti:'Zkus říct',tx:'"Hele, to je zajímavý!" Sdílený zájem — sledovat totéž a komentovat — je základ řeči i vztahu.'},
+  {mn:30,mx:59,t:4,e:'🌿',ti:'Dnes pro tebe',tx:'Únava se kumuluje. Pokud máš pocit že to nezvládáš — to není pravda. Jsi uprostřed nejtěžší části.'},
+  {mn:30,mx:59,t:5,e:'🧠',ti:'Biologický fakt',tx:'Spánkové cykly miminka trvají 45 minut — na rozdíl od dospělých 90 minut. Proto se budí "uprostřed noci". Je to biologie, ne záměr.'},
+  {mn:30,mx:59,t:6,e:'🌍',ti:'Velký obraz',tx:'Věda to potvrzuje: děti které jsou v 6 týdnech jistě připoutané mají v dospělosti lepší vztahy, odolnost a sebevědomí.'},
+
+  // 60–89 dní
+  {mn:60,mx:89,t:0,e:'💪',ti:'Sofince je dnes {age}',tx:'Začíná zvedat hlavičku a dívat se kolem. Záběr jejího světa se právě zdvojnásobil.'},
+  {mn:60,mx:89,t:1,e:'🎵',ti:'Hra dne',tx:'Zpívej jí cokoliv — i nákupní seznam. Mozek miminka reaguje na melodii stejně jako na slova. Hlas stačí.'},
+  {mn:60,mx:89,t:2,e:'🔊',ti:'Jak vidí svět',tx:'Začíná propojovat zvuk s obrazem — sleduje odkud hlas přichází. Experimenty se světem právě začínají.'},
+  {mn:60,mx:89,t:3,e:'💬',ti:'Zkus říct',tx:'Když brblá, odpověz. Chvíli počkej — jako v rozhovoru. Učí se střídání, základ veškeré komunikace.'},
+  {mn:60,mx:89,t:4,e:'🫶',ti:'Dnes pro tebe',tx:'Srovnávání s ostatními maminkami je past. Každé miminko, každá rodina, každé ráno — jiné. Tvoje je tvoje.'},
+  {mn:60,mx:89,t:5,e:'🧠',ti:'Biologický fakt',tx:'Úsměv miminka uvolňuje oxytocin u rodiče — stejný hormon jako při zamilování. Evoluce ví jak udržet vztah.'},
+  {mn:60,mx:89,t:6,e:'🌍',ti:'Velký obraz',tx:'Tohle období — 2 až 3 měsíce — je kdy se z přežívání stává začátek vztahu. Cítíš to?'},
+
+  // 90–119 dní
+  {mn:90,mx:119,t:0,e:'🌟',ti:'Sofince je dnes {age}',tx:'Pravděpodobně už se smíchla. Pokud ne — bude brzy. Přichystej si telefon na video.'},
+  {mn:90,mx:119,t:1,e:'🎈',ti:'Hra dne',tx:'Polož ji na bříško na chvíli každý den. Tummy time posiluje krk, záda a připravuje ji na sezení.'},
+  {mn:90,mx:119,t:2,e:'🌸',ti:'Jak vidí svět',tx:'Vidí teď skoro jako dospělý — barvy, vzdálenosti, pohyb. Svět se pro ni otevřel naplno.'},
+  {mn:90,mx:119,t:3,e:'💬',ti:'Zkus říct',tx:'Popisuj rutinu: "Teď si lehneme." "Jdeme ven." Předvídatelnost jazyka buduje jistotu a slovní zásobu zároveň.'},
+  {mn:90,mx:119,t:4,e:'💛',ti:'Dnes pro tebe',tx:'Pokud dnes nebyl tvůj nejlepší den — to je v pořádku. Konstantnost je důležitější než dokonalost.'},
+  {mn:90,mx:119,t:5,e:'🧠',ti:'Biologický fakt',tx:'Ve třech měsících mozek miminka zpracovává zvuky řeči ze všech jazyků světa. Pak se specializuje. Teď je okno otevřené dokořán.'},
+  {mn:90,mx:119,t:6,e:'🌍',ti:'Velký obraz',tx:'Vědecky: kvalita vztahu v prvním roce předpovídá jak bude dítě zvládat stres ve 20 letech. Děláš dlouhodobou práci.'},
+
+  // 120–179 dní
+  {mn:120,mx:179,t:0,e:'🤸',ti:'Sofince je dnes {age}',tx:'Brzy začne sahat po věcech záměrně. Svět se pro ni mění z "co vidím" na "co mohu ovlivnit".'},
+  {mn:120,mx:179,t:1,e:'🌀',ti:'Hra dne',tx:'Dej jí různé textury — měkké, drsné, chladné, teplé. Každý dotek buduje nové nervové dráhy.'},
+  {mn:120,mx:179,t:2,e:'🔍',ti:'Jak vidí svět',tx:'Začíná chápat permanenci objektů — že věci existují i když je nevidí. Peek-a-boo je vážná věda.'},
+  {mn:120,mx:179,t:3,e:'💬',ti:'Zkus říct',tx:'"Kam to zmizelo? Tady je!" Hra na schovanou s hlasem i obličejem je výuka konceptu existence.'},
+  {mn:120,mx:179,t:4,e:'🌙',ti:'Dnes pro tebe',tx:'Jestli spíš lépe — dobrá zpráva. Jestli ne — většina regresí se zlepší sama. Jen ne hned.'},
+  {mn:120,mx:179,t:5,e:'🧠',ti:'Biologický fakt',tx:'Kolem 4 měsíců přichází první velký vývojový skok — proto spánkové regrese. Mozek roste tak rychle že nestíhá spát.'},
+  {mn:120,mx:179,t:6,e:'🌍',ti:'Velký obraz',tx:'Tohle je věk kdy začíná záměrná komunikace. Ne pláč — ale vokalizace, gesta, oční kontakt. Rozhovor začíná.'},
+
+  // 180–269 dní
+  {mn:180,mx:269,t:0,e:'🥄',ti:'Sofince je dnes {age}',tx:'Příkrmy jsou velká věc — ale pomalejší zavedení je vždy bezpečnější než rychlejší. Žádný spěch.'},
+  {mn:180,mx:269,t:1,e:'🎶',ti:'Hra dne',tx:'Zkus ji pustit hudbu a hýbej se s ní. Rytmus a pohyb jsou pro vývoj mozku jedna z nejcennějších kombinací.'},
+  {mn:180,mx:269,t:2,e:'🌊',ti:'Jak vidí svět',tx:'Začíná rozlišovat "cizí" od "svých". Separační úzkost je vývojový milník, ne problém k řešení.'},
+  {mn:180,mx:269,t:3,e:'💬',ti:'Zkus říct',tx:'"Mám tě ráda." Opakuj to. Mozek miminka tyto věty ukládá dlouho předtím než je dokáže říct zpět.'},
+  {mn:180,mx:269,t:4,e:'🌿',ti:'Dnes pro tebe',tx:'Půl roku je hodně. Pokud máš pocit že jsi "měla být dál" — v čem přesně? Jsi přesně tam kde máš být.'},
+  {mn:180,mx:269,t:5,e:'🧠',ti:'Biologický fakt',tx:'Mozek v prvním roce zdvojnásobí svou velikost. Energeticky je to ekvivalent maratonu — každý den. Proto tolik jí a spí.'},
+  {mn:180,mx:269,t:6,e:'🌍',ti:'Velký obraz',tx:'Každé dítě které ví že je milované bez podmínek roste s jiným nastavením světa. Dáváš jí tenhle základ.'},
+
+  // 270–364 dní
+  {mn:270,mx:364,t:0,e:'🚶',ti:'Sofince je dnes {age}',tx:'Možná už se staví nebo plazí. Každý pohyb je výsledek stovek pokusů které nikdo nepočítal.'},
+  {mn:270,mx:364,t:1,e:'📦',ti:'Hra dne',tx:'Dej jí krabici a věci na vkládání a vyndávání. Tato jednoduchá hra je vrchol kognitivního tréninku pro tento věk.'},
+  {mn:270,mx:364,t:2,e:'🗣️',ti:'Jak vidí svět',tx:'Rozumí výrazně víc než říká. Všechno co slyší se ukládá. Mluvíš na ni víc než si myslíš.'},
+  {mn:270,mx:364,t:3,e:'💬',ti:'Zkus říct',tx:'"Ukáž mi..." "Kde je...?" Otázky které vyžadují gesto nebo pohled budují porozumění i před řečí.'},
+  {mn:270,mx:364,t:4,e:'💛',ti:'Dnes pro tebe',tx:'Blíží se rok. Možná se ptáš jestli děláš dost. Děláš. Otázka sama o sobě je důkaz.'},
+  {mn:270,mx:364,t:5,e:'🧠',ti:'Biologický fakt',tx:'Dítě v 9 měsících rozumí záměrům — ví že ty chceš něco, ne jen že pohybuješ rukou. Je to revoluční kognitívní skok.'},
+  {mn:270,mx:364,t:6,e:'🌍',ti:'Velký obraz',tx:'Bezpečná základna — to jsi ty. Z ní Sofinka vychází explorovat svět a vrací se nabít. Tenhle vzorec zůstane celý život.'},
+
+  // 365–499 dní
+  {mn:365,mx:499,t:0,e:'🎉',ti:'Sofince je dnes {age}',tx:'Rok je za námi. Teď přichází exploze řeči, pohybu a personality. Připoj se a uži si to.'},
+  {mn:365,mx:499,t:1,e:'🧩',ti:'Hra dne',tx:'Jednoduché puzzle, skládačky, věže z kostek — a sleduj jak přemýšlí. Neraď hned. Nech ji zkusit.'},
+  {mn:365,mx:499,t:2,e:'🔭',ti:'Jak vidí svět',tx:'Začíná chápat "já" jako oddělené od ostatních. Zrcadlo, jméno, vlastnictví — "moje!" — to je zdravý vývoj.'},
+  {mn:365,mx:499,t:3,e:'💬',ti:'Zkus říct',tx:'Pojmenuj emoce: "Vidím že jsi naštvaná." "To tě mrzí, že jo?" Emoční slovník se buduje takhle.'},
+  {mn:365,mx:499,t:4,e:'🌸',ti:'Dnes pro tebe',tx:'Za první rok jsi se naučila věci o sobě které by normálně trvaly dekádu. To není ztráta — to je zkrácená cesta.'},
+  {mn:365,mx:499,t:5,e:'🧠',ti:'Biologický fakt',tx:'Kolem 18 měsíců přichází druhý velký vývojový skok — mozek reorganizuje jak zpracovává jazyk. Proto najednou "exploduje" slovní zásoba.'},
+  {mn:365,mx:499,t:6,e:'🌍',ti:'Velký obraz',tx:'Vzdorování ve druhém roce není problém — je to zdravý test hranic. Hranice drž laskavě a pevně. Obojí zároveň.'},
+
+  // 500–730 dní
+  {mn:500,mx:730,t:0,e:'🌟',ti:'Sofince je dnes {age}',tx:'Je to člověk se svými preferencemi, humorem, a světem. Pamatuješ na miminko? Tohle jsi vybudovala.'},
+  {mn:500,mx:730,t:1,e:'🎭',ti:'Hra dne',tx:'Hrajte si na "jako by" — vaříme, nakupujeme, jdeme k doktorovi. Symbolická hra je trénink empatie a jazyka.'},
+  {mn:500,mx:730,t:2,e:'🌈',ti:'Jak vidí svět',tx:'Svět je pro ni místo plné pravidel které teprve chápe. Konzistentnost tvých reakcí je její mapa.'},
+  {mn:500,mx:730,t:3,e:'💬',ti:'Zkus říct',tx:'"Co si myslíš?" Ptej se i když odpověď nebude dávat smysl. Učíš ji že její myšlenky mají hodnotu.'},
+  {mn:500,mx:730,t:4,e:'🫶',ti:'Dnes pro tebe',tx:'Jedeš na autopilota více dní než ne. To je v pořádku. Rutina je péče, ne selhání.'},
+  {mn:500,mx:730,t:5,e:'🧠',ti:'Biologický fakt',tx:'Prefrontální kortex — část mozku pro regulaci emocí a impulzů — se plně vyvíjí až ve 25 letech. Trpělivost je na místě.'},
+  {mn:500,mx:730,t:6,e:'🌍',ti:'Velký obraz',tx:'Za dva roky jsi udělala víc pro jiného člověka než většina lidí za celý život. A jde to dál.'},
+];
+
+const CARD_TYPE_LABELS = ['Vývojový milník','Hra & moment','Pohled do světa','Zkus říct','Péče o tebe','Biologický fakt','Velký obraz'];
+
+function fmtAge(days){
+  if(days<14)return days+' dní';
+  if(days<30){const w=Math.floor(days/7);return w+' '+(w===1?'týden':'týdny');}
+  const m=Math.floor(days/30.44);
+  const rem=Math.round(days-m*30.44);
+  if(m>=24){const y=Math.floor(m/12),rm=m%12;return y+' '+(y===1?'rok':'roky')+(rm?' a '+rm+' m':'');}
+  if(m>=12){const y=Math.floor(m/12),rm=m%12;return y+' rok'+(rm?' a '+rm+' měs':'');}
+  if(rem<3)return m+' '+(m===1?'měsíc':m<5?'měsíce':'měsíců');
+  return m+' '+(m===1?'měsíc':m<5?'měsíce':'měsíců')+' a '+rem+' dní';
+}
+
+function getDailyCard(){
+  const birth=state.settings.birth||'2024-08-14';
+  const bDate=new Date(birth+' 12:00');
+  const today=new Date();today.setHours(12,0,0,0);
+  const days=Math.floor((today-bDate)/86400000);
+
+  // Speciální dny mají přednost
+  if(SPECIAL_CARDS[days])return{...SPECIAL_CARDS[days],days,special:true};
+
+  const cardType=days%7;
+  const card=DAILY_CARDS.find(c=>c.t===cardType&&days>=c.mn&&days<=c.mx);
+  if(!card){
+    // fallback — vezmi libovolnou kartu pro daný typ
+    const fb=DAILY_CARDS.find(c=>c.t===cardType)||DAILY_CARDS[cardType%DAILY_CARDS.length];
+    return{...fb,days,special:false};
+  }
+  return{...card,days,special:false};
+}
+
+function showDailyCard(){
+  // Zobraz jen jednou za den
+  const todayKey=dateKey(TODAY);
+  const lastShown=localStorage.getItem('sofin:cardShown')||'';
+  if(lastShown===todayKey)return;
+
+  const card=getDailyCard();
+  const ageStr=fmtAge(card.days);
+  const text=(card.tx||card.text||'').replace('{age}',ageStr);
+  const title=(card.ti||card.title||'').replace('{age}',ageStr).replace('{days}',ageStr);
+
+  document.getElementById('dcEmoji').textContent=card.e||card.emoji||'🌸';
+  document.getElementById('dcType').textContent=card.special?'✦ Zvláštní den ✦':(CARD_TYPE_LABELS[card.t]||'');
+  document.getElementById('dcTitle').textContent=title;
+  document.getElementById('dcText').textContent=text;
+  document.getElementById('dcDay').textContent='Den '+card.days+' · '+ageStr;
+
+  document.getElementById('dailyCardOverlay').style.display='block';
+}
+
+function closeDailyCard(){
+  document.getElementById('dailyCardOverlay').style.display='none';
+  localStorage.setItem('sofin:cardShown',dateKey(TODAY));
 }
 
 renderAll();
