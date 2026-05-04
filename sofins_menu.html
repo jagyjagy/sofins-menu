@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
@@ -312,6 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 <body>
 
 <!-- ONBOARDING -->
+
 <div class="onboard" id="onboard">
   <div class="ob-emoji">👶</div>
   <h2>Sofin's menu</h2>
@@ -331,6 +333,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- DNES -->
+
   <div id="scr-today" class="screen active">
     <div class="sticky-top">
       <div class="header">
@@ -379,6 +382,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- PLÁN -->
+
   <div id="scr-plan" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -447,6 +451,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- POTRAVINY -->
+
   <div id="scr-food" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -509,6 +514,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- MRAZÁK -->
+
   <div id="scr-freezer" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -538,6 +544,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- NASTAVENÍ -->
+
   <div id="scr-settings" class="screen">
     <div class="scroll-area">
       <div class="header"><div class="header-top"><h1>Nastavení</h1></div></div>
@@ -602,6 +609,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div>
 
 <!-- MODALS -->
+
 <div class="modal-wrap" id="mFood"><div class="movl" onclick="closeModal('mFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat jídlo</div>
   <div class="mrow"><label>Typ</label><div class="type-btns">
@@ -732,7 +740,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
+
 <!-- MODAL export pro alergologa -->
+
 <div class="modal-wrap" id="mExport"><div class="movl" onclick="closeModal('mExport')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:90vh">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -745,6 +755,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat vážení -->
+
 <div class="modal-wrap" id="mAddWeight"><div class="movl" onclick="closeModal('mAddWeight')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat vážení</div>
   <div class="mrow"><label>Datum</label><input type="date" id="wDate"/></div>
@@ -756,6 +767,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přezkum statusu potraviny -->
+
 <div class="modal-wrap" id="mStatusReview"><div class="movl" onclick="closeStatusReview()"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="font-size:13px;color:var(--text-2);margin-bottom:4px" id="srSubtitle"></div>
@@ -765,6 +777,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL upravit potravinu -->
+
 <div class="modal-wrap" id="mEditFood"><div class="movl" onclick="closeModal('mEditFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mEditFoodTitle">Upravit potravinu</div>
   <div class="mrow"><label>Název</label><input type="text" id="efName" placeholder="název potraviny"/></div>
@@ -792,6 +805,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat potravinu -->
+
 <div class="modal-wrap" id="mAddFood"><div class="movl" onclick="closeModal('mAddFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat potravinu</div>
   <div class="mrow"><label>Název</label><input type="text" id="afName" placeholder="např. quinoa, tempeh..."/></div>
@@ -812,6 +826,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat značku/recept -->
+
 <div class="modal-wrap" id="mAddBrand"><div class="movl" onclick="closeModal('mAddBrand')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mAddBrandTitle">Přidat značku / recept</div>
   <div class="mrow"><label>Název značky nebo receptu</label><input type="text" id="abName" placeholder="např. Mrkvová kaše, HiPP Bio..."/></div>
@@ -836,6 +851,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL plánování jídla -->
+
 <div class="modal-wrap" id="mPlanFood"><div class="movl" onclick="closeModal('mPlanFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" id="mPlanFoodTitle">Naplánovat jídlo</div>
@@ -856,6 +872,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL hromadná změna statusu -->
+
 <div class="modal-wrap" id="mBulkStatus"><div class="movl" onclick="closeModal('mBulkStatus')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle">Hromadná změna statusu</div>
@@ -890,6 +907,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail záznamu (jídlo/kojení/spánek) -->
+
 <div class="modal-wrap" id="mEntryDetail"><div class="movl" onclick="closeModal('mEntryDetail')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -905,6 +923,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL upravit záznam -->
+
 <div class="modal-wrap" id="mEditEntry"><div class="movl" onclick="closeModal('mEditEntry')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="editEntryTitle">Upravit záznam</div>
   <div id="editEntryBody"></div>
@@ -913,6 +932,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail reakce -->
+
 <div class="modal-wrap" id="mReactionDetail"><div class="movl" onclick="closeModal('mReactionDetail')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -1301,9 +1321,15 @@ function renderStatus(){
 
   // === MODRÉ — vzhůru + naspala ===
 
-  // Poslední bedtime/wakeup záznam dnešku
-  const wbEntries=allToday.filter(e=>e.type==='bedtime'||e.type==='wakeup').sort((a,b)=>b.ts-a.ts);
-  const lastWB=wbEntries[0];
+  // Poslední bedtime/wakeup záznam z posledních 24h (přes půlnoc!)
+  const since24h=now-24*3600000;
+  const recentBW=[
+    ...state.todayLog,
+    // včerejší záznamy z calData
+    ...((state.calData[dateKey(new Date(now-86400000))]||{}).entries||[])
+  ].filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&e.ts>since24h)
+   .sort((a,b)=>b.ts-a.ts);
+  const lastWB=recentBW[0];
   const isSleeping=state.sleep.active||(lastWB&&lastWB.type==='bedtime');
 
   // 💤 právě spí / 👀 vzhůru už
@@ -3309,10 +3335,14 @@ function copyExport(){
 // VSTALA / ŠLA SPÁT
 // ============================================================
 function toggleWakeSleep(){
-  // Výchozí: "Šla spát". Po kliknutí → zapíše a přepne.
-  const todayKey=dateKey(TODAY);
-  const lastEntry=state.todayLog.filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&dateKey(new Date(e.ts))===todayKey).sort((a,b)=>b.ts-a.ts)[0];
-  // Pokud poslední je bedtime nebo žádný → "Vstala"
+  const now=Date.now();
+  const since24h=now-24*3600000;
+  const recentBW=[
+    ...state.todayLog,
+    ...((state.calData[dateKey(new Date(now-86400000))]||{}).entries||[])
+  ].filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&e.ts>since24h)
+   .sort((a,b)=>b.ts-a.ts);
+  const lastEntry=recentBW[0];
   if(lastEntry&&lastEntry.type==='bedtime'){
     logWakeUp();
   } else {
@@ -3321,20 +3351,24 @@ function toggleWakeSleep(){
 }
 
 function updateWakeSleepBtn(){
-  const todayKey=dateKey(TODAY);
-  const lastEntry=state.todayLog.filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&dateKey(new Date(e.ts))===todayKey).sort((a,b)=>b.ts-a.ts)[0];
-  const isBedtime=lastEntry&&lastEntry.type==='bedtime'; // poslední byl bedtime → čekáme na vstala
+  const now=Date.now();
+  const since24h=now-24*3600000;
+  const recentBW=[
+    ...state.todayLog,
+    ...((state.calData[dateKey(new Date(now-86400000))]||{}).entries||[])
+  ].filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&e.ts>since24h)
+   .sort((a,b)=>b.ts-a.ts);
+  const lastEntry=recentBW[0];
+  const isBedtime=lastEntry&&lastEntry.type==='bedtime';
   const icon=document.getElementById('wakeSlpIcon');
   const label=document.getElementById('wakeSlpLabel');
   const btn=document.getElementById('btnSleepToggle');
   if(!icon||!label||!btn)return;
   if(isBedtime){
-    // čekáme na vstávání
     icon.textContent='🌅';icon.style.background='#fef3b0';
     label.textContent='Vstala';label.style.color='#7a5c00';
     btn.style.background='#fffbe6';btn.style.borderColor='#f5d87a';
   } else {
-    // výchozí — čekáme na usnutí
     icon.textContent='🌙';icon.style.background='#e4e0f7';
     label.textContent='Šla spát';label.style.color='#4a3d8f';
     btn.style.background='#f0f0fa';btn.style.borderColor='#c5c0e8';
@@ -3513,7 +3547,7 @@ function renderStats(){
   const keys=days.map(d=>dateKey(d));
   // Sbírej data
   let totalSleepMs=0,sleepDays=0,breastCount=0,foodDays=0,foodCount=0;
-  let reactions=0,newFoods=new Set(),maxSleep=0;
+  let reactions=0,newFoods=new Set(),maxSleep=0,nightSleepMs=0,nightSleepDays=0;
   keys.forEach(k=>{
     const entries=k===dateKey(TODAY)
       ?state.todayLog.filter(e=>!e.live)
@@ -3530,6 +3564,12 @@ function renderStats(){
     // jídla
     const fc=entries.filter(e=>e.type==='food').length;
     if(fc>0){foodCount+=fc;foodDays++;}
+    // noční spánek — záznamy "Noční spánek" z calData
+    const nightEntries=(state.calData[k]||{}).entries||[];
+    nightEntries.filter(e=>e.type==='sleep'&&(e.name||'').includes('Noční')).forEach(e=>{
+      const dur=getSleepEndTs(e)-e.ts;
+      if(dur>3600000&&dur<14*3600000){nightSleepMs+=dur;nightSleepDays++;}
+    });
     // reakce
     reactions+=entries.filter(e=>e.type==='reaction').length;
     // nové potraviny
@@ -3635,11 +3675,13 @@ function renderStats(){
   const avgBreast=n?breastCount/n:0;
   const pAvgBreast=prevDays.length?pBreast/prevDays.length:0;
 
+  const avgNightSleep=nightSleepDays?nightSleepMs/nightSleepDays:0;
+
   document.getElementById('statsContent').innerHTML=`
     ${weightBlock}
     <div style="display:flex;gap:8px;margin-bottom:8px">
       ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000))}
-      ${statCard('🌙','Nejdelší spánek',fmtDur(maxSleep),'')}
+      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','')}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       ${statCard('🍽','Jídla / den',avgFood?fmtNum(avgFood)+'×':'—',delta(avgFood,pAvgFood))}
@@ -3772,5 +3814,6 @@ function renderWeightList(){
 
 renderAll();
 </script>
+
 </body>
 </html>
