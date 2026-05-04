@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.26 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.27 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3618,7 +3618,7 @@ function renderStats(){
     const fdb=FDB.find(x=>x.name===f)||(state.customFoods||[]).find(x=>x.name===f);
     const ov=(state.foodOverrides||{})[f]||{};
     const status=ov.status||(fdb?fdb.status:'new');
-    if(status!=='no')newFoods.add(f); // nová = vše kromě eliminovaných
+    if(status==='warn'||status==='new')newFoods.add(f); // nová = jen nezkoušeno nebo sledujeme
   });
   const avgSleep=sleepDays?totalSleepMs/sleepDays:0;
   const avgFood=foodDays?foodCount/foodDays:0;
