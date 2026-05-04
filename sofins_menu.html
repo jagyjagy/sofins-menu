@@ -3377,19 +3377,26 @@ function updateWakeSleepBtn(){
 
 function logWakeUp(){
   const now=Date.now();
-  // Zapiš noční spánek do včerejška
-  const yesterday=new Date(TODAY);yesterday.setDate(yesterday.getDate()-1);
-  const yKey=dateKey(yesterday);
-  const allBedtime=[...state.todayLog,...((state.calData[yKey]||{}).entries||[])].filter(e=>e.type==='bedtime').sort((a,b)=>b.ts-a.ts)[0];
+  const todayKey=dateKey(TODAY);
+  // Přidej wakeup záznam
+  state.todayLog=state.todayLog.filter(e=>e.type!=='wakeup'||dateKey(new Date(e.ts))!==todayKey);
+  state.todayLog.push({id:'wu'+now,type:'wakeup',ts:now,name:'Vstala',sub:'vstávání',reaction:false,by:whoAmI()});
+  // Zapiš noční spánek — hledej bedtime z posledních 24h
+  const since24h=now-24*3600000;
+  const allBedtime=[
+    ...state.todayLog,
+    ...((state.calData[dateKey(new Date(now-86400000))]||{}).entries||[])
+  ].filter(e=>e.type==='bedtime'&&e.ts>since24h&&e.ts<now).sort((a,b)=>b.ts-a.ts)[0];
   if(allBedtime){
     const dur=now-allBedtime.ts;
     const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
     const durStr=h>0?h+'h'+(m?' '+m+'min':''):m+'min';
-    if(!state.calData[yKey])state.calData[yKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-    // odstraň předchozí noční spánek
-    state.calData[yKey].entries=state.calData[yKey].entries.filter(e=>e.sub&&!e.sub.includes('Noční'));
-    state.calData[yKey].entries.push({type:'sleep',ts:allBedtime.ts,name:'Noční spánek',sub:fmtTime(allBedtime.ts)+' – '+fmtTime(now)+' · '+durStr,reaction:false});
-    state.calData[yKey].sleep=(state.calData[yKey].entries||[]).filter(e=>e.type==='sleep').length;
+    // Zapiš do dne kdy bedtime bylo
+    const bedtimeDay=dateKey(new Date(allBedtime.ts));
+    if(!state.calData[bedtimeDay])state.calData[bedtimeDay]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+    state.calData[bedtimeDay].entries=state.calData[bedtimeDay].entries.filter(e=>!(e.type==='sleep'&&(e.name||'').includes('Noční')));
+    state.calData[bedtimeDay].entries.push({type:'sleep',ts:allBedtime.ts,name:'Noční spánek',sub:fmtTime(allBedtime.ts)+' – '+fmtTime(now)+' · '+durStr,reaction:false});
+    state.calData[bedtimeDay].sleep=(state.calData[bedtimeDay].entries||[]).filter(e=>e.type==='sleep').length;
   }
   renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
 }
