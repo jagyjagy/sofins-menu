@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.21 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.22 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3576,6 +3576,11 @@ function renderStats(){
       if(dur>60000&&dur<6*3600000){daySleepMs+=dur;} // max 6h = denní spánek
     });
     if(daySleepMs>0){totalSleepMs+=daySleepMs;sleepDays++;if(daySleepMs>maxSleep)maxSleep=daySleepMs;}
+    // kojení
+    breastCount+=entries.filter(e=>e.type==='breast').length;
+    // jídla
+    const fc=entries.filter(e=>e.type==='food').length;
+    if(fc>0){foodCount+=fc;foodDays++;}
     // noční spánek — záznamy "Noční spánek" z calData
     const nightEntries=(state.calData[k]||{}).entries||[];
     nightEntries.filter(e=>e.type==='sleep'&&(e.name||'').includes('Noční')).forEach(e=>{
