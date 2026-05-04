@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.18 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.20 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -2359,19 +2359,29 @@ function renderWeek(){
       body=pi.length?`<div class="wc-foods" style="color:var(--rose-dark)">${pi.map(p=>p.foods.join(', ')).join(' · ')}</div>`:`<div class="wc-foods" style="color:var(--text-3);font-style:italic">prázdný</div>`;
     }
     else{
-      // sleep total
+      // Denní zdřímnutí (bez nočního spánku)
       let sleepStr='';
-      if(dd.sleep){
+      const dayNaps=(dd.entries||[]).filter(e=>e.type==='sleep'&&!(e.name||'').includes('Noční'));
+      if(dayNaps.length){
         let totalM=0;
-        (dd.entries||[]).filter(e=>e.type==='sleep').forEach(e=>{
+        dayNaps.forEach(e=>{
           const dur=getSleepEndTs(e)-e.ts;
-          if(dur>60000&&dur<12*3600000)totalM+=Math.floor(dur/60000);
+          if(dur>60000&&dur<6*3600000)totalM+=Math.floor(dur/60000);
         });
         const sh=Math.floor(totalM/60),sm=totalM%60;
         const durStr=totalM>0?(sh>0?sh+'h'+(sm?' '+sm+'min':''):sm+'min'):'';
-        sleepStr=`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dd.sleep}× spánek${durStr?' ('+durStr+')':''}</div>`;
+        sleepStr=`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dayNaps.length}× spánek${durStr?' ('+durStr+')':''}</div>`;
       }
-      const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',sleepStr].filter(Boolean).join('');
+      // Noční spánek
+      let nightStr='';
+      const nightSleep=(dd.entries||[]).find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
+      if(nightSleep){
+        const dur=getSleepEndTs(nightSleep)-nightSleep.ts;
+        const nh=Math.floor(dur/3600000),nm=Math.floor((dur%3600000)/60000);
+        const nightDurStr=nh>0?nh+'h'+(nm?' '+nm+'min':''):nm+'min';
+        nightStr=`<div class="wc-stat"><div class="wsd" style="background:#4a6fa8"></div>🌙 ${nightDurStr}</div>`;
+      }
+      const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',nightStr,sleepStr].filter(Boolean).join('');
       if(st)body+=`<div class="wc-stats">${st}</div>`;
       if(dd.foods&&dd.foods.length)body+=`<div class="wc-foods">${dd.foods.join(', ')}</div>`;
     }
@@ -3559,18 +3569,13 @@ function renderStats(){
     const entries=k===dateKey(TODAY)
       ?state.todayLog.filter(e=>!e.live)
       :(state.calData[k]||{}).entries||[];
-    // spánek
+    // spánek — jen denní zdřímnutí (ne noční spánek)
     let daySleepMs=0;
-    entries.filter(e=>e.type==='sleep'&&!(e.sub||'').includes('probíhá')).forEach(e=>{
+    entries.filter(e=>e.type==='sleep'&&!(e.sub||'').includes('probíhá')&&!(e.name||'').includes('Noční')).forEach(e=>{
       const dur=getSleepEndTs(e)-e.ts;
-      if(dur>60000&&dur<14*3600000){daySleepMs+=dur;}
+      if(dur>60000&&dur<6*3600000){daySleepMs+=dur;} // max 6h = denní spánek
     });
     if(daySleepMs>0){totalSleepMs+=daySleepMs;sleepDays++;if(daySleepMs>maxSleep)maxSleep=daySleepMs;}
-    // kojení
-    breastCount+=entries.filter(e=>e.type==='breast').length;
-    // jídla
-    const fc=entries.filter(e=>e.type==='food').length;
-    if(fc>0){foodCount+=fc;foodDays++;}
     // noční spánek — záznamy "Noční spánek" z calData
     const nightEntries=(state.calData[k]||{}).entries||[];
     nightEntries.filter(e=>e.type==='sleep'&&(e.name||'').includes('Noční')).forEach(e=>{
