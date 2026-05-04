@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.27 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.29 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1336,16 +1336,16 @@ function renderStatus(){
   if(isSleeping){
     html+=`<div class="chip blue"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
-    // "Vzhůru od" — od wakeup nebo od konce posledního spánku
     let awakeFrom=null;
-    if(lastWB&&lastWB.type==='wakeup'){
-      awakeFrom=lastWB.ts;
+    const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+    if(todaySleeps.length){
+      // Byl dnes spánek → počítej od konce posledního
+      todaySleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
+      const endTs=getSleepEndTs(todaySleeps[0]);
+      if(endTs>0&&endTs<now)awakeFrom=endTs;
     } else {
-      const allS=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
-      if(allS.length){
-        allS.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
-        awakeFrom=getSleepEndTs(allS[0]);
-      }
+      // Dnes žádný spánek → fallback na wakeup záznam
+      if(lastWB&&lastWB.type==='wakeup')awakeFrom=lastWB.ts;
     }
     if(awakeFrom){
       const awMs=now-awakeFrom;
