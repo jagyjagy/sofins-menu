@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.31 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.32 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1123,7 +1123,7 @@ function applyRemoteState(remote) {
   if(remote.brands&&remote.brands.length>=((state.brands||[]).length)){
     state.brands = remote.brands;
   }
-  if(remote.weightLog&&remote.weightLog.length>=((state.weightLog||[]).length)){
+  if(remote.weightLog&&remote.weightLog.length>(state.weightLog||[]).length){
     state.weightLog = remote.weightLog;
   }
   if (remote.calData) state.calData = remote.calData;
@@ -1544,11 +1544,15 @@ function getFoodsFromSub(sub){
 
 function countFoodUsage(foodName){
   const name=foodName.toLowerCase().trim();
+  const todayKey=dateKey(TODAY);
   let count=0;
+  // todayLog — autoritativní zdroj pro dnešek
   state.todayLog.forEach(e=>{
     if(e.type==='food'&&getFoodsFromSub(e.sub).includes(name))count++;
   });
-  Object.values(state.calData||{}).forEach(day=>{
+  // calData — přeskoč dnešek (je v todayLog), aby nedošlo k dvojímu počítání
+  Object.entries(state.calData||{}).forEach(([k,day])=>{
+    if(k===todayKey)return;
     (day.entries||[]).forEach(e=>{
       if(e.type==='food'&&getFoodsFromSub(e.sub).includes(name))count++;
     });
