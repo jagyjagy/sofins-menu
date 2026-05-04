@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.23 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.24 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3669,7 +3669,7 @@ function renderStats(){
     if(latestW){
       const gain=prevW?(latestW.kg-prevW.kg)*1000:null;
       weightBlock=`
-      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px;cursor:pointer" onclick="switchTab('settings')">
+      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px;cursor:pointer" onclick="statsMode=false;document.getElementById('statsView').style.display='none';document.getElementById('calView').style.display='block';document.getElementById('calControls').style.display='block';document.getElementById('statsControls').style.display='none';document.getElementById('statsBtn').textContent='📊 Statistiky';document.getElementById('planSelectBtn').style.display='block';showScreen('settings')">
         <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">⚖️ Aktuální váha</div>
         <div style="display:flex;align-items:baseline;gap:8px">
           <span style="font-size:26px;font-weight:600">${latestW.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})}</span>
@@ -3775,10 +3775,11 @@ function renderWeightChart(){
   if(!canvas){return;}
   if(!log.length){canvas.style.display='none';return;}
   canvas.style.display='block';
-  const W=(canvas.parentElement?canvas.parentElement.offsetWidth-24:0)||280,H=100;
+  const W=(canvas.parentElement?canvas.parentElement.offsetWidth-24:0)||280,H=110;
   canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
+  const ML=10,MR=10,MT=18,MB=22;
   // WHO střední hodnoty pro dívky (kg) po měsících 0-36
   const WHO=[3.2,4.2,5.1,5.8,6.4,6.9,7.3,7.6,7.9,8.2,8.5,8.7,8.9,9.2,9.4,9.6,9.8,10.0,10.2,10.4,10.6,10.9,11.1,11.3,11.5,11.7,11.9,12.1,12.3,12.5,12.7,12.9,13.1,13.3,13.5,13.6,13.8];
   const birth=state.settings.birth||'2024-08-14';
@@ -3793,8 +3794,8 @@ function renderWeightChart(){
   const whoSlice=WHO.slice(minAge,maxAge+1);
   const allKg=[...pts.map(p=>p.kg),...whoSlice];
   const mn=Math.min(...allKg)-0.3,mx=Math.max(...allKg)+0.3;
-  const pxA=age=>(age-minAge)/(maxAge-minAge||1)*(W-20)+10;
-  const pyK=kg=>H-18-(kg-mn)/(mx-mn||1)*(H-26);
+  const pxA=age=>(age-minAge)/(maxAge-minAge||1)*(W-ML-MR)+ML;
+  const pyK=kg=>H-MB-(kg-mn)/(mx-mn||1)*(H-MT-MB);
   // WHO křivka
   if(whoSlice.length>1){
     ctx.setLineDash([4,4]);ctx.strokeStyle='#b5d4f4';ctx.lineWidth=1.5;
@@ -3811,34 +3812,43 @@ function renderWeightChart(){
   // Popisky krajních bodů
   ctx.fillStyle='#7a5c59';ctx.font='10px -apple-system,sans-serif';ctx.textAlign='center';
   [0,pts.length-1].filter((v,i,a)=>a.indexOf(v)===i).forEach(i=>{
-    if(pts[i])ctx.fillText(pts[i].kg.toLocaleString('cs-CZ',{minimumFractionDigits:1})+'kg',pxA(pts[i].age),pyK(pts[i].kg)-7);
+    if(pts[i]){
+      const y=Math.max(MT,pyK(pts[i].kg)-6);
+      ctx.fillText(pts[i].kg.toLocaleString('cs-CZ',{minimumFractionDigits:1})+'kg',pxA(pts[i].age),y);
+    }
   });
   // Legenda
   ctx.font='9px -apple-system,sans-serif';ctx.textAlign='left';
-  ctx.fillStyle='#d4948a';ctx.fillRect(10,H-8,14,2);ctx.fillStyle='#7a5c59';ctx.fillText('Sofinka',28,H-5);
+  ctx.fillStyle='#d4948a';ctx.fillRect(ML,H-MB+6,14,2);ctx.fillStyle='#7a5c59';ctx.fillText('Sofinka',ML+18,H-MB+10);
   ctx.strokeStyle='#b5d4f4';ctx.setLineDash([3,3]);ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(78,H-7);ctx.lineTo(92,H-7);ctx.stroke();
-  ctx.setLineDash([]);ctx.fillStyle='#7a5c59';ctx.fillText('WHO průměr',96,H-5);
+  ctx.beginPath();ctx.moveTo(ML+80,H-MB+7);ctx.lineTo(ML+94,H-MB+7);ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle='#7a5c59';ctx.fillText('WHO průměr',ML+98,H-MB+10);
 }
 
 function renderWeightList(){
-  const log=[...(state.weightLog||[])].reverse().slice(0,6);
+  const log=[...(state.weightLog||[])].reverse();
   const el=document.getElementById('weightList');
   if(!el)return;
   if(!log.length){el.innerHTML='<div style="font-size:12px;color:var(--text-3);padding:6px 0;text-align:center">Žádná vážení</div>';return;}
+  const birth=state.settings.birth||'2024-08-14';
+  const birthDate=new Date(birth+' 12:00');
   el.innerHTML=log.map((w,i)=>{
     const prev=log[i+1];
     const gain=prev?(w.kg-prev.kg)*1000:null;
     const gainStr=gain!==null
-      ?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${gain>0?'#eaf3de':gain<0?'#fcebeb':'var(--rose-light)'};color:${gain>0?'#27500a':gain<0?'#a32d2d':'var(--text-3)'}">${gain>0?'+':''}${Math.round(gain)}g</span>`
+      ?`<span style="font-size:10px;padding:1px 5px;border-radius:6px;background:${gain>0?'#eaf3de':gain<0?'#fcebeb':'var(--rose-light)'};color:${gain>0?'#27500a':gain<0?'#a32d2d':'var(--text-3)'}">${gain>0?'+':''}${Math.round(gain)}g</span>`
       :'';
     const d=new Date(w.date+' 12:00');
-    const ds=d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();
-    return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:.5px solid var(--rose-mid)">
-      <span style="font-size:11px;color:var(--text-3);min-width:72px">${ds}</span>
+    const ds=d.getDate()+'.'+(d.getMonth()+1)+'.';
+    // věk v měsících
+    const ageM=(d.getFullYear()-birthDate.getFullYear())*12+(d.getMonth()-birthDate.getMonth());
+    const ageStr=ageM>=12?Math.floor(ageM/12)+'r '+(ageM%12?ageM%12+'m':''):ageM+'m';
+    return`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:.5px solid var(--rose-mid)">
+      <span style="font-size:11px;color:var(--text-3);min-width:40px">${ds}</span>
+      <span style="font-size:10px;color:var(--text-3);min-width:28px">${ageStr}</span>
       <span style="font-size:13px;font-weight:600">${w.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})} kg</span>
       ${gainStr}
-      ${w.note?`<span style="font-size:10px;color:var(--text-3);margin-left:auto">${w.note}</span>`:''}
+      ${w.note?`<span style="font-size:10px;color:var(--text-3);margin-left:auto;font-style:italic">${w.note}</span>`:''}
     </div>`;
   }).join('');
 }
