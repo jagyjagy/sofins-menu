@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.29 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.31 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1573,15 +1573,14 @@ function runFoodStatusCheck(showReview=true){
       // Automaticky přejde na sledujeme
       state.foodOverrides[foodName]={...ov,status:'warn'};
       changed=true;
-    } else if(status==='warn'&&count>=3){
+    } else if(status==='warn'&&count>=3&&!reviewedFoods.has(foodName)){
       toReview.push(foodName);
     }
   });
 
   if(changed)saveAll();
   if(showReview&&toReview.length){
-    // Přidej jen ty co ještě nejsou ve frontě
-    const newToReview=toReview.filter(f=>!reviewFoodQueue.includes(f));
+    const newToReview=toReview.filter(f=>!reviewFoodQueue.includes(f)&&!reviewedFoods.has(f));
     if(newToReview.length){
       reviewFoodQueue=[...reviewFoodQueue,...newToReview];
       if(reviewFoodQueue.length===newToReview.length)showNextReview();
@@ -1595,6 +1594,7 @@ function checkWarnFoods(foods){
 }
 
 let reviewFoodQueue=[];
+const reviewedFoods=new Set(); // potraviny kterým jsme už zobrazili dialog
 function showStatusReview(foods){
   reviewFoodQueue=[...foods];
   showNextReview();
@@ -1620,6 +1620,7 @@ function showNextReview(){
 function applyReviewStatus(status){
   const food=reviewFoodQueue.shift();
   if(!food){closeModal('mStatusReview');return;}
+  reviewedFoods.add(food);
   if(!state.foodOverrides)state.foodOverrides={};
   state.foodOverrides[food]={...(state.foodOverrides[food]||{}),status};
   if(status==='no'&&!state.settings.allergens.some(a=>a.toLowerCase()===food.toLowerCase()))
@@ -1632,7 +1633,8 @@ function applyReviewStatus(status){
 }
 
 function closeStatusReview(){
-  reviewFoodQueue.shift();
+  const food=reviewFoodQueue.shift();
+  if(food)reviewedFoods.add(food);
   closeModal('mStatusReview');
   if(reviewFoodQueue.length) setTimeout(()=>showNextReview(),300);
 }
@@ -3765,6 +3767,7 @@ function getPrevDays(n,offset){
 // VÁHOVÝ DENÍK
 // ============================================================
 function openAddWeightModal(){
+  window._editWeightIdx=null;
   document.getElementById('wDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('wKg').value='';
   document.getElementById('wCm').value='';
@@ -3851,7 +3854,9 @@ function renderWeightList(){
   if(!log.length){el.innerHTML='<div style="font-size:12px;color:var(--text-3);padding:6px 0;text-align:center">Žádná vážení</div>';return;}
   const birth=state.settings.birth||'2024-08-14';
   const birthDate=new Date(birth+' 12:00');
-  el.innerHTML=log.map((w,i)=>{
+  const itemH=44; // px per item
+  const visible=5;
+  const rows=log.map((w,i)=>{
     const prev=log[i+1];
     const gain=prev?(w.kg-prev.kg)*1000:null;
     const gainStr=gain!==null
@@ -3859,17 +3864,64 @@ function renderWeightList(){
       :'';
     const d=new Date(w.date+' 12:00');
     const ds=d.getDate()+'.'+(d.getMonth()+1)+'.';
-    // věk v měsících
     const ageM=(d.getFullYear()-birthDate.getFullYear())*12+(d.getMonth()-birthDate.getMonth());
     const ageStr=ageM>=12?Math.floor(ageM/12)+'r '+(ageM%12?ageM%12+'m':''):ageM+'m';
-    return`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:.5px solid var(--rose-mid)">
-      <span style="font-size:11px;color:var(--text-3);min-width:40px">${ds}</span>
-      <span style="font-size:10px;color:var(--text-3);min-width:28px">${ageStr}</span>
-      <span style="font-size:13px;font-weight:600">${w.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})} kg</span>
-      ${gainStr}
-      ${w.note?`<span style="font-size:10px;color:var(--text-3);margin-left:auto;font-style:italic">${w.note}</span>`:''}
+    const idx=state.weightLog.length-1-i; // index v originálním (asc) poli
+    return`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:.5px solid var(--rose-mid);min-height:${itemH}px">
+      <div style="flex:1;display:flex;align-items:center;gap:6px;min-width:0">
+        <span style="font-size:11px;color:var(--text-3);min-width:38px">${ds}</span>
+        <span style="font-size:10px;color:var(--text-3);min-width:26px">${ageStr}</span>
+        <span style="font-size:13px;font-weight:600">${w.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})} kg</span>
+        ${gainStr}
+        ${w.note?`<span style="font-size:10px;color:var(--text-3);font-style:italic;margin-left:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.note}</span>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="editWeightEntry(${idx})" style="padding:3px 8px;border-radius:7px;border:.5px solid var(--rose-mid);background:transparent;font-size:11px;color:var(--text-2);cursor:pointer">✏</button>
+        <button onclick="deleteWeightEntry(${idx})" style="padding:3px 8px;border-radius:7px;border:.5px solid #f09595;background:transparent;font-size:11px;color:var(--red);cursor:pointer">🗑</button>
+      </div>
     </div>`;
   }).join('');
+  const maxH=visible*itemH;
+  el.innerHTML=`<div style="max-height:${maxH}px;overflow-y:auto;-webkit-overflow-scrolling:touch">${rows}</div>`;
+}
+
+function deleteWeightEntry(idx){
+  if(!confirm('Smazat toto vážení?'))return;
+  state.weightLog.splice(idx,1);
+  renderSettings();saveAll();
+}
+
+function editWeightEntry(idx){
+  const w=state.weightLog[idx];
+  if(!w)return;
+  document.getElementById('wDate').value=w.date;
+  document.getElementById('wKg').value=w.kg;
+  document.getElementById('wCm').value=w.cm||'';
+  document.getElementById('wNote').value=w.note||'';
+  // označíme že editujeme existující
+  window._editWeightIdx=idx;
+  openModal('mAddWeight');
+}
+
+// Patch saveWeightEntry to handle edit
+const _origSaveWeightEntry=saveWeightEntry;
+function saveWeightEntry(){
+  if(window._editWeightIdx!==undefined&&window._editWeightIdx!==null){
+    const idx=window._editWeightIdx;
+    window._editWeightIdx=null;
+    const date=document.getElementById('wDate').value;
+    const kg=parseFloat(document.getElementById('wKg').value.replace(',','.'));
+    const cm=parseFloat(document.getElementById('wCm').value.replace(',','.'))||null;
+    const note=document.getElementById('wNote').value.trim();
+    if(!date||isNaN(kg)||kg<=0){alert('Zadej prosím datum a hmotnost.');return;}
+    state.weightLog[idx]={date,kg:Math.round(kg*100)/100,cm:cm?Math.round(cm*10)/10:null,note};
+    state.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
+    const latest=state.weightLog[state.weightLog.length-1];
+    state.settings.weight=latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2});
+    closeModal('mAddWeight');renderSettings();saveAll();
+  } else {
+    _origSaveWeightEntry();
+  }
 }
 
 renderAll();
