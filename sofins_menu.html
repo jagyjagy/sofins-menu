@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.22 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.23 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3518,12 +3518,21 @@ function togglePlanStats(){
   document.getElementById('statsControls').style.display=statsMode?'block':'none';
   document.getElementById('planSelectBtn').style.display=statsMode?'none':'block';
   if(statsMode){
-    // Synchronizuj view s plánem (calView)
+    // Synchronizuj view s plánem
     const isMonth=calView==='month';
     statsView=isMonth?'month':'week';
     document.getElementById('vsW').classList.toggle('active',!isMonth);
     document.getElementById('vsM').classList.toggle('active',isMonth);
-    statsOffset=0;
+    // Synchronizuj offset — stejný týden/měsíc jako v plánu
+    if(isMonth){
+      statsOffset=curMonth-TODAY.getMonth()+(curYear-TODAY.getFullYear())*12;
+    } else {
+      // Počet týdnů od aktuálního
+      const msPerWeek=7*24*3600000;
+      const curMondayTs=curWeekStart.getTime();
+      const todayMondayTs=getMonday(TODAY).getTime();
+      statsOffset=Math.round((curMondayTs-todayMondayTs)/msPerWeek);
+    }
     renderStats();
   }
 }
@@ -3601,12 +3610,16 @@ function renderStats(){
   const avgSleep=sleepDays?totalSleepMs/sleepDays:0;
   const avgFood=foodDays?foodCount/foodDays:0;
   const n=days.length;
+  const breastDays=keys.filter(k=>{
+    const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+    return entries.some(e=>e.type==='breast');
+  }).length;
 
   // Předchozí období pro delta
   const prevOffset=statsOffset-1;
   const prevDays=getPrevDays(n,prevOffset);
   const prevKeys=prevDays.map(d=>dateKey(d));
-  let pSleepMs=0,pSleepDays=0,pBreast=0,pFood=0,pFoodDays=0,pReactions=0;
+  let pSleepMs=0,pSleepDays=0,pBreast=0,pBreastDays=0,pFood=0,pFoodDays=0,pReactions=0;
   prevKeys.forEach(k=>{
     const entries=(state.calData[k]||{}).entries||[];
     let ds=0;
@@ -3614,7 +3627,8 @@ function renderStats(){
       const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<6*3600000)ds+=dur;
     });
     if(ds>0){pSleepMs+=ds;pSleepDays++;}
-    pBreast+=entries.filter(e=>e.type==='breast').length;
+    const pbc=entries.filter(e=>e.type==='breast').length;
+    if(pbc>0){pBreast+=pbc;pBreastDays++;}
     const fc=entries.filter(e=>e.type==='food').length;
     if(fc>0){pFood+=fc;pFoodDays++;}
     pReactions+=entries.filter(e=>e.type==='reaction').length;
@@ -3689,8 +3703,8 @@ function renderStats(){
       </div>`
     :statCard('⚠️','Reakce','0×','');
 
-  const avgBreast=n?breastCount/n:0;
-  const pAvgBreast=prevDays.length?pBreast/prevDays.length:0;
+  const avgBreast=breastDays?breastCount/breastDays:0;
+  const pAvgBreast=pBreastDays?pBreast/pBreastDays:0;
 
   const avgNightSleep=nightSleepDays?nightSleepMs/nightSleepDays:0;
 
