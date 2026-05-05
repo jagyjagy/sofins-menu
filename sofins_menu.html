@@ -337,7 +337,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <div id="scr-today" class="screen active">
     <div class="sticky-top">
       <div class="header">
-        <div class="header-top"><h1>Sofin's menu</h1><span class="date-badge" id="todayBadge"></span></div>
+        <div class="header-top"><h1>Sofin's menu</h1><span class="date-badge" id="todayBadge" onclick="showDailyCard(true)" style="cursor:pointer"></span></div>
         <div class="subtitle" id="appSubtitle">Sofinka · 8 měsíců</div>
         <div class="status-row" id="statusRow"></div>
       </div>
@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.33 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.35 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -613,10 +613,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 <div class="modal-wrap" id="mFood"><div class="movl" onclick="closeModal('mFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat jídlo</div>
   <div class="mrow"><label>Typ</label><div class="type-btns">
-    <button class="type-btn sel" onclick="selType(this)">Snídaně</button>
-    <button class="type-btn" onclick="selType(this)">Oběd</button>
-    <button class="type-btn" onclick="selType(this)">Svačina</button>
-    <button class="type-btn" onclick="selType(this)">Večeře</button>
+    <button class="type-btn sel" onclick="selType(this)">🥣 Snídaně</button>
+    <button class="type-btn" onclick="selType(this)">🍽 Oběd</button>
+    <button class="type-btn" onclick="selType(this)">🍎 Svačina</button>
+    <button class="type-btn" onclick="selType(this)">🍲 Večeře</button>
   </div></div>
   <div class="mrow"><label>Zdroj</label><div class="type-btns">
     <button class="type-btn sel" id="srcOwn" onclick="selSrc('own')">🏠 Vlastní</button>
@@ -768,7 +768,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 
 <!-- DENNÍ KARTA -->
 
-<div id="dailyCardOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(245,235,232,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:cardFadeIn .35s ease">
+<div id="dailyCardOverlay" style="display:none;pointer-events:none;position:fixed;inset:0;z-index:9999;background:rgba(245,235,232,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:cardFadeIn .35s ease">
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;text-align:center">
     <button onclick="closeDailyCard()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--rose-dark);opacity:.6;padding:8px">✕</button>
     <div id="dcEmoji" style="font-size:52px;margin-bottom:16px;animation:cardSlideUp .4s ease .1s both"></div>
@@ -1088,6 +1088,7 @@ const DEFAULT_STATE = {
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let lastRemoteTs = 0;
+let lastSaveTime = 0; // kdy jsme naposledy uložili
 
 // ============================================================
 // SYNC — Firebase Realtime Database (cross-device real-time)
@@ -1099,6 +1100,7 @@ let fbListener = null;
 function saveAll() {
   syncTodayToCalData();
   state.ts = Date.now();
+  lastSaveTime = state.ts;
   // uložit lokálně
   try{localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}catch(e){}
   // uložit do Firebase
@@ -1125,7 +1127,8 @@ function applyRemoteState(remote) {
   if (!remote || !remote.ts) return;
   if (remote.ts <= lastRemoteTs) return;
   lastRemoteTs = remote.ts;
-  const wasMe = (Date.now() - remote.ts) < 10000; // 10s okno
+  // Blokuj přepis pokud jsme nedávno sami uložili (15s okno)
+  const wasMe = (Date.now() - lastSaveTime) < 15000;
   if (wasMe) return;
   const sleepWasActive = state.sleep && state.sleep.active;
   state.todayLog = remote.todayLog || state.todayLog;
@@ -1143,6 +1146,11 @@ function applyRemoteState(remote) {
   }
   if(remote.weightLog&&remote.weightLog.length>(state.weightLog||[]).length){
     state.weightLog = remote.weightLog;
+  } else if(remote.weightLog&&remote.weightLog.length===(state.weightLog||[]).length&&remote.ts>state.ts){
+    // Stejná délka ale remote je novější — porovnej obsah
+    const remoteStr=JSON.stringify(remote.weightLog);
+    const localStr=JSON.stringify(state.weightLog);
+    if(remoteStr!==localStr&&remote.ts>state.ts)state.weightLog=remote.weightLog;
   }
   if (remote.calData) state.calData = remote.calData;
   const sleepNowActive = state.sleep && state.sleep.active;
@@ -1422,7 +1430,7 @@ function renderTodayList(){
     const isBedtime=e.type==='bedtime';
     const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):isReaction?' reaction-card':'';
     const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-    const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':'🍽';
+    const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
     const who=e.by?`<span class="who ${byMap[e.by]||'who-tata'}">${e.by}</span>`:'';
     const rd=e.reaction&&!isReaction?`<div class="rdot">⚠</div>`:'';
     const lb=e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'';
@@ -1526,7 +1534,9 @@ let selFoods=[], fzSelFoodsArr=[];
 function saveFood(){
   if(!selFoods.length){closeModal('mFood');return;}
   const typeBtn=document.querySelector('#mFood .type-btn.sel');
-  const name=typeBtn?typeBtn.textContent:'Jídlo';
+  const rawName=typeBtn?typeBtn.textContent.trim():'Jídlo';
+  // Odstraň emoji prefix (🥣 Snídaně → Snídaně)
+  const name=rawName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}]\s*/u,'').trim()||rawName;
   const ts=parseTimeToTs(document.getElementById('foodTime').value);
   const brand=document.getElementById('brandInput')?.value.trim()||'';
   const sub=[brand?'🏪 '+brand:'',selFoods.join(', ')].filter(Boolean).join(' · ');
@@ -1685,6 +1695,15 @@ function saveReaction(){
 }
 
 // food suggest
+function getMealEmoji(name){
+  if(!name)return'🍽';
+  const n=name.toLowerCase();
+  if(n.includes('snídaně')||n.includes('snidane'))return'🥣';
+  if(n.includes('svačina')||n.includes('svacina'))return'🍎';
+  if(n.includes('večeře')||n.includes('vecere'))return'🍲';
+  return'🍽'; // oběd + ostatní
+}
+
 function allFoods(){
   const fdb=FDB.filter(f=>f.month<=CM);
   const custom=(state.customFoods||[]);
@@ -1841,7 +1860,7 @@ function openEditEntryModal(e){
   const timeVal=fmtTime(e.ts);
   let html='';
   if(e.type==='food'){
-    const typeNames=['Snídaně','Oběd','Svačina','Večeře'];
+    const typeNames=['🥣 Snídaně','🍽 Oběd','🍎 Svačina','🍲 Večeře'];
     html+=`<div class="mrow"><label>Typ</label><div class="type-btns">${typeNames.map(n=>`<button class="type-btn${e.name===n?' sel':''}" onclick="selType(this)">${n}</button>`).join('')}</div></div>`;
     // sub může být "🏪 Značka · složka1, složka2" nebo jen "složka1, složka2"
     let foodSubPart=e.sub||'';
@@ -2036,7 +2055,7 @@ function openEntryDetail(id){
   const e=state.todayLog.find(x=>x.id===id);
   if(!e)return;
   const isWakeup=e.type==='wakeup',isBedtime=e.type==='bedtime';
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isWakeup?'🌅':isBedtime?'🌙':'🍽';
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
   const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',wakeup:'#fef3b0',bedtime:'#e4e0f7'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
@@ -2181,7 +2200,7 @@ function syncTodayToCalData(){
 function openPlanEntryDetail(e, dayKey){
   currentEntryId=null;
   currentCalEntry=dayKey?{dayKey,ts:e.ts,type:e.type}:null;
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':e.type==='reaction'?'⚠️':'🍽';
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':e.type==='reaction'?'⚠️':getMealEmoji(e.name);
   const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',reaction:'var(--red-bg)'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
@@ -2461,7 +2480,7 @@ function selDay(y,m,day){
         const isBedtime=e.type==='bedtime';
         const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':isReaction?' style="background:#fff5f5;border-color:#f09595"':'';
         const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-        const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':'🍽';
+        const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
         const origTs=e.ts;const origType=e.type;
         html+=`<div class="ecard${isReaction?'':cc}" ${isReaction?'style="background:#fff5f5;border-color:#f09595"':''} onclick="${isReaction?`openPlanReactionDetail('${k}')`:`openPlanEntryDetailByTsType('${k}',${origTs},'${origType}')`}">
           <span class="etime">${fmtTime(e.ts)}</span>
@@ -2876,7 +2895,31 @@ function toggleRH(){
 // MODAL UTILS
 // ============================================================
 function openModal(id){
-  if(id==='mFood'){selFoods=[];renderSelFoodsEl();document.getElementById('ingInput').value='';document.getElementById('foodSug').style.display='none';document.getElementById('fzSugBox').style.display='none';document.getElementById('rowBrand').style.display='none';const now=new Date();document.getElementById('foodTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
+  if(id==='mFood'){
+    selFoods=[];renderSelFoodsEl();
+    document.getElementById('ingInput').value='';
+    document.getElementById('foodSug').style.display='none';
+    document.getElementById('fzSugBox').style.display='none';
+    document.getElementById('rowBrand').style.display='none';
+    const now=new Date();
+    document.getElementById('foodTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    // Předvyplnění typu podle času dne
+    const h=now.getHours();
+    let mealType='Svačina';
+    if(h>=6&&h<9) mealType='Snídaně';
+    else if(h>=9&&h<11) mealType='Svačina';
+    else if(h>=11&&h<14) mealType='Oběd';
+    else if(h>=14&&h<16) mealType='Svačina';
+    else if(h>=16&&h<20) mealType='Večeře';
+    else mealType='Večeře';
+    const mealEmoji={'Snídaně':'🥣 Snídaně','Oběd':'🍽 Oběd','Svačina':'🍎 Svačina','Večeře':'🍲 Večeře'};
+    const mealBtn=mealEmoji[mealType];
+    document.querySelectorAll('#mFood .type-btn').forEach(b=>{
+      if(Object.values(mealEmoji).includes(b.textContent.trim())){
+        b.classList.toggle('sel',b.textContent.trim()===mealBtn);
+      }
+    });
+  }
   if(id==='mBreast'){const now=new Date();document.getElementById('breastTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
   if(id==='mReaction'){const now=new Date();document.getElementById('reactionTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');rhOpen=false;document.getElementById('rhList').style.display='none';document.getElementById('rhToggle').textContent='▼ rozbalit';}
   if(id==='mFzAdd'){fzSelFoodsArr=[];document.getElementById('fzSelFoods').innerHTML='';document.getElementById('fzIngInput').value='';document.getElementById('fzFoodSug').style.display='none';document.getElementById('fzDate').value=new Date().toISOString().slice(0,10);document.getElementById('fzNote').value='';document.getElementById('fzIngRow').style.display='block';document.getElementById('fzMilkInfo').style.display='none';document.getElementById('fzExpiryPreview').style.display='none';document.getElementById('fzMaxDaysHint').textContent='max trvanlivost: 2 měsíce';document.getElementById('fzAmt').value='6';document.querySelector('#mFzAdd .type-btn.sel')?.classList.remove('sel');document.querySelector('#mFzAdd .type-btn').classList.add('sel');document.getElementById('fzUnit').value='kostičky';}
@@ -4089,29 +4132,27 @@ function getDailyCard(){
   return{...card,days,special:false};
 }
 
-function showDailyCard(){
-  // Zobraz jen jednou za den
-  const todayKey=dateKey(TODAY);
+function showDailyCard(force=false){
+  const todayStr=new Date().toISOString().slice(0,10);
   const lastShown=localStorage.getItem('sofin:cardShown')||'';
-  if(lastShown===todayKey)return;
-
+  if(!force&&lastShown===todayStr)return;
   const card=getDailyCard();
   const ageStr=fmtAge(card.days);
   const text=(card.tx||card.text||'').replace('{age}',ageStr);
   const title=(card.ti||card.title||'').replace('{age}',ageStr).replace('{days}',ageStr);
-
   document.getElementById('dcEmoji').textContent=card.e||card.emoji||'🌸';
   document.getElementById('dcType').textContent=card.special?'✦ Zvláštní den ✦':(CARD_TYPE_LABELS[card.t]||'');
   document.getElementById('dcTitle').textContent=title;
   document.getElementById('dcText').textContent=text;
   document.getElementById('dcDay').textContent='Den '+card.days+' · '+ageStr;
-
-  document.getElementById('dailyCardOverlay').style.display='block';
+  const el=document.getElementById('dailyCardOverlay');
+  el.style.display='block';el.style.pointerEvents='auto';
 }
 
 function closeDailyCard(){
-  document.getElementById('dailyCardOverlay').style.display='none';
-  localStorage.setItem('sofin:cardShown',dateKey(TODAY));
+  const el=document.getElementById('dailyCardOverlay');
+  el.style.display='none';el.style.pointerEvents='none';
+  localStorage.setItem('sofin:cardShown',new Date().toISOString().slice(0,10));
 }
 
 renderAll();
