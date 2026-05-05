@@ -595,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.35 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.36 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1144,13 +1144,14 @@ function applyRemoteState(remote) {
   if(remote.brands&&remote.brands.length>=((state.brands||[]).length)){
     state.brands = remote.brands;
   }
-  if(remote.weightLog&&remote.weightLog.length>(state.weightLog||[]).length){
-    state.weightLog = remote.weightLog;
-  } else if(remote.weightLog&&remote.weightLog.length===(state.weightLog||[]).length&&remote.ts>state.ts){
-    // Stejná délka ale remote je novější — porovnej obsah
-    const remoteStr=JSON.stringify(remote.weightLog);
-    const localStr=JSON.stringify(state.weightLog);
-    if(remoteStr!==localStr&&remote.ts>state.ts)state.weightLog=remote.weightLog;
+  // weightLog — chraň lokální změny pomocí vlastního timestamps
+  if(remote.weightLog){
+    const localWLTs=parseInt(localStorage.getItem('sofin:weightLogTs')||'0');
+    const remoteIsNewer=remote.ts>localWLTs;
+    if(remoteIsNewer&&remote.weightLog.length>=(state.weightLog||[]).length){
+      // Remote je novější než naše poslední uložení weightLogu
+      state.weightLog=remote.weightLog;
+    }
   }
   if (remote.calData) state.calData = remote.calData;
   const sleepNowActive = state.sleep && state.sleep.active;
@@ -3855,6 +3856,9 @@ function saveWeightEntry(){
   state.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
   const latest=state.weightLog[state.weightLog.length-1];
   state.settings.weight=latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2});
+  // Zaznamenej timestamp lokální změny weightLogu
+  const wlTs=Date.now();
+  localStorage.setItem('sofin:weightLogTs',wlTs.toString());
   closeModal('mAddWeight');renderSettings();saveAll();
 }
 
@@ -3955,6 +3959,7 @@ function renderWeightList(){
 function deleteWeightEntry(idx){
   if(!confirm('Smazat toto vážení?'))return;
   state.weightLog.splice(idx,1);
+  localStorage.setItem('sofin:weightLogTs',Date.now().toString());
   renderSettings();saveAll();
 }
 
@@ -3985,6 +3990,7 @@ function saveWeightEntry(){
     state.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
     const latest=state.weightLog[state.weightLog.length-1];
     state.settings.weight=latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2});
+    localStorage.setItem('sofin:weightLogTs',Date.now().toString());
     closeModal('mAddWeight');renderSettings();saveAll();
   } else {
     _origSaveWeightEntry();
