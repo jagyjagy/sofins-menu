@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
@@ -312,6 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 <body>
 
 <!-- ONBOARDING -->
+
 <div class="onboard" id="onboard">
   <div class="ob-emoji">👶</div>
   <h2>Sofin's menu</h2>
@@ -331,6 +333,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- DNES -->
+
   <div id="scr-today" class="screen active">
     <div class="sticky-top">
       <div class="header">
@@ -379,6 +382,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- PLÁN -->
+
   <div id="scr-plan" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -447,6 +451,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- POTRAVINY -->
+
   <div id="scr-food" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -509,6 +514,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- MRAZÁK -->
+
   <div id="scr-freezer" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -538,6 +544,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- NASTAVENÍ -->
+
   <div id="scr-settings" class="screen">
     <div class="scroll-area">
       <div class="header"><div class="header-top"><h1>Nastavení</h1></div></div>
@@ -588,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.38 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.39 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -602,6 +609,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div>
 
 <!-- MODALS -->
+
 <div class="modal-wrap" id="mFood"><div class="movl" onclick="closeModal('mFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat jídlo</div>
   <div class="mrow"><label>Typ</label><div class="type-btns">
@@ -732,7 +740,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
+
 <!-- MODAL export pro alergologa -->
+
 <div class="modal-wrap" id="mExport"><div class="movl" onclick="closeModal('mExport')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:90vh">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -745,6 +755,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat vážení -->
+
 <div class="modal-wrap" id="mAddWeight"><div class="movl" onclick="closeModal('mAddWeight')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat vážení</div>
   <div class="mrow"><label>Datum</label><input type="date" id="wDate"/></div>
@@ -756,6 +767,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- DENNÍ KARTA -->
+
 <div id="dailyCardOverlay" style="display:none;pointer-events:none;position:fixed;inset:0;z-index:9999;background:rgba(245,235,232,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:cardFadeIn .35s ease">
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;text-align:center">
     <button onclick="closeDailyCard()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--rose-dark);opacity:.6;padding:8px">✕</button>
@@ -772,7 +784,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 @keyframes cardSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 </style>
 
+<!-- MODAL stat detail -->
+
+<div class="modal-wrap" id="mStatDetail"><div class="movl" onclick="closeModal('mStatDetail')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
+  <div class="mhandle"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="mtitle" id="sdTitle" style="margin-bottom:0"></div>
+    <div class="type-btns" style="margin:0">
+      <button class="type-btn active" id="sdW" onclick="setStatDetailView('week',this)">Týden</button>
+      <button class="type-btn" id="sdM" onclick="setStatDetailView('month',this)">Měsíc</button>
+      <button class="type-btn" id="sdY" onclick="setStatDetailView('year',this)">Rok</button>
+    </div>
+  </div>
+  <canvas id="sdCanvas" height="160" style="width:100%;display:block;margin-bottom:12px"></canvas>
+  <div id="sdTable" style="font-size:12px"></div>
+</div></div></div>
+
 <!-- MODAL přezkum statusu potraviny -->
+
 <div class="modal-wrap" id="mStatusReview"><div class="movl" onclick="closeStatusReview()"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="font-size:13px;color:var(--text-2);margin-bottom:4px" id="srSubtitle"></div>
@@ -782,6 +811,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL upravit potravinu -->
+
 <div class="modal-wrap" id="mEditFood"><div class="movl" onclick="closeModal('mEditFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mEditFoodTitle">Upravit potravinu</div>
   <div class="mrow"><label>Název</label><input type="text" id="efName" placeholder="název potraviny"/></div>
@@ -809,6 +839,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat potravinu -->
+
 <div class="modal-wrap" id="mAddFood"><div class="movl" onclick="closeModal('mAddFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat potravinu</div>
   <div class="mrow"><label>Název</label><input type="text" id="afName" placeholder="např. quinoa, tempeh..."/></div>
@@ -829,6 +860,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat značku/recept -->
+
 <div class="modal-wrap" id="mAddBrand"><div class="movl" onclick="closeModal('mAddBrand')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mAddBrandTitle">Přidat značku / recept</div>
   <div class="mrow"><label>Název značky nebo receptu</label><input type="text" id="abName" placeholder="např. Mrkvová kaše, HiPP Bio..."/></div>
@@ -853,6 +885,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL plánování jídla -->
+
 <div class="modal-wrap" id="mPlanFood"><div class="movl" onclick="closeModal('mPlanFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" id="mPlanFoodTitle">Naplánovat jídlo</div>
@@ -873,6 +906,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL hromadná změna statusu -->
+
 <div class="modal-wrap" id="mBulkStatus"><div class="movl" onclick="closeModal('mBulkStatus')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle">Hromadná změna statusu</div>
@@ -907,6 +941,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail záznamu (jídlo/kojení/spánek) -->
+
 <div class="modal-wrap" id="mEntryDetail"><div class="movl" onclick="closeModal('mEntryDetail')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -922,6 +957,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL upravit záznam -->
+
 <div class="modal-wrap" id="mEditEntry"><div class="movl" onclick="closeModal('mEditEntry')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="editEntryTitle">Upravit záznam</div>
   <div id="editEntryBody"></div>
@@ -930,6 +966,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail reakce -->
+
 <div class="modal-wrap" id="mReactionDetail"><div class="movl" onclick="closeModal('mReactionDetail')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -3707,9 +3744,9 @@ function renderStats(){
   function fmtDur(ms){if(!ms)return'—';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h>0?h+'h'+(m?' '+m+'min':''):m+'min';}
   function fmtNum(n,dec=1){return Number(n.toFixed(dec)).toLocaleString('cs-CZ');}
 
-  const statCard=(icon,label,val,dlt)=>`
-    <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;flex:1;min-width:0">
-      <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${icon} ${label}</div>
+  const statCard=(icon,label,val,dlt,metric='')=>`
+    <div onclick="${metric?`openStatDetail('${metric}')`:''}" style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;flex:1;min-width:0;${metric?'cursor:pointer;':''}">
+      <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${icon} ${label}${metric?` <span style="float:right;opacity:.4;font-size:10px">›</span>`:''}</div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="font-size:18px;font-weight:600;color:var(--text)">${val}</span>
         ${dlt}
@@ -3768,12 +3805,12 @@ function renderStats(){
   document.getElementById('statsContent').innerHTML=`
     ${weightBlock}
     <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000))}
-      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','')}
+      ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000),'sleep')}
+      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','','nightsleep')}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${statCard('🍽','Jídla / den',avgFood?fmtNum(avgFood)+'×':'—',delta(avgFood,pAvgFood))}
-      ${statCard('🤱','Kojení / den',avgBreast?fmtNum(avgBreast,1)+'×':'—',delta(avgBreast,pAvgBreast))}
+      ${statCard('🍽','Jídla / den',avgFood?fmtNum(avgFood)+'×':'—',delta(avgFood,pAvgFood),'food')}
+      ${statCard('🤱','Kojení / den',avgBreast?fmtNum(avgBreast,1)+'×':'—',delta(avgBreast,pAvgBreast),'breast')}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       ${reactionCard}
@@ -3786,7 +3823,7 @@ function renderStats(){
         :statCard('🥣','Nové pot.','0','')}
     </div>
     <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:4px">
-      ▲▼ = porovnání s předchozím ${statsView==='week'?'týdnem':'měsícem'}
+      ▲▼ = porovnání s předchozím ${statsView==='week'?'týdnem':'měsícem'} · klikni na kartu pro vývoj
     </div>`;
 }
 
@@ -4118,7 +4155,170 @@ function closeDailyCard(){
   localStorage.setItem('sofin:cardShown',new Date().toISOString().slice(0,10));
 }
 
+
+// ============================================================
+// STAT DETAIL MODAL
+// ============================================================
+let statDetailMetric='sleep';
+let statDetailView='week';
+
+const STAT_META={
+  sleep:   {icon:'😴',label:'Průměrný spánek/den',color:'#7a8fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
+  nightsleep:{icon:'🌙',label:'Průměrná noc',color:'#4a6fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
+  food:    {icon:'🍽',label:'Jídla / den',color:'#d4948a',unit:'×',fmt:(n)=>+n.toFixed(2)},
+  breast:  {icon:'🤱',label:'Kojení / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
+};
+
+function openStatDetail(metric){
+  statDetailMetric=metric;
+  statDetailView='week';
+  document.getElementById('sdTitle').textContent=(STAT_META[metric]?.icon||'')+'  '+(STAT_META[metric]?.label||metric);
+  document.querySelectorAll('#mStatDetail .type-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sdW').classList.add('active');
+  openModal('mStatDetail');
+  setTimeout(()=>renderStatDetail(),50);
+}
+
+function setStatDetailView(v,btn){
+  statDetailView=v;
+  document.querySelectorAll('#mStatDetail .type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStatDetail();
+}
+
+function renderStatDetail(){
+  const metric=statDetailMetric;
+  const meta=STAT_META[metric];
+  if(!meta)return;
+
+  // Připrav periody
+  const periods=[];
+  const now=new Date(TODAY);
+  if(statDetailView==='week'){
+    // Posledních 8 týdnů
+    for(let w=7;w>=0;w--){
+      const mon=new Date(now);
+      const dow=mon.getDay()===0?6:mon.getDay()-1;
+      mon.setDate(mon.getDate()-dow-w*7);
+      const days=[];
+      for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d);}
+      const label=days[0].getDate()+'.'+(days[0].getMonth()+1)+'.';
+      periods.push({label,days});
+    }
+  } else if(statDetailView==='month'){
+    // Posledních 6 měsíců
+    for(let m=5;m>=0;m--){
+      const d=new Date(now.getFullYear(),now.getMonth()-m,1);
+      const dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+      const days=[];
+      for(let i=1;i<=dim;i++)days.push(new Date(d.getFullYear(),d.getMonth(),i));
+      const MONTHS=['Led','Ún','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+      periods.push({label:MONTHS[d.getMonth()],days});
+    }
+  } else {
+    // Rok — 12 měsíců
+    for(let m=11;m>=0;m--){
+      const d=new Date(now.getFullYear(),now.getMonth()-m,1);
+      const dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+      const days=[];
+      for(let i=1;i<=dim;i++)days.push(new Date(d.getFullYear(),d.getMonth(),i));
+      const MONTHS=['Led','Ún','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+      periods.push({label:MONTHS[d.getMonth()],days});
+    }
+  }
+
+  // Spočítej hodnoty
+  const values=periods.map(p=>{
+    const keys=p.days.map(d=>dateKey(d));
+    let total=0,count=0;
+    keys.forEach(k=>{
+      const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+      let dayVal=0;
+      if(metric==='sleep'){
+        let ms=0;
+        entries.filter(e=>e.type==='sleep'&&!(e.name||'').includes('Noční')&&!(e.sub||'').includes('probíhá')).forEach(e=>{
+          const d=getSleepEndTs(e)-e.ts;if(d>60000&&d<6*3600000)ms+=d;
+        });
+        if(ms>0){dayVal=ms;count++;}
+      } else if(metric==='nightsleep'){
+        const ns=(state.calData[k]||{}).entries?.find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
+        if(ns){const d=getSleepEndTs(ns)-ns.ts;if(d>3600000){dayVal=d;count++;}}
+      } else if(metric==='food'){
+        const fc=entries.filter(e=>e.type==='food').length;
+        if(fc>0){dayVal=fc;count++;}
+      } else if(metric==='breast'){
+        const bc=entries.filter(e=>e.type==='breast').length;
+        if(bc>0){dayVal=bc;count++;}
+      }
+      total+=dayVal;
+    });
+    const avg=count>0?total/count:0;
+    return meta.fmt(avg);
+  });
+
+  // Nakresli graf
+  const canvas=document.getElementById('sdCanvas');
+  const W=canvas.parentElement.offsetWidth-32||280,H=160;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const n=values.length;
+  const mx=Math.max(...values,0.1);
+  const ML=10,MR=10,MT=12,MB=28;
+  const barW=Math.floor((W-ML-MR)/n)-4;
+  const pX=i=>ML+i*(W-ML-MR)/n+(W-ML-MR)/n/2;
+  const pY=v=>H-MB-(v/mx)*(H-MT-MB);
+
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,.06)';ctx.lineWidth=1;
+  for(let i=1;i<=3;i++){
+    const y=H-MB-(i/4)*(H-MT-MB);
+    ctx.beginPath();ctx.moveTo(ML,y);ctx.lineTo(W-MR,y);ctx.stroke();
+  }
+
+  // Bars
+  values.forEach((v,i)=>{
+    const x=pX(i);const bh=Math.max(2,(v/mx)*(H-MT-MB));
+    const isLast=i===n-1;
+    ctx.fillStyle=isLast?meta.color:meta.color+'88';
+    ctx.beginPath();
+    const bx=x-barW/2;
+    const by=H-MB-bh;
+    const r=4;
+    ctx.moveTo(bx+r,by);ctx.lineTo(bx+barW-r,by);ctx.quadraticCurveTo(bx+barW,by,bx+barW,by+r);
+    ctx.lineTo(bx+barW,H-MB);ctx.lineTo(bx,H-MB);ctx.lineTo(bx,by+r);
+    ctx.quadraticCurveTo(bx,by,bx+r,by);ctx.closePath();ctx.fill();
+    // Value label
+    if(v>0){
+      ctx.fillStyle=isLast?meta.color:'#666';ctx.font=`${isLast?'600 ':''}9px -apple-system,sans-serif`;ctx.textAlign='center';
+      const disp=metric.includes('sleep')?fmtDurShort(v*3600000):v.toFixed(1);
+      ctx.fillText(disp,x,by-3);
+    }
+  });
+
+  // X labels
+  ctx.fillStyle='#aaa';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='center';
+  periods.forEach((p,i)=>ctx.fillText(p.label,pX(i),H-8));
+
+  // Tabulka
+  document.getElementById('sdTable').innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+      ${periods.map((p,i)=>`
+        <div style="flex:1;min-width:60px;background:${i===n-1?'var(--rose-light)':'var(--card)'};border-radius:8px;padding:5px 6px;border:.5px solid var(--rose-mid)">
+          <div style="font-size:9px;color:var(--text-3)">${p.label}</div>
+          <div style="font-size:12px;font-weight:${i===n-1?'600':'400'}">${values[i]>0?(metric.includes('sleep')?fmtDurShort(values[i]*3600000):values[i].toFixed(1)+meta.unit):'—'}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function fmtDurShort(ms){
+  if(!ms)return'—';
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
+  return h>0?h+'h'+(m?m+'m':''):m+'m';
+}
+
 renderAll();
 </script>
+
 </body>
 </html>
