@@ -588,7 +588,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.37 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.38 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -2528,30 +2528,24 @@ function openPlanReactionDetail(dayKey){
   else{suspectEl.style.display='none';}
   document.getElementById('rdNote').style.display='none';
   // Jídla před reakcí — pokud nemáme reactionTs, ukažeme všechna jídla daného dne
-  const foodEntries=entries.filter(e=>e.type==='food'||e.type==='breast');
+  const foodEntries=entries.filter(e=>e.type==='food');
+  // Přidej i jídla z předchozího dne (48h okno)
+  const prevKey=dateKey(new Date(new Date(dayKey+' 12:00').getTime()-86400000));
+  const prevEntries=(state.calData[prevKey]||{}).entries||[];
+  const allFoodEntries=[...foodEntries,...prevEntries.filter(e=>e.type==='food')];
   // Porovnávej jen čas v daném dni (ne absolutní ts — záznamy mohou být z různých dat)
   const reactionMins=reactionTs?new Date(reactionTs).getHours()*60+new Date(reactionTs).getMinutes():null;
   let hist;
   if(foodEntries.length===0&&dd.foods&&dd.foods.length){
     hist=dd.foods.map(f=>({type:'food',ts:0,name:'Jídlo',sub:f}));
   } else {
-    hist=reactionMins!==null
-      ? foodEntries.filter(e=>{
-          const m=new Date(e.ts).getHours()*60+new Date(e.ts).getMinutes();
-          return m<reactionMins;
-        }).sort((a,b)=>{
-          const ma=new Date(a.ts).getHours()*60+new Date(a.ts).getMinutes();
-          const mb=new Date(b.ts).getHours()*60+new Date(b.ts).getMinutes();
-          return mb-ma;
-        }).slice(0,8)
-      : foodEntries.sort((a,b)=>b.ts-a.ts).slice(0,8);
+    hist=reactionTs!==null
+      ? allFoodEntries.filter(e=>e.ts>0&&e.ts<reactionTs&&(reactionTs-e.ts)<48*3600000)
+          .sort((a,b)=>b.ts-a.ts).slice(0,12)
+      : allFoodEntries.sort((a,b)=>b.ts-a.ts).slice(0,12);
   }
   document.getElementById('rdHistory').innerHTML=hist.length?hist.map(h=>{
-    let minBefore=null;
-    if(reactionMins!==null&&h.ts>0){
-      const hm=new Date(h.ts).getHours()*60+new Date(h.ts).getMinutes();
-      minBefore=reactionMins-hm;
-    }
+    const minBefore=reactionTs&&h.ts>0?Math.round((reactionTs-h.ts)/60000):null;
     const timeStr=minBefore!==null
       ?(minBefore<60?minBefore+'min před':Math.floor(minBefore/60)+'h '+(minBefore%60?minBefore%60+'min ':'')+'před')
       :(h.ts>0?fmtTime(h.ts):'tentýž den');
@@ -2881,9 +2875,27 @@ function toggleRH(){
   rhOpen=!rhOpen;
   const list=document.getElementById('rhList');const toggle=document.getElementById('rhToggle');
   if(rhOpen){
-    const now=Date.now();const hist=[...state.todayLog].filter(e=>e.type==='food'||e.type==='breast').sort((a,b)=>b.ts-a.ts).slice(0,8);
+    const now=Date.now();
+    const since48h=now-48*3600000;
+    // Jen jídla (ne kojení), posledních 48h, ze všech zdrojů
+    const todayKey=dateKey(TODAY);
+    const yesterday=dateKey(new Date(now-86400000));
+    const allEntries=[
+      ...state.todayLog,
+      ...((state.calData[yesterday]||{}).entries||[])
+    ];
+    const hist=allEntries.filter(e=>e.type==='food'&&e.ts>since48h&&e.ts<now).sort((a,b)=>b.ts-a.ts).slice(0,12);
     list.style.display='flex';
-    list.innerHTML=hist.map(e=>{const el=now-e.ts;const mins=Math.floor(el/60000);const clr=mins<=120?'var(--red)':mins<=240?'var(--amber)':'var(--text-2)';const warn=e.type==='food'&&mins<=120?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;margin-left:4px">⚠ blízko</span>':'';return`<div class="rh-item ${e.type==='food'&&mins<=120?'close-r':''}"><div style="min-width:60px;text-align:right"><div style="font-size:11px;font-weight:600;color:${clr}">${fmtElapsed(el)}</div><div style="font-size:10px;color:var(--text-3)">${fmtTime(e.ts)}</div></div><div><div style="font-size:12px;color:${e.type==='breast'?'#5c3d8a':'var(--text)'}">${e.type==='breast'?'🤱 ':''} ${e.sub}${warn}</div></div></div>`;}).join('');
+    list.innerHTML=hist.map(e=>{
+      const el=now-e.ts;const mins=Math.floor(el/60000);
+      const clr=mins<=120?'var(--red)':mins<=480?'var(--amber)':'var(--text-2)';
+      const warn=mins<=120?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;margin-left:4px">⚠ blízko</span>':'';
+      const timeAgo=mins<60?mins+'min':Math.floor(mins/60)+'h'+(mins%60?' '+mins%60+'min':'');
+      return`<div class="rh-item ${mins<=120?'close-r':''}">
+        <div style="min-width:60px;text-align:right"><div style="font-size:11px;font-weight:600;color:${clr}">${timeAgo} před</div><div style="font-size:10px;color:var(--text-3)">${fmtTime(e.ts)}</div></div>
+        <div><div style="font-size:12px;color:var(--text)">${e.sub||e.name}${warn}</div></div>
+      </div>`;
+    }).join('')||(hist.length===0?'<div style="font-size:12px;color:var(--text-3);padding:8px">Žádná jídla za posledních 48h</div>':'');
     toggle.textContent='▲ sbalit';
   } else {list.style.display='none';toggle.textContent='▼ rozbalit';}
 }
@@ -3353,28 +3365,20 @@ function exportAlergolog(){
       const parts=(r.sub||'').split('·').map(s=>s.trim()).filter(Boolean);
       parts.forEach(p=>lines.push('   '+p));
 
-      // co jedla předtím — porovnej čas v daném dni (jako v openPlanReactionDetail)
-      const reactionMins=new Date(r.ts).getHours()*60+new Date(r.ts).getMinutes();
-      const before=r.allEntries
-        .filter(e=>{
-          if(e.type!=='food'&&e.type!=='breast')return false;
-          const em=new Date(e.ts).getHours()*60+new Date(e.ts).getMinutes();
-          return em<reactionMins&&(reactionMins-em)<360; // max 6h před
-        })
-        .sort((a,b)=>{
-          const ma=new Date(a.ts).getHours()*60+new Date(a.ts).getMinutes();
-          const mb=new Date(b.ts).getHours()*60+new Date(b.ts).getMinutes();
-          return mb-ma;
-        });
+      // co jedla předtím — 48h před reakcí, jen jídla
+      // Přidej jídla z předchozího dne
+      const prevDayKey=dateKey(new Date(r.ts-86400000));
+      const prevDayEntries=(state.calData[prevDayKey]||{}).entries||[];
+      const allFoodBefore=[...r.allEntries,...prevDayEntries]
+        .filter(e=>e.type==='food'&&e.ts<r.ts&&(r.ts-e.ts)<48*3600000)
+        .sort((a,b)=>b.ts-a.ts);
 
-      if(before.length){
-        lines.push('   Co jedla předtím:');
-        before.forEach(e=>{
-          const em=new Date(e.ts).getHours()*60+new Date(e.ts).getMinutes();
-          const minAgo=reactionMins-em;
-          const kdy=minAgo<60?minAgo+'min před':Math.floor(minAgo/60)+'h'+(minAgo%60?' '+minAgo%60+'min':'')+'před';
-          const co=e.type==='breast'?'kojení':(e.sub||e.name);
-          lines.push('   – '+co+' ('+kdy+')');
+      if(allFoodBefore.length){
+        lines.push('   Co jedla předtím (48h):');
+        allFoodBefore.forEach(e=>{
+          const minAgo=Math.round((r.ts-e.ts)/60000);
+          const kdy=minAgo<60?minAgo+'min před':Math.floor(minAgo/60)+'h'+(minAgo%60?' '+minAgo%60+'min ':' ')+'před';
+          lines.push('   – '+(e.sub||e.name)+' ('+kdy+')');
         });
       }
     });
