@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
@@ -313,7 +312,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 <body>
 
 <!-- ONBOARDING -->
-
 <div class="onboard" id="onboard">
   <div class="ob-emoji">👶</div>
   <h2>Sofin's menu</h2>
@@ -333,7 +331,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- DNES -->
-
   <div id="scr-today" class="screen active">
     <div class="sticky-top">
       <div class="header">
@@ -382,7 +379,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- PLÁN -->
-
   <div id="scr-plan" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -451,7 +447,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- POTRAVINY -->
-
   <div id="scr-food" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -514,7 +509,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- MRAZÁK -->
-
   <div id="scr-freezer" class="screen">
     <div class="sticky-top">
       <div class="header">
@@ -544,7 +538,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   </div>
 
   <!-- NASTAVENÍ -->
-
   <div id="scr-settings" class="screen">
     <div class="scroll-area">
       <div class="header"><div class="header-top"><h1>Nastavení</h1></div></div>
@@ -595,7 +588,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.36 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.37 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -609,7 +602,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div>
 
 <!-- MODALS -->
-
 <div class="modal-wrap" id="mFood"><div class="movl" onclick="closeModal('mFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat jídlo</div>
   <div class="mrow"><label>Typ</label><div class="type-btns">
@@ -740,9 +732,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail potraviny -->
-
 <!-- MODAL export pro alergologa -->
-
 <div class="modal-wrap" id="mExport"><div class="movl" onclick="closeModal('mExport')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:90vh">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -755,7 +745,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat vážení -->
-
 <div class="modal-wrap" id="mAddWeight"><div class="movl" onclick="closeModal('mAddWeight')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat vážení</div>
   <div class="mrow"><label>Datum</label><input type="date" id="wDate"/></div>
@@ -767,7 +756,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- DENNÍ KARTA -->
-
 <div id="dailyCardOverlay" style="display:none;pointer-events:none;position:fixed;inset:0;z-index:9999;background:rgba(245,235,232,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:cardFadeIn .35s ease">
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;text-align:center">
     <button onclick="closeDailyCard()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--rose-dark);opacity:.6;padding:8px">✕</button>
@@ -785,7 +773,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </style>
 
 <!-- MODAL přezkum statusu potraviny -->
-
 <div class="modal-wrap" id="mStatusReview"><div class="movl" onclick="closeStatusReview()"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="font-size:13px;color:var(--text-2);margin-bottom:4px" id="srSubtitle"></div>
@@ -795,7 +782,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL upravit potravinu -->
-
 <div class="modal-wrap" id="mEditFood"><div class="movl" onclick="closeModal('mEditFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mEditFoodTitle">Upravit potravinu</div>
   <div class="mrow"><label>Název</label><input type="text" id="efName" placeholder="název potraviny"/></div>
@@ -823,7 +809,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat potravinu -->
-
 <div class="modal-wrap" id="mAddFood"><div class="movl" onclick="closeModal('mAddFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle">Přidat potravinu</div>
   <div class="mrow"><label>Název</label><input type="text" id="afName" placeholder="např. quinoa, tempeh..."/></div>
@@ -844,7 +829,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL přidat značku/recept -->
-
 <div class="modal-wrap" id="mAddBrand"><div class="movl" onclick="closeModal('mAddBrand')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mAddBrandTitle">Přidat značku / recept</div>
   <div class="mrow"><label>Název značky nebo receptu</label><input type="text" id="abName" placeholder="např. Mrkvová kaše, HiPP Bio..."/></div>
@@ -869,7 +853,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL plánování jídla -->
-
 <div class="modal-wrap" id="mPlanFood"><div class="movl" onclick="closeModal('mPlanFood')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" id="mPlanFoodTitle">Naplánovat jídlo</div>
@@ -890,7 +873,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL hromadná změna statusu -->
-
 <div class="modal-wrap" id="mBulkStatus"><div class="movl" onclick="closeModal('mBulkStatus')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle">Hromadná změna statusu</div>
@@ -925,7 +907,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail záznamu (jídlo/kojení/spánek) -->
-
 <div class="modal-wrap" id="mEntryDetail"><div class="movl" onclick="closeModal('mEntryDetail')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -941,7 +922,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL upravit záznam -->
-
 <div class="modal-wrap" id="mEditEntry"><div class="movl" onclick="closeModal('mEditEntry')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="editEntryTitle">Upravit záznam</div>
   <div id="editEntryBody"></div>
@@ -950,7 +930,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 </div></div></div>
 
 <!-- MODAL detail reakce -->
-
 <div class="modal-wrap" id="mReactionDetail"><div class="movl" onclick="closeModal('mReactionDetail')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -1685,6 +1664,23 @@ function saveReaction(){
   const suspect=document.getElementById('suspectFood').value;
   const types=[...document.querySelectorAll('#mReaction .type-btn.sel')].map(b=>b.textContent).filter(Boolean);
   const sub=[types.join(', '),suspect?'Podezřelé: '+suspect:'',note].filter(Boolean).join(' · ');
+  // Editace záznamu z calData (minulé dny)
+  if(currentEditingCalEntry){
+    const day=state.calData[currentEditingCalEntry.dayKey];
+    if(day&&day.entries){
+      const newTs=parseTimeToTs(document.getElementById('reactionTime').value)||currentEditingCalEntry.ts;
+      const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type==='reaction');
+      if(idx>=0)day.entries[idx]={...day.entries[idx],ts:newTs,sub:sub||'Reakce'};
+      else day.entries.push({type:'reaction',ts:newTs,name:'Reakce',sub:sub||'Reakce',reaction:true});
+      day.reaction=true;
+    }
+    currentEditingCalEntry=null;
+    closeModal('mReaction');
+    if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
+    saveAll();
+    return;
+  }
+  // Editace záznamu z todayLog
   if(window._editingReactionId){
     const e=state.todayLog.find(x=>x.id===window._editingReactionId);
     if(e){e.ts=ts;e.sub=sub||'Reakce';}
@@ -3545,32 +3541,6 @@ function openCalReactionEdit(e){
   openModal('mReaction');
 }
 
-// Override saveReaction to handle calData edits
-const _origSaveReaction=saveReaction;
-function saveReaction(){
-  if(currentEditingCalEntry){
-    const day=state.calData[currentEditingCalEntry.dayKey];
-    if(day&&day.entries){
-      const types=[...document.querySelectorAll('#mReaction .type-btn.sel')].map(b=>b.textContent);
-      const suspect=document.getElementById('suspectFood')?.value.trim()||'';
-      const note=document.getElementById('reactionNote')?.value.trim()||'';
-      const newTs=parseTimeToTs(document.getElementById('reactionTime').value)||currentEditingCalEntry.ts;
-      const sub=[types.join(', '),suspect?'Podezřelé: '+suspect:'',note].filter(Boolean).join(' · ');
-      const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type==='reaction');
-      if(idx>=0)day.entries[idx]={...day.entries[idx],ts:newTs,sub};
-      else day.entries.push({type:'reaction',ts:newTs,name:'Reakce',sub,reaction:true});
-      day.reaction=true;
-    }
-    currentEditingCalEntry=null;
-    closeModal('mReaction');
-    if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
-    saveAll();
-  } else {
-    _origSaveReaction();
-  }
-}
-
-
 // ============================================================
 // STATISTIKY
 // ============================================================
@@ -3851,14 +3821,20 @@ function saveWeightEntry(){
   const note=document.getElementById('wNote').value.trim();
   if(!date||isNaN(kg)||kg<=0){alert('Zadej prosím datum a hmotnost.');return;}
   if(!state.weightLog)state.weightLog=[];
-  state.weightLog=state.weightLog.filter(w=>w.date!==date);
-  state.weightLog.push({date,kg:Math.round(kg*100)/100,cm:cm?Math.round(cm*10)/10:null,note});
+  if(window._editWeightIdx!==undefined&&window._editWeightIdx!==null){
+    // Editace existujícího záznamu
+    const idx=window._editWeightIdx;
+    window._editWeightIdx=null;
+    state.weightLog[idx]={date,kg:Math.round(kg*100)/100,cm:cm?Math.round(cm*10)/10:null,note};
+  } else {
+    // Nový záznam — přepiš pokud existuje stejné datum
+    state.weightLog=state.weightLog.filter(w=>w.date!==date);
+    state.weightLog.push({date,kg:Math.round(kg*100)/100,cm:cm?Math.round(cm*10)/10:null,note});
+  }
   state.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
   const latest=state.weightLog[state.weightLog.length-1];
   state.settings.weight=latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2});
-  // Zaznamenej timestamp lokální změny weightLogu
-  const wlTs=Date.now();
-  localStorage.setItem('sofin:weightLogTs',wlTs.toString());
+  localStorage.setItem('sofin:weightLogTs',Date.now().toString());
   closeModal('mAddWeight');renderSettings();saveAll();
 }
 
@@ -3974,29 +3950,6 @@ function editWeightEntry(idx){
   window._editWeightIdx=idx;
   openModal('mAddWeight');
 }
-
-// Patch saveWeightEntry to handle edit
-const _origSaveWeightEntry=saveWeightEntry;
-function saveWeightEntry(){
-  if(window._editWeightIdx!==undefined&&window._editWeightIdx!==null){
-    const idx=window._editWeightIdx;
-    window._editWeightIdx=null;
-    const date=document.getElementById('wDate').value;
-    const kg=parseFloat(document.getElementById('wKg').value.replace(',','.'));
-    const cm=parseFloat(document.getElementById('wCm').value.replace(',','.'))||null;
-    const note=document.getElementById('wNote').value.trim();
-    if(!date||isNaN(kg)||kg<=0){alert('Zadej prosím datum a hmotnost.');return;}
-    state.weightLog[idx]={date,kg:Math.round(kg*100)/100,cm:cm?Math.round(cm*10)/10:null,note};
-    state.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
-    const latest=state.weightLog[state.weightLog.length-1];
-    state.settings.weight=latest.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2});
-    localStorage.setItem('sofin:weightLogTs',Date.now().toString());
-    closeModal('mAddWeight');renderSettings();saveAll();
-  } else {
-    _origSaveWeightEntry();
-  }
-}
-
 
 // ============================================================
 // DENNÍ KARTY
@@ -4163,6 +4116,5 @@ function closeDailyCard(){
 
 renderAll();
 </script>
-
 </body>
 </html>
