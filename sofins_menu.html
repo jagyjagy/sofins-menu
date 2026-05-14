@@ -35,8 +35,13 @@
   --green:#3b6d11;--green-bg:#eaf3de;--amber:#854f0b;--amber-bg:#faeeda;
   --red:#a32d2d;--red-bg:#fcebeb
 }
+[data-theme="boy"]{
+  --rose:#6e8fa8;--rose-light:#e8eff5;--rose-mid:#b8cedd;--rose-dark:#2d5068;--rose-btn:#7a9db8;
+  --surface:#f5f8fb;--card:#fff;--text:#182028;--text-2:#4a6070;--text-3:#8aaabb;
+}
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#e8d5d0;display:flex;align-items:center;justify-content:center}
+body[data-theme="boy"]{background:#c8d8e4}
 .phone{width:100%;max-width:430px;height:100%;max-height:932px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;position:relative}
 @media(min-width:500px){.phone{border-radius:44px;border:0.5px solid var(--rose-mid);box-shadow:0 32px 80px rgba(44,26,24,0.18)}}
 .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;background:var(--surface)}
@@ -403,7 +408,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       <div id="nightSleepCard" style="display:none;margin:0 12px 8px;border-radius:14px;padding:11px 14px;cursor:pointer;background:linear-gradient(135deg,#ece9f8,#f3f0fb);border:1.5px solid #c5c0e8" onclick="toggleNightSleep()">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-size:15px;font-weight:700;color:#3d3580" id="nightCardLabel">🌙 Usnula</div>
+            <div style="font-size:15px;font-weight:700;color:#3d3580" id="nightCardLabel">🌙 Noční spánek</div>
             <div style="font-size:11px;color:#7a6fa0;margin-top:2px" id="nightCardSub">do večerky <span id="nightCardTimer">—</span></div>
           </div>
           <div style="width:36px;height:36px;border-radius:50%;background:#c5c0e8;display:flex;align-items:center;justify-content:center;font-size:18px" id="nightCardIcon">🌙</div>
@@ -611,7 +616,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
     <div class="scroll-area">
       <div class="header"><div class="header-top"><h1>Nastavení</h1></div></div>
       <div class="av-sec">
-        <div class="av">👶</div>
+        <div class="av" id="avEmoji" onclick="openEmojiPicker()" style="cursor:pointer;position:relative" title="Změnit ikonu">👶</div>
         <div class="av-name" id="avName">Sofinka</div>
         <div class="av-age" id="avAge">8 měsíců</div>
       </div>
@@ -620,7 +625,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
         <div class="set-card">
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">👶</div><div class="set-lbl"><div class="set-lbl-t">Jméno</div></div><span class="set-val" id="svName">Sofinka</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">🎂</div><div class="set-lbl"><div class="set-lbl-t">Datum narození</div></div><span class="set-val" id="svBirth">14. 8. 2024</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
-          <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">⏰</div><div class="set-lbl"><div class="set-lbl-t">Večerka</div><div class="set-lbl-s">čas pro odpočet</div></div><span class="set-val" id="svBedtime">—</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" style="cursor:default"><div class="si si-r">🎨</div><div class="set-lbl"><div class="set-lbl-t">Motiv aplikace</div></div>
+            <div style="display:flex;gap:6px;margin-left:auto">
+              <button id="genderGirl" onclick="setGender('girl')" style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #e8c4be;background:#f5e8e6;color:#8a4f47">🎀 Holčička</button>
+              <button id="genderBoy" onclick="setGender('boy')" style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #b8cedd;background:#e8eff5;color:#2d5068">🚂 Klučík</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="set-sec">
+        <div class="set-title">Večerka</div>
+        <div class="set-card">
+          <div class="set-row" onclick="openModal('mBedtime')"><div class="si si-r">🌙</div><div class="set-lbl"><div class="set-lbl-t">Čas večerky</div><div class="set-lbl-s">kdy dítě usíná</div></div><span class="set-val" id="svBedtime">—</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="openModal('mBedtime')"><div class="si si-r">⏱️</div><div class="set-lbl"><div class="set-lbl-t">Upozornění před večerkou</div><div class="set-lbl-s">kdy zobrazit kartu Noční spánek</div></div><span class="set-val" id="svBedtimeWarn">3,5 h</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
       <div class="set-sec">
@@ -657,7 +674,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.06 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.10 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -669,6 +686,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
     <div class="ti" id="ti-settings" onclick="showScreen('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="tl">Nastavení</span></div>
   </div>
 </div>
+
+<!-- EMOJI PICKER MODAL -->
+<div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
+  <div class="mhandle"></div>
+  <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
+  <div id="emojiGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding-bottom:16px"></div>
+</div></div></div>
 
 <!-- MODALS -->
 
@@ -780,9 +804,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <div class="mrow"><label>Jméno</label><input type="text" id="cName" value="Sofinka"/></div>
   <div class="mrow"><label>Datum narození</label><input type="date" id="cBirth" value="2024-08-14"/></div>
   <div class="mrow"><label>Váha (kg)</label><input type="number" id="cWeight" value="7.8" step="0.1"/></div>
-  <div class="mrow"><label>Večerka (čas)</label><input type="time" id="cBedtime" value="19:30"/></div>
   <button class="msave" onclick="saveChild()">Uložit</button>
   <button class="mcancel" onclick="closeModal('mChild')">Zrušit</button>
+</div></div></div>
+
+<div class="modal-wrap" id="mBedtime"><div class="movl" onclick="closeModal('mBedtime')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div><div class="mtitle">Večerka</div>
+  <div class="mrow"><label>Čas večerky</label><input type="time" id="cBedtime" value="19:30"/></div>
+  <div class="mrow">
+    <label>Upozornění před večerkou</label>
+    <select id="cBedtimeWarn" style="width:100%;padding:10px;border-radius:10px;border:.5px solid var(--rose-mid);font-size:14px;background:var(--card);color:var(--text)">
+      <option value="1">1 hodinu předem</option>
+      <option value="1.5">1,5 hodiny předem</option>
+      <option value="2">2 hodiny předem</option>
+      <option value="2.5">2,5 hodiny předem</option>
+      <option value="3">3 hodiny předem</option>
+      <option value="3.5" selected>3,5 hodiny předem</option>
+      <option value="4">4 hodiny předem</option>
+    </select>
+  </div>
+  <button class="msave" onclick="saveBedtime()">Uložit</button>
+  <button class="mcancel" onclick="closeModal('mBedtime')">Zrušit</button>
 </div></div></div>
 
 <div class="modal-wrap" id="mDoctor"><div class="movl" onclick="closeModal('mDoctor')"><div class="msheet" onclick="event.stopPropagation()">
@@ -1161,6 +1203,9 @@ const DEFAULT_STATE = {
   ],
   settings: {
     name:'Sofinka', birth:'2024-08-14', weight:'7,8',
+    childEmoji:'👶',
+    bedtimeWarn:3.5,
+    gender:'girl',
     allergens:['ABKM (kravské mléko)','sója','hovězí','vejce','sezam'],
     doctors:[
       {type:'pediatr',name:'MUDr. Jana Nováková',phone:'+420 123 456 789',place:'Dětská ordinace Praha 4',next:'2025-06-10'},
@@ -2940,17 +2985,64 @@ function saveFoodDetail(){
 function fmtDateShort(val){if(!val)return'';const d=new Date(typeof val==='number'?val:val);return d.getDate()+'.'+(d.getMonth()+1)+'.'+(d.getFullYear()%100);}
 
 // ============================================================
+// EMOJI PICKER PRO DÍTĚ
+// ============================================================
+const CHILD_EMOJIS=[
+  '👶','🧒','👧','🧒‍♀️','🧒‍♂️','🐣','🐥','🐤','🦊','🐰','🐻','🐼','🐨','🦁','🐯','🐸','🐙','🦋','🌟','⭐',
+  '🌈','🌸','🌺','🌻','🍀','🍁','🌙','☀️','🌤','⛅','🎀','🎈','🎠','🎡','🎪','🎭','🎨','🎯','🎲','🎵',
+  '🎶','🌹','🌷','🏵','💐','🫧','🧸','🪆','🪅','🎁','💫','✨','💛','💙','💜','❤️','💚','🩷','🩵','🩶'
+];
+function openEmojiPicker(){
+  const grid=document.getElementById('emojiGrid');
+  if(!grid)return;
+  const cur=state.settings.childEmoji||'👶';
+  grid.innerHTML=CHILD_EMOJIS.map(e=>`
+    <div onclick="selectChildEmoji('${e}')" style="font-size:26px;text-align:center;padding:6px;border-radius:8px;cursor:pointer;background:${e===cur?'var(--rose-light)':'transparent'};border:${e===cur?'1.5px solid var(--rose-btn)':'1.5px solid transparent'}">${e}</div>
+  `).join('');
+  openModal('mEmojiPicker');
+}
+function selectChildEmoji(emoji){
+  state.settings.childEmoji=emoji;
+  const avEl=document.getElementById('avEmoji');if(avEl)avEl.textContent=emoji;
+  closeModal('mEmojiPicker');
+  renderStories();
+  saveAll();
+}
+
+function applyTheme(gender){
+  const isboy=(gender||state.settings.gender)==='boy';
+  document.documentElement.setAttribute('data-theme',isboy?'boy':'');
+  document.body.setAttribute('data-theme',isboy?'boy':'');
+  // Update button active states
+  const gGirl=document.getElementById('genderGirl');
+  const gBoy=document.getElementById('genderBoy');
+  if(gGirl){gGirl.style.outline=isboy?'none':'2px solid var(--rose-btn)';gGirl.style.outlineOffset='2px';}
+  if(gBoy){gBoy.style.outline=isboy?'2px solid #7a9db8':'none';gBoy.style.outlineOffset='2px';}
+}
+function setGender(g){
+  state.settings.gender=g;
+  applyTheme(g);
+  saveAll();
+}
+
+// ============================================================
 // NASTAVENÍ
 // ============================================================
 let editDoctorIdx=-1;
 function renderSettings(){
   const s=state.settings;
+  const emoji=s.childEmoji||'👶';
+  applyTheme(s.gender);
   document.getElementById('avName').textContent=s.name;
   document.getElementById('avAge').textContent=calcAge(s.birth)+' · '+fmtDate(s.birth);
+  const avEl=document.getElementById('avEmoji');if(avEl)avEl.textContent=emoji;
   document.getElementById('svName').textContent=s.name;
   document.getElementById('svBirth').textContent=fmtDate(s.birth);
   if(document.getElementById('svWeight'))document.getElementById('svWeight').textContent=s.weight+' kg';
   document.getElementById('svBedtime').textContent=s.bedtime||'—';
+  const warn=s.bedtimeWarn||3.5;
+  const warnEl=document.getElementById('svBedtimeWarn');
+  if(warnEl)warnEl.textContent=(warn===1?'1 h':(String(warn).replace('.',','))+' h');
   const appSub=document.getElementById('appSubtitle');
   if(appSub)appSub.textContent=s.name+' · '+calcAge(s.birth);
   document.getElementById('foodSubtitle').textContent=calcAge(s.birth)+' · zavádění';
@@ -2960,7 +3052,10 @@ function renderSettings(){
   document.getElementById('cName').value=s.name;
   document.getElementById('cBirth').value=s.birth;
   document.getElementById('cWeight').value=s.weight.replace(',','.');
+  // pre-fill bedtime modal
   document.getElementById('cBedtime').value=s.bedtime||'19:30';
+  const warnSel=document.getElementById('cBedtimeWarn');
+  if(warnSel)warnSel.value=String(warn);
   const icons={pediatr:'👩‍⚕️',alergolog:'🔬',gastroenterolog:'🩺',jiný:'👨‍⚕️'};
   const labels={pediatr:'Pediatr',alergolog:'Alergolog',gastroenterolog:'Gastroenterolog',jiný:'Jiný'};
   document.getElementById('docList').innerHTML=s.doctors.map((d,i)=>`
@@ -2987,8 +3082,13 @@ function saveChild(){
   state.settings.name=document.getElementById('cName').value||'Sofinka';
   state.settings.birth=document.getElementById('cBirth').value||'2024-08-14';
   state.settings.weight=document.getElementById('cWeight').value.replace('.',',')||'7,8';
+  closeModal('mChild');renderSettings();renderStories();saveAll();
+}
+
+function saveBedtime(){
   state.settings.bedtime=document.getElementById('cBedtime').value||'';
-  closeModal('mChild');renderSettings();saveAll();
+  state.settings.bedtimeWarn=parseFloat(document.getElementById('cBedtimeWarn').value)||3.5;
+  closeModal('mBedtime');renderSettings();renderNightSleepCard();saveAll();
 }
 
 function editDoctor(i){
@@ -3145,6 +3245,8 @@ if(savedState){
     lastRemoteTs=s.ts||0;
     // ihned zkontroluj rollover — přesuň záznamy jiných dnů
     syncTodayToCalData();
+    // Aplikuj téma hned po načtení
+    applyTheme(state.settings.gender);
   }catch(e){seedCalData();}
 } else {
   seedCalData();
@@ -3918,7 +4020,7 @@ function renderStats(){
     if(latestW){
       const gain=prevW?(latestW.kg-prevW.kg)*1000:null;
       weightBlock=`
-      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px;cursor:pointer" onclick="statsMode=false;document.getElementById('statsView').style.display='none';document.getElementById('calView').style.display='block';document.getElementById('calControls').style.display='block';document.getElementById('statsControls').style.display='none';document.getElementById('statsBtn').textContent='📊 Statistiky';document.getElementById('planSelectBtn').style.display='block';showScreen('settings')">
+      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px;cursor:pointer" onclick="switchPlanTab('plan');showScreen('settings')">
         <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">⚖️ Aktuální váha</div>
         <div style="display:flex;align-items:baseline;gap:8px">
           <span style="font-size:26px;font-weight:600">${latestW.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})}</span>
@@ -4345,9 +4447,11 @@ function renderStories(){
   if(!bar)return;
   const s=getStoriesState();
 
+  const childEmoji=state.settings?.childEmoji||'👶';
+  const childName=state.settings?.name||'Sofinka';
   let html='';
   // Sofinka — vždy, stabilní ring
-  html+=storyBubbleHtml('sofinka','👶','Sofinka',false,true);
+  html+=storyBubbleHtml('sofinka',childEmoji,childName,false,true);
   // Ostatní — vždy viditelné (i bez obsahu), barevné pokud nepřečtené
   html+=storyBubbleHtml('morning',s.morning?.card?.icon||'☀️','Ráno',s.morning?!s.morning.read:false,false);
   html+=storyBubbleHtml('activity',s.activity?.card?.icon||'🎮','Dnes zkus',s.activity?!s.activity.read:false,false);
@@ -4380,10 +4484,11 @@ function openStory(type){
     const today=new Date();today.setHours(12,0,0,0);
     const ageDays=Math.floor((today-bDate)/86400000);
     const name=state.settings.name||'Sofinka';
+    const emoji=state.settings.childEmoji||'👶';
     const wl=state.weightLog||[];
     const lastW=wl.length?wl[wl.length-1]:null;
     content={
-      icon:'👶',title:name,
+      icon:emoji,title:name,
       body:`Je jí ${fmtAgeDays(ageDays)} — to je ${ageDays} dní na světě.
 
 ${lastW?`Aktuální váha: ${lastW.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})} kg${lastW.cm?' · '+lastW.cm+' cm':''}
@@ -4497,9 +4602,10 @@ function renderNightSleepCard(){
     const bt=new Date();bt.setHours(bh,bm,0,0);
     if(bt<new Date())bt.setDate(bt.getDate()+1);
     const diffMs=bt.getTime()-now;
-    if(diffMs>0&&diffMs<=3.5*3600000){
+    const warnH=state.settings.bedtimeWarn||3.5;
+    if(diffMs>0&&diffMs<=warnH*3600000){
       card.style.display='block';
-      if(lbl)lbl.textContent='🌙 Usnula';
+      if(lbl)lbl.textContent='🌙 Noční spánek';
       if(ico)ico.textContent='🌙';
       if(sub)sub.innerHTML='do večerky <span id="nightCardTimer">—</span>';
     } else {
@@ -4687,9 +4793,9 @@ function renderStatDetail(){
   }
 
   const maxV=Math.max(...nonZero);
-  // Y osa — noční spánek po 1h, denní spánek po 15min, ostatní po 1
+  // Y osa — noční spánek po 2h, denní spánek po 15min, ostatní po 1
   const isNightSleep=metric==='nightsleep';
-  const yStep=isNightSleep?1:isSleep?0.25:1;
+  const yStep=isNightSleep?2:isSleep?0.25:1;
   const yMax=Math.ceil(maxV/yStep)*yStep;
   const n=values.length;
 
