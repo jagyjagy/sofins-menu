@@ -35,13 +35,38 @@
   --green:#3b6d11;--green-bg:#eaf3de;--amber:#854f0b;--amber-bg:#faeeda;
   --red:#a32d2d;--red-bg:#fcebeb
 }
-[data-theme="boy"]{
+/* Themes */
+[data-theme="rose"],[data-theme=""],:root:not([data-theme]){
+  --rose:#c9857a;--rose-light:#f5e8e6;--rose-mid:#e8c4be;--rose-dark:#8a4f47;--rose-btn:#d4948a;
+  --surface:#fdf8f7;--card:#fff;--text:#2c1a18;--text-2:#7a5c59;--text-3:#b89390;
+}
+[data-theme="blue"]{
   --rose:#6e8fa8;--rose-light:#e8eff5;--rose-mid:#b8cedd;--rose-dark:#2d5068;--rose-btn:#7a9db8;
   --surface:#f5f8fb;--card:#fff;--text:#182028;--text-2:#4a6070;--text-3:#8aaabb;
 }
+[data-theme="green"]{
+  --rose:#5a8a5a;--rose-light:#e8f5e8;--rose-mid:#b8ddb8;--rose-dark:#2a5a2a;--rose-btn:#70a870;
+  --surface:#f6fbf6;--card:#fff;--text:#1a2a1a;--text-2:#4a6a4a;--text-3:#8aaa8a;
+}
+[data-theme="yellow"]{
+  --rose:#a08030;--rose-light:#faf3e0;--rose-mid:#e8d898;--rose-dark:#604800;--rose-btn:#c8a840;
+  --surface:#fdfaf2;--card:#fff;--text:#2a2010;--text-2:#6a5820;--text-3:#b0a060;
+}
+[data-theme="nude"]{
+  --rose:#a89080;--rose-light:#f5eeea;--rose-mid:#ddd0c8;--rose-dark:#5a4838;--rose-btn:#c0a898;
+  --surface:#fdfaf8;--card:#fff;--text:#2a2018;--text-2:#6a5848;--text-3:#b0a090;
+}
+[data-theme="neutral"]{
+  --rose:#808080;--rose-light:#f0f0f0;--rose-mid:#d0d0d0;--rose-dark:#404040;--rose-btn:#909090;
+  --surface:#fafafa;--card:#fff;--text:#202020;--text-2:#606060;--text-3:#a0a0a0;
+}
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#e8d5d0;display:flex;align-items:center;justify-content:center}
-body[data-theme="boy"]{background:#c8d8e4}
+body[data-theme="blue"]{background:#c8d8e4}
+body[data-theme="green"]{background:#c8dcc8}
+body[data-theme="yellow"]{background:#ddd8a8}
+body[data-theme="nude"]{background:#ddd0c0}
+body[data-theme="neutral"]{background:#d0d0d0}
 .phone{width:100%;max-width:430px;height:100%;max-height:932px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;position:relative}
 @media(min-width:500px){.phone{border-radius:44px;border:0.5px solid var(--rose-mid);box-shadow:0 32px 80px rgba(44,26,24,0.18)}}
 .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;background:var(--surface)}
@@ -250,7 +275,7 @@ body[data-theme="boy"]{background:#c8d8e4}
 .type-btn.sel{background:var(--rose-btn);color:#fff;border-color:var(--rose-btn)}
 .msave{width:100%;padding:12px;border-radius:13px;background:var(--rose-btn);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:5px}
 .mcancel{width:100%;padding:8px;border-radius:13px;background:transparent;border:none;color:var(--text-2);font-size:12px;cursor:pointer;margin-top:3px}
-.fsug{background:var(--card);border:.5px solid var(--rose-mid);border-radius:10px;max-height:110px;overflow-y:auto;margin-top:3px}
+.fsug{background:var(--card);border:.5px solid var(--rose-mid);border-radius:10px;max-height:130px;overflow-y:auto;position:absolute;left:0;right:0;bottom:calc(100% + 4px);z-index:200;box-shadow:0 -4px 16px rgba(44,26,24,.12)}
 .fsug-item{padding:8px 11px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:.5px solid var(--rose-light)}
 .fsug-item:last-child{border-bottom:none}
 .fsug-item:active{background:var(--rose-light)}
@@ -625,12 +650,12 @@ body[data-theme="boy"]{background:#c8d8e4}
         <div class="set-card">
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">👶</div><div class="set-lbl"><div class="set-lbl-t">Jméno</div></div><span class="set-val" id="svName">Sofinka</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="openModal('mChild')"><div class="si si-r">🎂</div><div class="set-lbl"><div class="set-lbl-t">Datum narození</div></div><span class="set-val" id="svBirth">14. 8. 2024</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
-          <div class="set-row" style="cursor:default"><div class="si si-r">🎨</div><div class="set-lbl"><div class="set-lbl-t">Motiv aplikace</div></div>
-            <div style="display:flex;gap:6px;margin-left:auto">
-              <button id="genderGirl" onclick="setGender('girl')" style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #e8c4be;background:#f5e8e6;color:#8a4f47">🎀 Holčička</button>
-              <button id="genderBoy" onclick="setGender('boy')" style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #b8cedd;background:#e8eff5;color:#2d5068">🚂 Klučík</button>
-            </div>
-          </div>
+        </div>
+      </div>
+      <div class="set-sec">
+        <div class="set-title">Motiv aplikace</div>
+        <div class="set-card" style="padding:12px 16px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap" id="themeSwatches"></div>
         </div>
       </div>
       <div class="set-sec">
@@ -674,7 +699,7 @@ body[data-theme="boy"]{background:#c8d8e4}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.10 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.11 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -694,6 +719,20 @@ body[data-theme="boy"]{background:#c8d8e4}
   <div id="emojiGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding-bottom:16px"></div>
 </div></div></div>
 
+<!-- PLAN ADD MENU -->
+<div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
+  <input type="hidden" id="planAddDayKey"/>
+  <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:16px">
+    <button onclick="planAddEntry('food')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid var(--rose-mid);background:#fff3ef;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">🥣</span>Jídlo</button>
+    <button onclick="planAddEntry('breast')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #d9c8ee;background:#f5f0ff;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">🤱</span>Kojení</button>
+    <button onclick="planAddEntry('sleep')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #c5d2e0;background:#eef3fa;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">😴</span>Spánek</button>
+    <button onclick="planAddEntry('wakeup')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid var(--rose-mid);background:var(--rose-light);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">☀️</span>Probudila se</button>
+    <button onclick="planAddEntry('nightsleep')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #c5c0e8;background:#f0ecff;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">🌙</span>Noční spánek</button>
+  </div>
+</div></div></div>
+
 <!-- MODALS -->
 
 <div class="modal-wrap" id="mFood"><div class="movl" onclick="closeModal('mFood')"><div class="msheet" onclick="event.stopPropagation()">
@@ -710,12 +749,16 @@ body[data-theme="boy"]{background:#c8d8e4}
   </div></div>
   <div class="mrow" id="rowBrand" style="display:none">
     <label>Značka</label>
-    <input type="text" id="brandInput" placeholder="HiPP Bio hruška..." oninput="showBrandSuggestFood(this.value)" autocomplete="off"/>
-    <div class="fsug" id="brandFoodSug" style="display:none"></div>
+    <div style="position:relative">
+      <input type="text" id="brandInput" placeholder="HiPP Bio hruška..." oninput="showBrandSuggestFood(this.value)" autocomplete="off"/>
+      <div class="fsug" id="brandFoodSug" style="display:none"></div>
+    </div>
   </div>
   <div class="mrow"><label>Složky</label>
-    <input type="text" id="ingInput" placeholder="začni psát..." oninput="showSuggest(this.value)" autocomplete="off"/>
-    <div class="fsug" id="foodSug" style="display:none"></div>
+    <div style="position:relative">
+      <input type="text" id="ingInput" placeholder="začni psát..." oninput="showSuggest(this.value)" autocomplete="off"/>
+      <div class="fsug" id="foodSug" style="display:none"></div>
+    </div>
     <div class="sel-foods" id="selFoods"></div>
   </div>
   <div id="fzSugBox" class="fz-sug-box"><p>❄️ Dostupné v mrazáku — použít?</p><div id="fzSugItems"></div></div>
@@ -1574,7 +1617,7 @@ function renderTodayList(){
     const isNightSleep=e.type==='nightsleep';
     const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):isNightSleep?' sleep-c'+(e.live?' live':''):isReaction?' reaction-card':'';
     const ic=e.type==='breast'?'i-breast':(e.type==='sleep'||isNightSleep)?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-    const em=e.type==='breast'?'🤱':isNightSleep?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
+    const em=e.type==='breast'?'🤱':isNightSleep?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name);
     const nightStyle=isNightSleep?'background:#f0ecff;border-color:#c5c0e8;border-left:3px solid #7a6fbf':'';
     const who=e.by?`<span class="who ${byMap[e.by]||'who-tata'}">${e.by}</span>`:'';
     const rd=e.reaction&&!isReaction?`<div class="rdot">⚠</div>`:'';
@@ -1709,11 +1752,20 @@ function saveFood(){
   if(!selFoods.length){closeModal('mFood');return;}
   const typeBtn=document.querySelector('#mFood .type-btn.sel');
   const rawName=typeBtn?typeBtn.textContent.trim():'Jídlo';
-  // Odstraň emoji prefix (🥣 Snídaně → Snídaně)
   const name=rawName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}]\s*/u,'').trim()||rawName;
   const ts=parseTimeToTs(document.getElementById('foodTime').value);
   const brand=document.getElementById('brandInput')?.value.trim()||'';
   const sub=[brand?'🏪 '+brand:'',selFoods.join(', ')].filter(Boolean).join(' · ');
+  // Přidat do minulého dne z plánu?
+  if(_planAddTargetDay){
+    const k=_planAddTargetDay;_planAddTargetDay=null;
+    if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+    state.calData[k].entries.push({type:'food',ts,name,sub,brand:brand||null,reaction:false});
+    state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
+    selFoods=[];renderSelFoodsEl();closeModal('mFood');saveAll();
+    const dp=new Date(k);selDay(dp.getFullYear(),dp.getMonth(),dp.getDate());
+    return;
+  }
   state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub,brand:brand||null,reaction:false,by:whoAmI()});
   const savedFoods=[...selFoods];
   selFoods.forEach(food=>{
@@ -1849,7 +1901,17 @@ function saveBreast(){
   const side=document.querySelector('#mBreast .type-btn.sel');
   const dur=document.getElementById('breastDur').value;
   const note=document.getElementById('breastNote').value;
-  state.todayLog.push({id:'b'+Date.now(),type:'breast',ts,name:'Kojení',sub:(side?side.textContent:'')+(dur?' · '+dur+' min':'')+(note?' · '+note:''),reaction:false,by:whoAmI()});
+  const sub=(side?side.textContent:'')+(dur?' · '+dur+' min':'')+(note?' · '+note:'');
+  if(_planAddTargetDay){
+    const k=_planAddTargetDay;_planAddTargetDay=null;
+    if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+    state.calData[k].entries.push({type:'breast',ts,name:'Kojení',sub,reaction:false});
+    state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
+    closeModal('mBreast');saveAll();
+    const dp=new Date(k);selDay(dp.getFullYear(),dp.getMonth(),dp.getDate());
+    return;
+  }
+  state.todayLog.push({id:'b'+Date.now(),type:'breast',ts,name:'Kojení',sub,reaction:false,by:whoAmI()});
   renderTodayList();renderStatus();closeModal('mBreast');saveAll();
 }
 function saveReaction(){
@@ -2047,7 +2109,7 @@ function editCurrentEntry(){
 }
 
 function openEditEntryModal(e){
-  document.getElementById('editEntryTitle').textContent=e.type==='food'?'Upravit jídlo':e.type==='breast'?'Upravit kojení':'Upravit spánek';
+  document.getElementById('editEntryTitle').textContent=e.type==='food'?'Upravit jídlo':e.type==='breast'?'Upravit kojení':e.type==='nightsleep'?'Upravit noční spánek':'Upravit spánek';
   const timeVal=fmtTime(e.ts);
   let html='';
   if(e.type==='food'){
@@ -2103,8 +2165,29 @@ function openEditEntryModal(e){
       </div>
       <div class="mrow"><label>Poznámka</label><input type="text" id="editSleepNote" value="" placeholder="volitelně..."/></div>
     </div>`;
+  } else if(e.type==='nightsleep'){
+    const subParts=(e.sub||'').split('\n');
+    const timePart=(subParts[0]||'').trim();
+    // "od 21:50 · probíhá" nebo "21:50–06:45"
+    let startVal='',endVal='';
+    if(timePart.includes('–')){
+      const times=timePart.split('–').map(s=>s.trim());
+      startVal=times[0]||fmtTime(e.ts);
+      endVal=times[1]||'';
+    } else {
+      // probíhající — jen start
+      startVal=fmtTime(e.ts);
+    }
+    const isLive=e.live||getNightSleep().active;
+    html+=`<div class="mrow"><label>Usnula</label><input type="time" id="editNSStart" value="${startVal}"/></div>`;
+    if(!isLive){
+      html+=`<div class="mrow"><label>Probudila se</label><input type="time" id="editNSEnd" value="${endVal}" placeholder="—"/></div>`;
+    } else {
+      html+=`<div style="font-size:11px;color:var(--text-3);padding:2px 0 8px">Noční spánek právě probíhá — konec se nastaví po probuzení.</div>`;
+      html+=`<input type="hidden" id="editNSEnd" value=""/>`;
+    }
   }
-  if(e.type!=='sleep'){
+  if(e.type!=='sleep'&&e.type!=='nightsleep'){
     html+=`<div class="mrow"><label>Čas</label><input type="time" id="editEntryTime" value="${timeVal}"/></div>`;
   }
   document.getElementById('editEntryBody').innerHTML=html;
@@ -2213,8 +2296,21 @@ function saveEditEntry(){
       const durStr=(h>0?h+'h ':'')+m+'min';
       e.sub=start+' – '+end+' · '+durStr+(note?' · '+note:'');
     }
+  } else if(e.type==='nightsleep'){
+    const start=document.getElementById('editNSStart')?.value||fmtTime(e.ts);
+    const end=document.getElementById('editNSEnd')?.value||'';
+    e.ts=parseTimeToTs(start);
+    if(state.nightSleep&&state.nightSleep.active)state.nightSleep.startTs=e.ts;
+    if(end){
+      const [sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);
+      let mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;
+      const h=Math.floor(mins/60),m=mins%60;
+      e.sub=start+'–'+end+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
+    } else {
+      e.sub='od '+start+' · probíhá';
+    }
   }
-  closeModal('mEditEntry');renderTodayList();renderStatus();
+  closeModal('mEditEntry');renderTodayList();renderStatus();renderNightSleepCard();
   if(currentEditingCalEntry){
     const day=state.calData[currentEditingCalEntry.dayKey];
     if(day&&day.entries){
@@ -2245,15 +2341,13 @@ function openEntryDetail(id){
   if(delBtn)delBtn.style.display='';
   const e=state.todayLog.find(x=>x.id===id);
   if(!e)return;
-  const isWakeup=e.type==='wakeup',isBedtime=e.type==='bedtime';
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
-  const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',wakeup:'#fef3b0',bedtime:'#e4e0f7'};
+  const isWakeup=e.type==='wakeup',isBedtime=e.type==='bedtime',isNS=e.type==='nightsleep';
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isNS?'🌙':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name);
+  const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',wakeup:'#fef3b0',bedtime:'#e4e0f7',nightsleep:'#e8e4f5'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
   document.getElementById('edTitle').textContent=e.name;
   document.getElementById('edTime').textContent=fmtTime(e.ts)+(e.by?' · '+e.by:'');
-  // skrýt Upravit jen pro typy bez editace — wakeup/bedtime mají časovou editaci
-  // takže Upravit necháme viditelný pro všechno
   let body='';
   if(e.type==='food'){
     body+=`<div style="margin-bottom:10px"><div style="font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Složky</div>`;
@@ -2267,6 +2361,10 @@ function openEntryDetail(id){
     body+=`</div>`;
   } else if(e.type==='sleep'){
     body+=`<div style="background:#f2f5fa;border-radius:9px;padding:10px 12px;font-size:13px;color:var(--slate-dark)">${e.sub||''}</div>`;
+  } else if(isNS){
+    const isLive=e.live||getNightSleep().active;
+    body+=`<div style="background:#f0ecff;border-radius:9px;padding:10px 12px;font-size:13px;color:#3d3580">${e.sub||''}</div>`;
+    if(isLive)body+=`<div style="font-size:11px;color:var(--text-3);margin-top:6px">Probíhá — upravit lze pouze čas začátku</div>`;
   } else {
     body+=`<div style="background:#f2f5fa;border-radius:9px;padding:10px 12px;font-size:13px;color:var(--text-2)">${fmtTime(e.ts)}</div>`;
   }
@@ -2368,10 +2466,10 @@ function syncTodayToCalData(){
       day.reaction=day.entries.some(e=>e.type==='reaction');
       day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
     });
-    // odeber z todayLog záznamy jiných dnů (kromě live spánku)
+    // odeber z todayLog záznamy jiných dnů (kromě live spánku a nočního spánku)
     state.todayLog=state.todayLog.filter(e=>{
-      if(e.live)return true; // zachovej live záznamy (denní spánek + noční spánek)
-      if(e.type==='nightsleep')return true; // zachovej noční spánek přes půlnoc
+      if(e.live)return true; // zachovej live záznamy
+      if(e.type==='nightsleep')return true; // zachovej noční spánek vždy dokud není ukončen
       const d=new Date(e.ts);d.setHours(0,0,0,0);
       return dateKey(d)===todayKey;
     });
@@ -2380,7 +2478,7 @@ function syncTodayToCalData(){
   // Teď synkuj pouze dnešní záznamy do calData
   if(!state.calData[todayKey])state.calData[todayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
   const day=state.calData[todayKey];
-  const todayEntries=state.todayLog.filter(e=>!e.live);
+  const todayEntries=state.todayLog.filter(e=>!e.live&&e.type!=='nightsleep');
   day.foods=[...new Set(todayEntries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
   day.breast=todayEntries.filter(e=>e.type==='breast').length;
   day.sleep=todayEntries.filter(e=>e.type==='sleep').length;
@@ -2666,32 +2764,36 @@ function selDay(y,m,day){
   if(!isFut){
     if(dd.reaction)html+=`<div style="margin:6px 16px;background:#fff5f5;border-radius:11px;padding:9px 12px;border:.5px solid #f09595;font-size:12px;color:var(--red);font-weight:500;cursor:pointer" onclick="openPlanReactionDetail('${k}')">⚠ Reakce zaznamenaná v tento den — klikni pro detail</div>`;
     const entries=[...(dd.entries||[])].sort((a,b)=>{
-      // Řaď podle místního času (HH:MM) — ne absolutního ts kvůli timezone
       const tA=new Date(a.ts);const tB=new Date(b.ts);
-      const minsA=tA.getHours()*60+tA.getMinutes();
-      const minsB=tB.getHours()*60+tB.getMinutes();
-      return minsB-minsA; // nejnovější nahoře
+      return (tB.getHours()*60+tB.getMinutes())-(tA.getHours()*60+tA.getMinutes());
     });
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px">
+      <div class="sec-lbl" style="padding:0;margin:0">Záznamy</div>
+      <button onclick="openPlanAddMenu('${k}')" style="width:26px;height:26px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
+    </div>`;
     if(entries.length){
-      html+=`<div class="sec-lbl">Záznamy</div><div class="entry-list">`;
+      html+=`<div class="entry-list">`;
       entries.forEach((e,i)=>{
         const isReaction=e.type==='reaction';
         const isWakeup=e.type==='wakeup';
         const isBedtime=e.type==='bedtime';
-        const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c':isReaction?' style="background:#fff5f5;border-color:#f09595"':'';
-        const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-        const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
+        const isNS=e.type==='nightsleep';
+        const cc=e.type==='breast'?' breast':(e.type==='sleep'||isNS)?' sleep-c':isReaction?' reaction-card':'';
+        const ic=e.type==='breast'?'i-breast':(e.type==='sleep'||isNS)?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
+        const em=e.type==='breast'?'🤱':isNS?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name);
         const origTs=e.ts;const origType=e.type;
-        html+=`<div class="ecard${isReaction?'':cc}" ${isReaction?'style="background:#fff5f5;border-color:#f09595"':''} onclick="${isReaction?`openPlanReactionDetail('${k}')`:`openPlanEntryDetailByTsType('${k}',${origTs},'${origType}')`}">
+        const nsStyle=isNS?'style="background:#f0ecff;border-color:#c5c0e8"':'';
+        const nsIconStyle=isNS?'style="background:#e8e4f5"':'';
+        html+=`<div class="ecard${isReaction?'':cc}" ${isReaction?'style="background:#fff5f5;border-color:#f09595"':nsStyle} onclick="${isReaction?`openPlanReactionDetail('${k}')`:`openPlanEntryDetailByTsType('${k}',${origTs},'${origType}')`}">
           <span class="etime">${fmtTime(e.ts)}</span>
-          <div class="eicon ${ic}" ${isReaction?'style="background:var(--red-bg)"':''}>${em}</div>
+          <div class="eicon ${ic}" ${isReaction?'style="background:var(--red-bg)"':nsIconStyle}>${em}</div>
           <div class="einfo"><div class="ename" ${isReaction?'style="color:var(--red);font-weight:600"':''}>${e.name}</div><div class="esub">${e.sub||''}</div></div>
           <div class="eright">${e.reaction&&!isReaction?'<div class="rdot">⚠</div>':''}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>`;
       });
       html+=`</div>`;
-    } else if(!canPlan){
-      html+=`<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Žádné záznamy</div>`;
+    } else {
+      html+=`<div style="padding:16px 20px;text-align:center;color:var(--text-3);font-size:13px">Žádné záznamy — klikni + pro přidání</div>`;
     }
   }
 
@@ -2800,6 +2902,76 @@ function openPlanEntryDetailWithEdit(dayKey,idx){
   const e=dd.entries[idx];
   openPlanEntryDetailByTsType(dayKey,e.ts,e.type);
 }
+function openPlanAddMenu(dayKey){
+  document.getElementById('planAddDayKey').value=dayKey;
+  openModal('mPlanAdd');
+}
+
+function planAddEntry(type){
+  const dayKey=document.getElementById('planAddDayKey').value;
+  closeModal('mPlanAdd');
+  if(!dayKey)return;
+  if(type==='food'){
+    _planAddTargetDay=dayKey;openModal('mFood');
+  } else if(type==='breast'){
+    _planAddTargetDay=dayKey;openModal('mBreast');
+  } else if(type==='sleep'){
+    _planAddSimple(dayKey,'sleep','Spánek','');
+  } else if(type==='wakeup'){
+    _planAddSimple(dayKey,'wakeup','Probudila se','vstávání');
+  } else if(type==='nightsleep'){
+    _planAddNightSleepDirect(dayKey);
+  }
+}
+
+let _planAddTargetDay=null;
+
+function _planAddSimple(dayKey,type,name,sub){
+  if(type==='wakeup'){
+    const existing=(state.calData[dayKey]||{}).entries||[];
+    if(existing.find(e=>e.type==='wakeup')){
+      alert('Záznam "Probudila se" v tento den už existuje. Klikni na něj pro úpravu.');
+      return;
+    }
+  }
+  const time=prompt('Čas záznamu (HH:MM):',type==='wakeup'?'07:00':'09:00');
+  if(!time)return;
+  const[hh,mm]=(time+':00').split(':').map(Number);
+  const[yr,mo,dy]=dayKey.split('-').map(Number);
+  const d=new Date(yr,mo-1,dy,hh,mm,0,0);
+  if(!state.calData[dayKey])state.calData[dayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+  state.calData[dayKey].entries.push({type,ts:d.getTime(),name,sub,reaction:false});
+  state.calData[dayKey].entries.sort((a,b)=>a.ts-b.ts);
+  saveAll();
+  selDay(yr,mo-1,dy);
+}
+
+function _planAddNightSleepDirect(dayKey){
+  const existing=(state.calData[dayKey]||{}).entries||[];
+  if(existing.find(e=>e.type==='nightsleep')){
+    alert('Noční spánek v tento den už existuje. Klikni na záznam pro úpravu.');
+    return;
+  }
+  const startTime=prompt('Čas usnula (HH:MM):','20:00');
+  if(!startTime)return;
+  const endTime=prompt('Čas probudila se (HH:MM):','06:30');
+  if(!endTime)return;
+  const[yr,mo,dy]=dayKey.split('-').map(Number);
+  const[sh,sm]=(startTime+':00').split(':').map(Number);
+  const startD=new Date(yr,mo-1,dy,sh,sm,0,0);
+  const[eh,em]=(endTime+':00').split(':').map(Number);
+  const endD=new Date(yr,mo-1,dy,eh,em,0,0);
+  if(endD<=startD)endD.setDate(endD.getDate()+1);
+  const dur=endD-startD;
+  const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+  const durStr='celkem '+(h>0?h+'h ':'')+m+'min';
+  if(!state.calData[dayKey])state.calData[dayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+  state.calData[dayKey].entries.push({type:'nightsleep',ts:startD.getTime(),name:'Noční spánek',sub:fmtTime(startD.getTime())+'–'+fmtTime(endD.getTime())+'\n'+durStr,reaction:false});
+  state.calData[dayKey].entries.sort((a,b)=>a.ts-b.ts);
+  saveAll();
+  selDay(yr,mo-1,dy);
+}
+
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){
   calView=v;
@@ -3009,21 +3181,45 @@ function selectChildEmoji(emoji){
   saveAll();
 }
 
-function applyTheme(gender){
-  const isboy=(gender||state.settings.gender)==='boy';
-  document.documentElement.setAttribute('data-theme',isboy?'boy':'');
-  document.body.setAttribute('data-theme',isboy?'boy':'');
-  // Update button active states
-  const gGirl=document.getElementById('genderGirl');
-  const gBoy=document.getElementById('genderBoy');
-  if(gGirl){gGirl.style.outline=isboy?'none':'2px solid var(--rose-btn)';gGirl.style.outlineOffset='2px';}
-  if(gBoy){gBoy.style.outline=isboy?'2px solid #7a9db8':'none';gBoy.style.outlineOffset='2px';}
+const THEMES=[
+  {id:'rose',  label:'Růžová', color:'#d4948a', bg:'#f5e8e6'},
+  {id:'blue',  label:'Modrá',  color:'#7a9db8', bg:'#e8eff5'},
+  {id:'green', label:'Zelená', color:'#70a870', bg:'#e8f5e8'},
+  {id:'yellow',label:'Zlatá',  color:'#c8a840', bg:'#faf3e0'},
+  {id:'nude',  label:'Nude',   color:'#c0a898', bg:'#f5eeea'},
+  {id:'neutral',label:'Neutrální',color:'#909090',bg:'#f0f0f0'},
+];
+
+function applyTheme(theme){
+  const t=theme||state.settings.theme||'rose';
+  document.documentElement.setAttribute('data-theme',t);
+  document.body.setAttribute('data-theme',t);
+  // Update meta theme-color
+  const mc=document.querySelector('meta[name=theme-color]');
+  const found=THEMES.find(x=>x.id===t);
+  if(mc&&found)mc.setAttribute('content',found.bg);
+  renderThemeSwatches();
 }
-function setGender(g){
-  state.settings.gender=g;
-  applyTheme(g);
+
+function renderThemeSwatches(){
+  const wrap=document.getElementById('themeSwatches');
+  if(!wrap)return;
+  const cur=state.settings.theme||'rose';
+  wrap.innerHTML=THEMES.map(t=>`
+    <div onclick="setTheme('${t.id}')" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:50%;background:${t.color};border:${t.id===cur?'3px solid var(--text)':'2px solid transparent'};box-shadow:${t.id===cur?'0 0 0 2px '+t.color:'none'};transition:all .2s"></div>
+      <span style="font-size:9px;color:${t.id===cur?'var(--text)':'var(--text-3)'};font-weight:${t.id===cur?'600':'400'}">${t.label}</span>
+    </div>
+  `).join('');
+}
+
+function setTheme(t){
+  state.settings.theme=t;
+  applyTheme(t);
   saveAll();
 }
+
+function setGender(g){state.settings.gender=g;applyTheme(state.settings.theme);saveAll();}
 
 // ============================================================
 // NASTAVENÍ
@@ -3032,7 +3228,8 @@ let editDoctorIdx=-1;
 function renderSettings(){
   const s=state.settings;
   const emoji=s.childEmoji||'👶';
-  applyTheme(s.gender);
+  applyTheme(s.theme||s.gender);
+  renderThemeSwatches();
   document.getElementById('avName').textContent=s.name;
   document.getElementById('avAge').textContent=calcAge(s.birth)+' · '+fmtDate(s.birth);
   const avEl=document.getElementById('avEmoji');if(avEl)avEl.textContent=emoji;
@@ -3246,7 +3443,7 @@ if(savedState){
     // ihned zkontroluj rollover — přesuň záznamy jiných dnů
     syncTodayToCalData();
     // Aplikuj téma hned po načtení
-    applyTheme(state.settings.gender);
+    applyTheme(state.settings.theme||state.settings.gender);
   }catch(e){seedCalData();}
 } else {
   seedCalData();
@@ -3707,7 +3904,7 @@ function updateWakeSleepBtn(){
   if(!icon&&!label&&!btn)return; // elementy odstraněny v v2.00
   if(!icon||!label||!btn)return;
   if(isBedtime){
-    icon.textContent='🌅';icon.style.background='#fef3b0';
+    icon.textContent='☀️';icon.style.background='#fef3b0';
     label.textContent='Vstala';label.style.color='#7a5c00';
     btn.style.background='#fffbe6';btn.style.borderColor='#f5d87a';
   } else {
@@ -3912,6 +4109,7 @@ function renderStats(){
   // Sbírej data
   let totalSleepMs=0,sleepDays=0,breastCount=0,foodDays=0,foodCount=0;
   let reactions=0,newFoods=new Set(),maxSleep=0,nightSleepMs=0,nightSleepDays=0;
+  let wakeupMins=0,wakeupDays=0,nsBedMins=0,nsBedDays=0;
   keys.forEach(k=>{
     const entries=k===dateKey(TODAY)
       ?state.todayLog.filter(e=>!e.live)
@@ -3928,11 +4126,27 @@ function renderStats(){
     // jídla
     const fc=entries.filter(e=>e.type==='food').length;
     if(fc>0){foodCount+=fc;foodDays++;}
-    // noční spánek — záznamy "Noční spánek" z calData
+    // noční spánek — záznamy nightsleep z calData
     const nightEntries=(state.calData[k]||{}).entries||[];
-    nightEntries.filter(e=>e.type==='sleep'&&(e.name||'').includes('Noční')).forEach(e=>{
+    nightEntries.filter(e=>e.type==='nightsleep').forEach(e=>{
       const dur=getSleepEndTs(e)-e.ts;
       if(dur>3600000&&dur<14*3600000){nightSleepMs+=dur;nightSleepDays++;}
+      // Začátek noci (usnutí) — hodiny od půlnoci
+      const startD=new Date(e.ts);const startMins=startD.getHours()*60+startD.getMinutes();
+      // Normalize — večerní časy (>12h) jsou before midnight
+      const normalizedMins=startMins>12*60?startMins:startMins+24*60;
+      nsBedMins+=normalizedMins;nsBedDays++;
+    });
+    // Vstávání — wakeup entries nebo konce nočního spánku
+    nightEntries.filter(e=>e.type==='nightsleep').forEach(e=>{
+      const endTs=getSleepEndTs(e);
+      if(endTs&&endTs>e.ts){
+        const endD=new Date(endTs);wakeupMins+=endD.getHours()*60+endD.getMinutes();wakeupDays++;
+      }
+    });
+    // Také wakeup entries
+    entries.filter(e=>e.type==='wakeup').forEach(e=>{
+      const d=new Date(e.ts);wakeupMins+=d.getHours()*60+d.getMinutes();wakeupDays++;
     });
     // reakce
     reactions+=entries.filter(e=>e.type==='reaction').length;
@@ -4064,6 +4278,17 @@ function renderStats(){
     <div style="display:flex;gap:8px;margin-bottom:8px">
       ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000),'sleep')}
       ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','','nightsleep')}
+      ${(()=>{
+        // Průměrné vstávání
+        const avgWakeupMin=wakeupDays?wakeupMins/wakeupDays:0;
+        const wh=Math.floor(avgWakeupMin/60),wm=Math.round(avgWakeupMin%60);
+        const wStr=avgWakeupMin?String(wh).padStart(2,'0')+':'+String(wm).padStart(2,'0'):'—';
+        // Průměrné usnutí
+        const avgBedMin=nsBedDays?nsBedMins/nsBedDays:0;
+        const bh=Math.floor(avgBedMin/60)%24,bm=Math.round(avgBedMin%60);
+        const bStr=nsBedDays?String(bh).padStart(2,'0')+':'+String(bm).padStart(2,'0'):'—';
+        return statCard('🌅','Průměrné vstávání',wStr,'','wakeuptime')+statCard('🌃','Průměrné usnutí',bStr,'','bedtimetime');
+      })()}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       ${statCard('🍽','Jídla / den',avgFood?fmtNum(avgFood)+'×':'—',delta(avgFood,pAvgFood),'food')}
@@ -4675,10 +4900,12 @@ let statDetailMetric='sleep';
 let statDetailView='week';
 
 const STAT_META={
-  sleep:   {icon:'😴',label:'Průměrný spánek/den',color:'#7a8fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
-  nightsleep:{icon:'🌙',label:'Průměrná noc',color:'#4a6fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
-  food:    {icon:'🍽',label:'Jídla / den',color:'#d4948a',unit:'×',fmt:(n)=>+n.toFixed(2)},
-  breast:  {icon:'🤱',label:'Kojení / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
+  sleep:      {icon:'😴',label:'Průměrný spánek/den',color:'#7a8fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
+  nightsleep: {icon:'🌙',label:'Průměrná noc',color:'#4a6fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
+  food:       {icon:'🍽',label:'Jídla / den',color:'#d4948a',unit:'×',fmt:(n)=>+n.toFixed(2)},
+  breast:     {icon:'🤱',label:'Kojení / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
+  wakeuptime: {icon:'🌅',label:'Průměrné vstávání',color:'#e8a050',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
+  bedtimetime:{icon:'🌙',label:'Průměrný začátek noci',color:'#6050a8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
 };
 
 function openStatDetail(metric){
@@ -4756,8 +4983,19 @@ function renderStatDetail(){
         if(ms>0){dayVal=ms;count++;}
       } else if(metric==='nightsleep'){
         const calEntries=(state.calData[k]||{}).entries||[];
-        const ns=calEntries.find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
+        const ns=calEntries.find(e=>e.type==='nightsleep');
         if(ns){const d=getSleepEndTs(ns)-ns.ts;if(d>3600000){dayVal=d;count++;}}
+      } else if(metric==='wakeuptime'){
+        // Vstávání — konec nightsleep nebo wakeup entry, jako minuty od půlnoci
+        const calEntries=(state.calData[k]||{}).entries||[];
+        const ns=calEntries.find(e=>e.type==='nightsleep');
+        if(ns){const endTs=getSleepEndTs(ns);if(endTs>ns.ts){const d=new Date(endTs);dayVal=(d.getHours()*60+d.getMinutes())*60000;count++;}}
+        else{const wu=entries.find(e=>e.type==='wakeup');if(wu){const d=new Date(wu.ts);dayVal=(d.getHours()*60+d.getMinutes())*60000;count++;}}
+      } else if(metric==='bedtimetime'){
+        // Usnutí — začátek nightsleep, jako minuty od půlnoci (normalizováno — večer>12h)
+        const calEntries=(state.calData[k]||{}).entries||[];
+        const ns=calEntries.find(e=>e.type==='nightsleep');
+        if(ns){const d=new Date(ns.ts);let mins=d.getHours()*60+d.getMinutes();if(mins<12*60)mins+=24*60;dayVal=mins*60000;count++;}
       } else if(metric==='food'){
         const fc=entries.filter(e=>e.type==='food').length;
         if(fc>0){dayVal=fc;count++;}
@@ -4795,7 +5033,8 @@ function renderStatDetail(){
   const maxV=Math.max(...nonZero);
   // Y osa — noční spánek po 2h, denní spánek po 15min, ostatní po 1
   const isNightSleep=metric==='nightsleep';
-  const yStep=isNightSleep?2:isSleep?0.25:1;
+  const isClockTime=metric==='wakeuptime'||metric==='bedtimetime';
+  const yStep=isNightSleep?2:isSleep?0.25:isClockTime?1:1;
   const yMax=Math.ceil(maxV/yStep)*yStep;
   const n=values.length;
 
@@ -4806,21 +5045,28 @@ function renderStatDetail(){
     titleEl.innerHTML=`<span>${(STAT_META[metric]?.icon||'')} ${(STAT_META[metric]?.label||metric)}</span><span style="font-size:11px;font-weight:500;color:var(--text-3);margin-left:8px">${periodLabels[statDetailView]||''}</span>`;
   }
 
-  const YL=isSleep?32:22;
+  const YL=isClockTime?34:(isSleep?32:22);
   const MR=6,MT=10,MB=18;
   const chartW=W-YL-MR;
 
   const pX=i=>YL+(i/(n-1||1))*chartW;
   const pY=v=>MT+(1-v/yMax)*(H-MT-MB);
 
-  // Y grid + labels
+  // Y grid
   ctx.setLineDash([]);
   for(let y=0;y<=yMax;y+=yStep){
     const py=pY(y);
     ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(YL,py);ctx.lineTo(W-MR,py);ctx.stroke();
     ctx.fillStyle='#c0a8a4';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='right';
-    const lbl=isSleep?fmtDurShort(y*3600000):(y>0?y+'×':'0');
+    let lbl;
+    if(isClockTime){
+      // y is in hours from midnight (e.g. 6.5 = 06:30, 22 = 22:00)
+      const normalH=Math.round(y*60);const hh=Math.floor(normalH/60)%24;const mm=normalH%60;
+      lbl=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+    } else {
+      lbl=isSleep?fmtDurShort(y*3600000):(y>0?y+'×':'0');
+    }
     ctx.fillText(lbl,YL-3,py+3);
   }
 
@@ -4874,7 +5120,12 @@ function renderStatDetail(){
   });
 
   // Summary
-  const fmtV=v=>v>0?(isSleep?fmtDurShort(v*3600000):v.toFixed(1)+'×'):'—';
+  const fmtV=v=>{
+    if(!v)return'—';
+    if(isClockTime){const totalM=Math.round(v*60);const hh=Math.floor(totalM/60)%24;const mm=totalM%60;return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
+    if(isSleep)return fmtDurShort(v*3600000);
+    return v.toFixed(1)+'×';
+  };
   document.getElementById('sdAvg').textContent=fmtV(avgV);
   document.getElementById('sdMax').textContent=fmtV(Math.max(...nonZero));
   document.getElementById('sdMin').textContent=fmtV(Math.min(...nonZero));
