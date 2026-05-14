@@ -1412,13 +1412,27 @@ function showScreen(n){
 // ============================================================
 // RENDER ALL
 // ============================================================
+function _showErr(ctx,e){
+  console.error(ctx,e);
+  let d=document.getElementById('_errToast');
+  if(!d){d=document.createElement('div');d.id='_errToast';d.style.cssText='position:fixed;bottom:80px;left:8px;right:8px;background:#c00;color:#fff;padding:10px;border-radius:8px;font-size:11px;z-index:99999;word-break:break-all';document.body.appendChild(d);}
+  d.textContent='ERR ['+ctx+']: '+e.message;
+  clearTimeout(d._t);d._t=setTimeout(()=>d.remove(),8000);
+}
+
 function renderAll(){
-  renderTodayBadge();renderStatus();renderTodayList();updateSleepUI();updateWakeSleepBtn();
-  renderStories();renderNightSleepCard();checkAndPublishStories();
-  if(curScreen==='plan')renderCal();
-  if(curScreen==='food')renderFoods();
-  if(curScreen==='freezer')renderFreezer();
-  if(curScreen==='settings')renderSettings();
+  try{renderTodayBadge();}catch(e){_showErr('badge',e);}
+  try{renderStatus();}catch(e){_showErr('status',e);}
+  try{renderTodayList();}catch(e){_showErr('todayList',e);}
+  try{updateSleepUI();updateWakeSleepBtn();}catch(e){_showErr('sleepUI',e);}
+  try{renderStories();}catch(e){_showErr('stories',e);}
+  try{renderNightSleepCard();checkAndPublishStories();}catch(e){_showErr('night',e);}
+  try{
+    if(curScreen==='plan')renderCal();
+    if(curScreen==='food')renderFoods();
+    if(curScreen==='freezer')renderFreezer();
+    if(curScreen==='settings')renderSettings();
+  }catch(e){_showErr('screen:'+curScreen,e);}
 }
 
 // ============================================================
