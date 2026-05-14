@@ -301,33 +301,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .doc-edit-btn.del{background:var(--red-bg);color:var(--red)}
 /* onboarding */
 .onboard{position:fixed;inset:0;background:var(--surface);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center}
-/* Status dashboard cells */
-.sdash-cell{display:flex;align-items:center;gap:6px;padding:4px 2px;min-width:0}
-.sdash-icon{font-size:18px;flex-shrink:0}
-.sdash-text{display:flex;flex-direction:column;min-width:0}
-.sdash-val{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;line-height:1.2}
-.sdash-lbl{font-size:10px;color:var(--text-3);white-space:nowrap;line-height:1.2}
-.sdash-cell.warn .sdash-val{color:var(--amber)}
 .onboard h2{font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px}
-/* Stories */
-.story-bubble{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;width:58px}
-.story-ring{width:52px;height:52px;border-radius:50%;padding:2.5px;background:var(--rose-light)}
-.story-ring.unread{background:linear-gradient(135deg,#e8748a,#d4948a,#c9857a)}
-.story-ring.read{background:#ddd}
-.story-ring.sofinka{background:linear-gradient(135deg,#d4948a,#c9857a)}
-.story-inner{width:100%;height:100%;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;border:2px solid var(--surface)}
-.story-label{font-size:9px;color:var(--text-2);font-weight:500;text-align:center;max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Quick tiles */
-.quick-tile{border-radius:12px;border:.5px solid;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:opacity .15s;font-family:inherit}
-.quick-tile:active{opacity:.8}
-.qt-label{font-size:10px;font-weight:500;color:var(--text);text-align:center;line-height:1.2}
-/* Story modal */
-.story-modal{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center}
-.story-modal-bg{position:absolute;inset:0;background:rgba(44,26,24,.5)}
-.story-modal-card{position:relative;z-index:1;width:100%;max-width:430px;border-radius:24px 24px 0 0;padding:28px 24px 40px;min-height:340px;display:flex;flex-direction:column}
-.story-modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.3);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-/* Night sleep tile */
-.quick-tile.sleeping{background:#dde5f0!important;border-color:#a8bdd4!important}
 .onboard p{font-size:14px;color:var(--text-2);margin-bottom:32px;line-height:1.5}
 .ob-btns{display:flex;gap:12px;width:100%;max-width:280px}
 .ob-btn{flex:1;padding:16px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer}
@@ -362,73 +336,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 
   <div id="scr-today" class="screen active">
     <div class="sticky-top">
-      <!-- STORIES PÁS -->
-      <div id="storiesBar" style="display:flex;gap:14px;padding:10px 16px 8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:var(--surface)">
+      <div class="header">
+        <div class="header-top"><h1>Sofin's menu</h1><span class="date-badge" id="todayBadge" onclick="showDailyCard(true)" style="cursor:pointer"></span></div>
+        <div class="subtitle" id="appSubtitle">Sofinka · 8 měsíců</div>
+        <div class="status-row" id="statusRow"></div>
       </div>
-      <!-- STAVOVÝ DASHBOARD — fixní, vždy viditelný -->
-      <div id="statusDash" style="display:flex;align-items:center;padding:4px 14px 8px;gap:0;background:var(--surface)">
-        <div class="sdash-cell" id="sd-awake" style="flex:1">
-          <div class="sdash-icon" id="sd-awake-icon">😴</div>
-          <div class="sdash-text">
-            <div class="sdash-val" id="sd-awake-val">—</div>
-            <div class="sdash-lbl" id="sd-awake-lbl">právě vzhůru</div>
-          </div>
-        </div>
-        <div style="width:.5px;height:28px;background:var(--rose-mid);flex-shrink:0"></div>
-        <div class="sdash-cell" id="sd-food" style="flex:1;justify-content:center">
-          <div class="sdash-icon">🥣</div>
-          <div class="sdash-text">
-            <div class="sdash-val" id="sd-food-val">—</div>
-            <div class="sdash-lbl">jedla před</div>
-          </div>
-        </div>
-        <div style="width:.5px;height:28px;background:var(--rose-mid);flex-shrink:0"></div>
-        <div class="sdash-cell" id="sd-breast" style="flex:1;justify-content:center">
-          <div class="sdash-icon">🤱</div>
-          <div class="sdash-text">
-            <div class="sdash-val" id="sd-breast-val">—</div>
-            <div class="sdash-lbl">kojila před</div>
-          </div>
-        </div>
-        <div style="width:.5px;height:28px;background:var(--rose-mid);flex-shrink:0"></div>
-        <div class="sdash-cell" id="sd-sleep" style="flex:1;justify-content:flex-end">
-          <div class="sdash-icon">😴</div>
-          <div class="sdash-text">
-            <div class="sdash-val" id="sd-sleep-val">—</div>
-            <div class="sdash-lbl">naspala dnes</div>
-          </div>
-        </div>
+      <div style="padding:0 16px 6px">
+        <button id="btnSleepToggle" onclick="toggleWakeSleep()" class="act-btn" style="width:100%;background:#fffbe6;border-color:#f5d87a">
+          <div class="act-icon" id="wakeSlpIcon" style="background:#fef3b0">🌅</div>
+          <span class="act-label" id="wakeSlpLabel" style="color:#7a5c00">Vstala</span>
+        </button>
       </div>
-      <!-- SITUAČNÍ KARTA USNULA / PROBUDILA SE -->
-      <div id="nightSleepCard" style="display:none;margin:0 12px 8px;border-radius:14px;padding:11px 14px;cursor:pointer;background:linear-gradient(135deg,#ece9f8,#f3f0fb);border:1.5px solid #c5c0e8" onclick="toggleNightSleep()">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:15px;font-weight:700;color:#3d3580" id="nightCardLabel">🌙 Usnula</div>
-            <div style="font-size:11px;color:#7a6fa0;margin-top:2px" id="nightCardSub">do večerky <span id="nightCardTimer">—</span></div>
+      <div class="action-row">
+        <button class="act-btn btn-food" onclick="openModal('mFood')">
+          <div class="act-icon">+</div>
+          <span class="act-label">Přidat jídlo</span>
+        </button>
+        <button class="act-btn btn-breast" onclick="openModal('mBreast')">
+          <div class="act-icon">🤱</div>
+          <span class="act-label">Zaznamenat kojení</span>
+        </button>
+        <button class="act-btn btn-sleep" id="sleepBtn" onclick="toggleSleep()">
+          <div class="sleep-icon" id="sleepIcon">
+            <svg id="iconPlay" viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9"/></svg>
+            <svg id="iconPause" viewBox="0 0 10 10" style="display:none"><rect x="1.5" y="1" width="2.5" height="8" rx=".8"/><rect x="6" y="1" width="2.5" height="8" rx=".8"/></svg>
           </div>
-          <div style="width:36px;height:36px;border-radius:50%;background:#c5c0e8;display:flex;align-items:center;justify-content:center;font-size:18px" id="nightCardIcon">🌙</div>
-        </div>
-      </div>
-      <!-- RYCHLÉ ZÁZNAMY — 4 vedle sebe -->
-      <div style="padding:0 12px 8px">
-        <div style="font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Rychlý záznam</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-          <button class="quick-tile" style="background:#fff3ef;border-color:#f5cfc5" onclick="openModal('mFood')">
-            <span style="font-size:20px">🥣</span>
-            <span class="qt-label">Jídlo</span>
-          </button>
-          <button class="quick-tile" style="background:#f5f0ff;border-color:#d9c8ee" onclick="openModal('mBreast')">
-            <span style="font-size:20px">🤱</span>
-            <span class="qt-label">Kojení</span>
-          </button>
-          <button class="quick-tile" id="sleepTile" style="background:#eef3fa;border-color:#c5d2e0" onclick="toggleSleep()">
-            <span style="font-size:20px" id="sleepTileIcon">😴</span>
-            <span class="qt-label" id="sleepTileLabel">Spánek</span>
-          </button>
-          <button class="quick-tile" style="background:#fff0f0;border-color:#f5c5c5" onclick="openModal('mReaction')">
-            <span style="font-size:20px">⚠️</span>
-            <span class="qt-label" style="color:var(--red)">Reakce</span>
-          </button>
+          <span class="act-label">
+            <span id="sleepLabel">Začít spánek</span>
+            <span class="act-sub" id="sleepSub" style="display:block"></span>
+          </span>
+          <span class="sleep-live" id="sleepLive" style="display:none"></span>
+        </button>
+        <div class="act-btn" style="background:var(--red-bg);border:2px solid #e05555;cursor:pointer" onclick="openModal('mReaction')">
+          <div class="act-icon" style="background:#f7c1c1;font-size:13px">⚠</div>
+          <span class="act-label" style="color:var(--red);font-weight:700;text-align:center">Zaznamenat reakci</span>
         </div>
       </div>
       <div class="divider"></div>
@@ -438,7 +379,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
       <div class="entry-list" id="todayList"></div>
       <div style="height:8px"></div>
     </div>
-
+  </div>
 
   <!-- PLÁN -->
 
@@ -654,7 +595,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.01 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v1.39 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -825,49 +766,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
   <button class="mcancel" onclick="closeModal('mAddWeight')">Zrušit</button>
 </div></div></div>
 
-<!-- STORY MODAL -->
-<div id="storyModal" class="story-modal" style="display:none">
-  <div class="story-modal-bg" onclick="closeStoryModal()"></div>
-  <div class="story-modal-card" id="storyModalCard">
-    <button class="story-modal-close" onclick="closeStoryModal()">✕</button>
-    <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:10px" id="smCategory"></div>
-    <div style="font-size:34px;margin-bottom:8px" id="smEmoji"></div>
-    <div style="font-size:20px;font-weight:700;line-height:1.3;margin-bottom:14px" id="smTitle"></div>
-    <div style="font-size:14px;line-height:1.7;opacity:.85;flex:1" id="smBody"></div>
-    <div style="font-size:10px;opacity:.5;margin-top:16px" id="smFooter"></div>
+<!-- DENNÍ KARTA -->
+
+<div id="dailyCardOverlay" style="display:none;pointer-events:none;position:fixed;inset:0;z-index:9999;background:rgba(245,235,232,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:cardFadeIn .35s ease">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;text-align:center">
+    <button onclick="closeDailyCard()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--rose-dark);opacity:.6;padding:8px">✕</button>
+    <div id="dcEmoji" style="font-size:52px;margin-bottom:16px;animation:cardSlideUp .4s ease .1s both"></div>
+    <div id="dcType" style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--rose-dark);opacity:.6;margin-bottom:8px"></div>
+    <div id="dcTitle" style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px;line-height:1.3;animation:cardSlideUp .4s ease .15s both"></div>
+    <div id="dcText" style="font-size:15px;color:var(--text-2);line-height:1.65;max-width:320px;animation:cardSlideUp .4s ease .2s both"></div>
+    <div id="dcDay" style="font-size:11px;color:var(--text-3);margin-top:20px;animation:cardSlideUp .4s ease .25s both"></div>
+    <button onclick="closeDailyCard()" style="margin-top:32px;padding:13px 36px;border-radius:99px;background:var(--rose-btn);border:none;color:#fff;font-size:15px;font-weight:600;cursor:pointer;animation:cardSlideUp .4s ease .3s both">Jdu na to 🌸</button>
   </div>
 </div>
 <style>
 @keyframes cardFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes cardSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes storySlideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 </style>
 
 <!-- MODAL stat detail -->
 
 <div class="modal-wrap" id="mStatDetail"><div class="movl" onclick="closeModal('mStatDetail')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
   <div class="mhandle"></div>
-  <div class="mtitle" id="sdTitle" style="margin-bottom:10px"></div>
-  <div class="view-toggle" style="margin:0 0 14px">
-    <button class="vt" id="sdW" onclick="setStatDetailView('week',this)">Týden</button>
-    <button class="vt" id="sdM" onclick="setStatDetailView('month',this)">Měsíc</button>
-    <button class="vt" id="sdY" onclick="setStatDetailView('year',this)">Rok</button>
-  </div>
-  <canvas id="sdCanvas" style="width:100%;display:block;margin-bottom:8px"></canvas>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px">
-    <div style="background:#faf5f4;border-radius:10px;padding:9px 10px;border:.5px solid #ecddd9">
-      <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#b89390;margin-bottom:3px">Průměr</div>
-      <div style="font-size:15px;font-weight:600;color:#7a8fa8" id="sdAvg">—</div>
-    </div>
-    <div style="background:#faf5f4;border-radius:10px;padding:9px 10px;border:.5px solid #ecddd9">
-      <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#b89390;margin-bottom:3px">Maximum</div>
-      <div style="font-size:15px;font-weight:600;color:#4a7a4a" id="sdMax">—</div>
-    </div>
-    <div style="background:#faf5f4;border-radius:10px;padding:9px 10px;border:.5px solid #ecddd9">
-      <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#b89390;margin-bottom:3px">Minimum</div>
-      <div style="font-size:15px;font-weight:600;color:#b89390" id="sdMin">—</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="mtitle" id="sdTitle" style="margin-bottom:0"></div>
+    <div class="type-btns" style="margin:0">
+      <button class="type-btn active" id="sdW" onclick="setStatDetailView('week',this)">Týden</button>
+      <button class="type-btn" id="sdM" onclick="setStatDetailView('month',this)">Měsíc</button>
+      <button class="type-btn" id="sdY" onclick="setStatDetailView('year',this)">Rok</button>
     </div>
   </div>
+  <canvas id="sdCanvas" height="160" style="width:100%;display:block;margin-bottom:12px"></canvas>
+  <div id="sdTable" style="font-size:12px"></div>
 </div></div></div>
 
 <!-- MODAL přezkum statusu potraviny -->
@@ -1149,7 +1079,6 @@ const MONTHS_GEN=['ledna','února','března','dubna','května','června','červe
 const DEFAULT_STATE = {
   todayLog: [],
   sleep: {active:false, startTs:null},
-  nightSleep: {active:false, startTs:null},
   freezer: [
     {id:1,foods:['mrkev','batát'],type:'prikrm',amount:8,unit:'kostičky',frozen:Date.now()-5*864e5,note:''},
     {id:2,foods:['máslová dýně','rýže'],type:'kase',amount:12,unit:'kostičky',frozen:Date.now()-18*864e5,note:'bez soli'},
@@ -1241,7 +1170,6 @@ function applyRemoteState(remote) {
     }
   }
   if (remote.calData) state.calData = remote.calData;
-  if (remote.nightSleep!==undefined) state.nightSleep = remote.nightSleep;
   const sleepNowActive = state.sleep && state.sleep.active;
   if (sleepWasActive !== sleepNowActive) updateSleepUI();
   renderAll();
@@ -1404,7 +1332,6 @@ function showScreen(n){
 // ============================================================
 function renderAll(){
   renderTodayBadge();renderStatus();renderTodayList();updateSleepUI();updateWakeSleepBtn();
-  renderStories();renderNightSleepCard();checkAndPublishStories();
   if(curScreen==='plan')renderCal();
   if(curScreen==='food')renderFoods();
   if(curScreen==='freezer')renderFreezer();
@@ -1415,78 +1342,97 @@ function renderAll(){
 // TODAY
 // ============================================================
 function renderTodayBadge(){
-  // todayBadge odstraněn v v2.00 — stories pás nahrazuje hlavičku
-  // appSubtitle se aktualizuje v renderSettings
+  const d=new Date();const days=['Ne','Po','Út','St','Čt','Pá','So'];
+  document.getElementById('todayBadge').textContent=days[d.getDay()]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.';
 }
 
 
 function renderStatus(){
   const now=Date.now();
   const todayKey=dateKey(TODAY);
-  function mStr(ms){const m=Math.max(0,Math.floor(ms/60000));return m<60?m+'min':Math.floor(m/60)+'h'+(m%60?' '+m%60+'min':'');}
+  let html='';
 
   const calEntries=(state.calData[todayKey]||{}).entries||[];
   const dedup=new Set();
   const allToday=[...state.todayLog,...calEntries].filter(e=>{
-    const k=e.ts+'|'+e.type;if(dedup.has(k))return false;dedup.add(k);return true;
+    const k=e.ts+'|'+e.type;
+    if(dedup.has(k))return false;
+    dedup.add(k);return true;
   });
 
-  // Vzhůru / spí
+  function mStr(ms){const m=Math.max(0,Math.floor(ms/60000));return m<60?m+'min':Math.floor(m/60)+'h'+(m%60?' '+m%60+'min':'');}
+
+  // === MODRÉ — vzhůru + naspala ===
+
+  // Poslední bedtime/wakeup záznam z posledních 24h (přes půlnoc!)
   const since24h=now-24*3600000;
-  const recentBW=[...state.todayLog,...((state.calData[dateKey(new Date(now-86400000))]||{}).entries||[])]
-    .filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&e.ts>since24h).sort((a,b)=>b.ts-a.ts);
+  const recentBW=[
+    ...state.todayLog,
+    // včerejší záznamy z calData
+    ...((state.calData[dateKey(new Date(now-86400000))]||{}).entries||[])
+  ].filter(e=>(e.type==='bedtime'||e.type==='wakeup')&&e.ts>since24h)
+   .sort((a,b)=>b.ts-a.ts);
   const lastWB=recentBW[0];
-  const isSleeping=state.sleep.active||(lastWB&&lastWB.type==='bedtime')||getNightSleep().active;
+  const isSleeping=state.sleep.active||(lastWB&&lastWB.type==='bedtime');
 
-  const awakeEl=document.getElementById('sd-awake');
-  const awakeVal=document.getElementById('sd-awake-val');
-  const awakeLbl=document.getElementById('sd-awake-lbl');
-  const awakeIcon=document.getElementById('sd-awake-icon');
-
+  // 💤 právě spí / 👀 vzhůru už
   if(isSleeping){
-    if(awakeEl)awakeEl.className='sdash-cell';
-    if(awakeIcon)awakeIcon.textContent='💤';
-    if(awakeVal)awakeVal.textContent='spí';
-    if(awakeLbl)awakeLbl.textContent='právě spí';
+    html+=`<div class="chip blue"><span>💤</span><span style="font-weight:500">právě spí</span></div>`;
   } else {
     let awakeFrom=null;
     const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
     if(todaySleeps.length){
+      // Byl dnes spánek → počítej od konce posledního
       todaySleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const endTs=getSleepEndTs(todaySleeps[0]);
       if(endTs>0&&endTs<now)awakeFrom=endTs;
-    } else if(lastWB&&lastWB.type==='wakeup'){awakeFrom=lastWB.ts;}
-    if(awakeEl)awakeEl.className='sdash-cell'+(awakeFrom&&(now-awakeFrom)>7200000?' warn':'');
-    if(awakeIcon)awakeIcon.textContent='🌤';
-    if(awakeVal)awakeVal.textContent=awakeFrom?mStr(now-awakeFrom):'—';
-    if(awakeLbl)awakeLbl.textContent='právě vzhůru';
+    } else {
+      // Dnes žádný spánek → fallback na wakeup záznam
+      if(lastWB&&lastWB.type==='wakeup')awakeFrom=lastWB.ts;
+    }
+    if(awakeFrom){
+      const awMs=now-awakeFrom;
+      const awM=Math.max(0,Math.floor(awMs/60000));
+      html+=`<div class="chip blue ${awM>120?'warn':''}"><span>👀</span><span>vzhůru už <span class="chip-val">${mStr(awMs)}</span></span></div>`;
+    }
   }
 
-  // Naspala dnes
+  // 😴 naspala
   const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min')&&!(e.sub||'').includes('probíhá'));
   let totalMs=0;
   sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
   if(state.sleep.active&&state.sleep.startTs)totalMs+=now-state.sleep.startTs;
-  const sleepVal=document.getElementById('sd-sleep-val');
-  if(sleepVal)sleepVal.textContent=totalMs>=60000?mStr(totalMs):'—';
+  if(totalMs>=60000)html+=`<div class="chip blue"><span>😴</span><span>naspala <span class="chip-val">${fmtDuration(totalMs)}</span></span></div>`;
 
-  // Jedla před
+  // === ORANŽOVÉ — nejedla + nekojila ===
+
+  // 🥣 nejedla už (jen jídlo)
   const lastMeal=allToday.filter(e=>e.type==='food').sort((a,b)=>b.ts-a.ts)[0];
-  const foodCell=document.getElementById('sd-food');
-  const foodVal=document.getElementById('sd-food-val');
-  if(foodVal)foodVal.textContent=lastMeal?mStr(now-lastMeal.ts):'—';
-  if(foodCell)foodCell.className='sdash-cell'+(lastMeal&&(now-lastMeal.ts)>10800000?' warn':'');
+  if(lastMeal){
+    const el=now-lastMeal.ts,m=Math.floor(el/60000);
+    html+=`<div class="chip orange ${m>180?'warn':''}"><span>🥣</span><span>nejedla už <span class="chip-val">${mStr(el)}</span></span></div>`;
+  }
 
-  // Kojila před
+  // 🤱 nekojila už
   const lastBreast=allToday.filter(e=>e.type==='breast').sort((a,b)=>b.ts-a.ts)[0];
-  const breastCell=document.getElementById('sd-breast');
-  const breastVal=document.getElementById('sd-breast-val');
-  if(breastVal)breastVal.textContent=lastBreast?mStr(now-lastBreast.ts):'—';
-  if(breastCell)breastCell.className='sdash-cell'+(lastBreast&&(now-lastBreast.ts)>10800000?' warn':'');
+  if(lastBreast){
+    const el=now-lastBreast.ts,m=Math.floor(el/60000);
+    html+=`<div class="chip orange ${m>180?'warn':''}"><span>🤱</span><span>nekojila už <span class="chip-val">${mStr(el)}</span></span></div>`;
+  }
 
-  // Starý statusRow — guard
-  const sr=document.getElementById('statusRow');
-  if(sr)sr.innerHTML='';
+  // === SVĚTLE ČERVENÁ — večerka (4h před) ===
+  const bedtime=state.settings.bedtime;
+  if(bedtime){
+    const[bh,bm]=bedtime.split(':').map(Number);
+    const bt=new Date();bt.setHours(bh,bm,0,0);
+    if(bt.getTime()<now)bt.setDate(bt.getDate()+1);
+    const diff=Math.floor((bt.getTime()-now)/60000);
+    if(diff>=0&&diff<240){
+      html+=`<div class="chip bedtime"><span>⏰</span><span>večerka za <span class="chip-val">${mStr(diff*60000)}</span></span></div>`;
+    }
+  }
+
+  document.getElementById('statusRow').innerHTML=html;
 }
 
 
@@ -1499,46 +1445,39 @@ function renderTodayList(){
     const isReaction=e.type==='reaction';
     const isWakeup=e.type==='wakeup';
     const isBedtime=e.type==='bedtime';
-    const isNightSleep=e.type==='nightsleep';
-    const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):isNightSleep?' sleep-c'+(e.live?' live':''):isReaction?' reaction-card':'';
-    const ic=e.type==='breast'?'i-breast':(e.type==='sleep'||isNightSleep)?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-    const em=e.type==='breast'?'🤱':(e.type==='sleep'||isNightSleep)?'🌙':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
-    const nightStyle=isNightSleep?'background:#f0ecff;border-color:#c5c0e8;border-left:3px solid #7a6fbf':'';
+    const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):isReaction?' reaction-card':'';
+    const ic=e.type==='breast'?'i-breast':e.type==='sleep'?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
+    const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'🌅':isBedtime?'🌙':getMealEmoji(e.name);
     const who=e.by?`<span class="who ${byMap[e.by]||'who-tata'}">${e.by}</span>`:'';
     const rd=e.reaction&&!isReaction?`<div class="rdot">⚠</div>`:'';
     const lb=e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'';
     const clickFn=isReaction?`openReactionDetail('${e.id}')`:`openEntryDetail('${e.id}')`;
-    const cardStyle=isReaction?'background:#fff5f5;border-color:#f09595;border-left:3px solid #e24b4a':nightStyle;
+    const cardStyle=isReaction?'background:#fff5f5;border-color:#f09595;border-left:3px solid #e24b4a':'';
 
-    // Pro spánek: vlevo čas začátku, v sub jen délka
+    // Pro spánek: vlevo čas začátku, v sub jen délka (bez opakování času)
     let subText=e.sub||'';
     let timeLabel=fmtTime(e.ts);
     if(e.type==='sleep'&&!e.live){
+      // sub format: "7:10 – 8:45 · 1h 35min" nebo "7:10 – 8:45 · 1h 35min · poznámka"
+      // extrahovat jen délku (za ·)
       const parts=(e.sub||'').split('·');
       subText=parts.slice(1).map(s=>s.trim()).filter(Boolean).join(' · ')||e.sub;
-    }
-    // Noční spánek — speciální zobrazení
-    if(isNightSleep&&e.live){
-      subText=e.sub||''; // "od 22:57 · probíhá"
     }
 
     return`<div class="eswipe-wrap" id="esw-${e.id}">
       <div class="eswipe-delete-bg">🗑 Smazat</div>
       <div class="ecard${cc}" id="ec-${e.id}" style="${cardStyle}" onclick="${clickFn}">
         <span class="etime">${timeLabel}</span>
-        <div class="eicon ${ic}" style="${isNightSleep?'background:#e8e4f5':''}">🌙</div>
+        <div class="eicon ${ic}">${em}</div>
         <div class="einfo">
           <div class="ename" style="${isReaction?'color:var(--red);font-weight:600':''}">${e.name}</div>
-          <div class="esub">${subText}</div>
-          ${isNightSleep&&e.live?`<div class="esub" id="nsListTimer" style="color:#7a6fbf;font-size:10px;font-weight:500">—</div>`:''}
+          <div class="esub" ${e.live?'id="liveCardSub"':''}>${subText}</div>
         </div>
-        <div class="eright">${who}${rd}${isNightSleep&&e.live?`<span class="livebadge" style="background:#c5c0e8;color:#3d3580">probíhá</span>`:(e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'')}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+        <div class="eright">${who}${rd}${lb}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
       </div>
     </div>`;
   }).join('');
   sorted.forEach(e=>initEntrySwipe(e.id));
-  // Start night sleep list timer if active
-  if(getNightSleep().active)startNightListTimer();
 
   // Přidej naplánované položky na dnešek dole
   const todayKey=dateKey(TODAY);
@@ -1572,44 +1511,20 @@ function updateSleepUI(){
   const live=document.getElementById('sleepLive');
   const play=document.getElementById('iconPlay');
   const pause=document.getElementById('iconPause');
-  // Update tile
-  const tile=document.getElementById('sleepTile');
-  const tileLabel=document.getElementById('sleepTileLabel');
-  const tileSub=document.getElementById('sleepTileSub');
-  const tileIcon=document.getElementById('sleepTileIcon');
   if(active){
-    if(btn)btn.classList.add('sleeping');
-    if(label)label.textContent='Probíhá spánek';
-    if(sub&&state.sleep.startTs)sub.textContent='od '+fmtTime(state.sleep.startTs);
-    if(live)live.style.display='inline';
-    if(play)play.style.display='none';
-    if(pause)pause.style.display='block';
-    if(tile)tile.classList.add('sleeping');
-    if(tileLabel)tileLabel.textContent='Spánek běží';
-    if(tileIcon)tileIcon.textContent='⏹️';
+    btn.classList.add('sleeping');label.textContent='Probíhá spánek';sub.textContent='od '+fmtTime(state.sleep.startTs);live.style.display='inline';play.style.display='none';pause.style.display='block';
     if(!sleepTimerInterval){sleepTimerInterval=setInterval(()=>{
       const el=Date.now()-state.sleep.startTs;
       const d=document.getElementById('liveCardTimer');
       const b=document.getElementById('sleepLive');
       const s=document.getElementById('liveCardSub');
-      const ts=document.getElementById('sleepTileSub');
       if(d)d.textContent=fmtTimer(el);
       if(b)b.textContent=fmtTimer(el);
       if(s)s.textContent='probíhá · '+fmtTimer(el);
-      if(ts)ts.textContent=fmtTimer(el);
       renderStatus();
     },1000);}
   } else {
-    if(btn)btn.classList.remove('sleeping');
-    if(label)label.textContent='Začít spánek';
-    if(sub)sub.textContent='';
-    if(live){live.style.display='none';live.textContent='';}
-    if(play)play.style.display='block';
-    if(pause)pause.style.display='none';
-    if(tile)tile.classList.remove('sleeping');
-    if(tileLabel)tileLabel.textContent='Spánek';
-    if(tileIcon)tileIcon.textContent='😴';
-    if(tileSub)tileSub.textContent='';
+    btn.classList.remove('sleeping');label.textContent='Začít spánek';sub.textContent='';live.style.display='none';live.textContent='';play.style.display='block';pause.style.display='none';
     if(sleepTimerInterval){clearInterval(sleepTimerInterval);sleepTimerInterval=null;}
   }
 }
@@ -2298,8 +2213,7 @@ function syncTodayToCalData(){
     });
     // odeber z todayLog záznamy jiných dnů (kromě live spánku)
     state.todayLog=state.todayLog.filter(e=>{
-      if(e.live)return true; // zachovej live záznamy (denní spánek + noční spánek)
-      if(e.type==='nightsleep')return true; // zachovej noční spánek přes půlnoc
+      if(e.live)return true;
       const d=new Date(e.ts);d.setHours(0,0,0,0);
       return dateKey(d)===todayKey;
     });
@@ -2916,8 +2830,7 @@ function renderSettings(){
   document.getElementById('svBirth').textContent=fmtDate(s.birth);
   if(document.getElementById('svWeight'))document.getElementById('svWeight').textContent=s.weight+' kg';
   document.getElementById('svBedtime').textContent=s.bedtime||'—';
-  const appSub=document.getElementById('appSubtitle');
-  if(appSub)appSub.textContent=s.name+' · '+calcAge(s.birth);
+  document.getElementById('appSubtitle').textContent=s.name+' · '+calcAge(s.birth);
   document.getElementById('foodSubtitle').textContent=calcAge(s.birth)+' · zavádění';
   document.getElementById('identityVal').textContent=myIdentity==='mama'?'🤱 Mama':myIdentity==='tata'?'👨 Táta':'—';
   document.getElementById('alWrap').innerHTML=s.allergens.map((a,i)=>`<div class="al-pill">${a}<span style="font-size:13px;opacity:.6;line-height:1;cursor:pointer" onclick="removeAllergen(${i})">×</span></div>`).join('')+`<div class="al-add" onclick="addAllergenPrompt()">+ přidat</div>`;
@@ -3085,7 +2998,6 @@ if(savedState){
     // deep merge — localStorage přepíše vše co tam je
     if(s.todayLog!==undefined)state.todayLog=s.todayLog;
     if(s.sleep!==undefined)state.sleep=s.sleep;
-    if(s.nightSleep!==undefined)state.nightSleep=s.nightSleep;
     if(s.freezer!==undefined)state.freezer=s.freezer;
     if(s.fzNextId!==undefined)state.fzNextId=s.fzNextId;
     if(s.foodOverrides!==undefined)state.foodOverrides=s.foodOverrides;
@@ -3566,7 +3478,6 @@ function updateWakeSleepBtn(){
   const icon=document.getElementById('wakeSlpIcon');
   const label=document.getElementById('wakeSlpLabel');
   const btn=document.getElementById('btnSleepToggle');
-  if(!icon&&!label&&!btn)return; // elementy odstraněny v v2.00
   if(!icon||!label||!btn)return;
   if(isBedtime){
     icon.textContent='🌅';icon.style.background='#fef3b0';
@@ -3603,9 +3514,8 @@ function logWakeUp(){
     state.calData[bedtimeDay].sleep=(state.calData[bedtimeDay].entries||[]).filter(e=>e.type==='sleep').length;
   }
   renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
-  // stories + night sleep
-  renderNightSleepCard();
-  checkAndPublishStories();
+  // Zobraz denní kartu
+  setTimeout(()=>showDailyCard(),400);
 }
 
 function logBedtime(){
@@ -4083,401 +3993,168 @@ function editWeightEntry(idx){
 }
 
 // ============================================================
-// STORIES SYSTÉM
+// DENNÍ KARTY
 // ============================================================
 
-// ---- Story card packs (věkové balíčky) ----
-// Struktura: typ "morning" | "activity" | "evening"
-// ageFromDays / ageToDays — věk dítěte v dnech
-const STORY_PACKS = {
-  "8-10": {
-    segments: [
-      { // 8m0d – 8m14d (240–254)
-        id:"8-10-a", ageFromDays:240, ageToDays:254,
-        morning:[
-          {id:"m-8a-01",icon:"☀️",title:"Dobré ráno",body:"V tomto období děti často víc zkoumají prostor — otáčejí se, plazí, lezou nebo si hledají vlastní cestu k věcem. Každé dítě má své tempo.",tag:"Milestone"},
-          {id:"m-8a-02",icon:"🌅",title:"Ranní postřeh",body:"Dnes možná přijde další pokus o útěk z deky. Tohle období je plné pohybového zkoumání — a plné překvapení.",tag:"Vývoj"},
-          {id:"m-8a-03",icon:"☀️",title:"Pro tebe",body:"Ráno je ráno. Dej si chvíli než naběhneš na plný výkon. I ty potřebuješ chvíli na rozkoukat se.",tag:"Péče"},
-        ],
-        activity:[
-          {id:"a-8a-01",icon:"🔍",title:"Malá detektivka",body:'Schovej oblíbenou hračku napůl pod plenku a chvíli počkej, jestli ji Sofinka začne hledat. Když ji to nezaujme, nic se neděje — zkuste to jindy.',tag:"Hra"},
-          {id:"a-8a-02",icon:"📦",title:"Vkládání a vyndávání",body:"Dej jí krabici a různé věci co se dají vkládat a vyndávat. Tato jednoduchá hra je pro tento věk kognitivní trénink číslo jedna.",tag:"Hra"},
-          {id:"a-8a-03",icon:"🎵",title:"Rytmus spolu",body:"Tleskej a hm-hm-hm k jakékoli melodii. Rytmus a opakování jsou pro mozek dítěte v tomhle věku jako svátky.",tag:"Komunikace"},
-        ],
-        evening:[
-          {id:"e-8a-01",icon:"🌙",title:"Dnešek je hotový",body:"Fakt dobrá práce. Malý mozek si teď během spánku třídí hlasy, pohyby a dojmy, které dnes zažil.",tag:"Večer"},
-          {id:"e-8a-02",icon:"✨",title:"Pomalé odpoledne",body:"Někdy stačí jen být. Nemusí se každý den něco nového zkoušet. Přítomnost je víc než program.",tag:"Péče"},
-          {id:"e-8a-03",icon:"🌙",title:"Biologický fakt",body:"Spánek v tomto věku není jen odpočinek — je to hlavní čas kdy mozek konsoliduje nové pohybové vzorce které dnes Sofinka zkoušela.",tag:"Věda"},
-        ]
-      },
-      { // 8m14d – 8m28d (255–269)
-        id:"8-10-b", ageFromDays:255, ageToDays:269,
-        morning:[
-          {id:"m-8b-01",icon:"☀️",title:"Dobré ráno",body:"Možná už si všimla, že Sofinka víc ukazuje prstem nebo gestikuluje. Je to vývojový skok — říká si o věci bez slov.",tag:"Milestone"},
-          {id:"m-8b-02",icon:"🌤",title:"Ranní postřeh",body:"V tomhle období se děti učí záměrně komunikovat. Každé její brbláni nebo ukazování je zkouška — funguje to?",tag:"Vývoj"},
-          {id:"m-8b-03",icon:"☀️",title:"Pro tebe",body:"Všimni si dnes jednoho hezkého momentu. Jeden stačí. Nemusíš si je všechny pamatovat.",tag:"Péče"},
-        ],
-        activity:[
-          {id:"a-8b-01",icon:"🪆",title:"Peek-a-boo pokročilý",body:'Schovej se za noviny nebo polštář a počkej. Sofinka teď ví, že jsi za tím — a čeká na tvůj výskyt. Napětí je celá pointa.',tag:"Hra"},
-          {id:"a-8b-02",icon:"🥄",title:"Prozkoumávání textur",body:"Dej jí různé materiály: papír, látka, kov lžičky. Každá textura buduje nové senzorické mapy v mozku.",tag:"Smysly"},
-          {id:"a-8b-03",icon:"💬",title:"Řekni to jinak",body:'"Chceš hrnek?" Otázky které vyžadují reakci gesty nebo pohledem budují porozumění dřív než řeč.',tag:"Komunikace"},
-        ],
-        evening:[
-          {id:"e-8b-01",icon:"🌙",title:"Konec dne",body:"Jeden den méně do prvního kroku, prvního slova, prvního smíchu nad vtipem. Tohle všechno se děje pomalu — a ty u toho jsi.",tag:"Večer"},
-          {id:"e-8b-02",icon:"🌟",title:"Dobré zprávy",body:"Výzkumy ukazují, že děti jejichž rodiče s nimi hodně mluví mají ve 3 letech výrazně větší slovní zásobu. Mluvíš s ní víc než si myslíš.",tag:"Věda"},
-          {id:"e-8b-03",icon:"🌙",title:"Pro tebe",body:"Unavená a přesto tady. To se počítá víc než dokonalost.",tag:"Péče"},
-        ]
-      },
-      { // 9m0d – 9m14d (270–284)
-        id:"8-10-c", ageFromDays:270, ageToDays:284,
-        morning:[
-          {id:"m-9a-01",icon:"☀️",title:"Dobré ráno",body:"Kolem 9 měsíců mozek dítěte začíná chápat záměry druhých — ví, že ty chceš něco, ne jen že pohybuješ rukou. To je revoluční.",tag:"Milestone"},
-          {id:"m-9a-02",icon:"🌅",title:"Ranní postřeh",body:"Separační úzkost v tomhle věku je vývojový úspěch — Sofinka si uvědomuje, že jsi zvláštní osoba a chce tě mít blízko.",tag:"Vývoj"},
-          {id:"m-9a-03",icon:"☀️",title:"Pro tebe",body:"Jsi její bezpečná základna. Z tebe vychází zkoumat a k tobě se vrací nabít. Tohle trvá celý život.",tag:"Péče"},
-        ],
-        activity:[
-          {id:"a-9a-01",icon:"🏗",title:"Věže a boření",body:"Postav věž z kostek nebo hrnků a nech ji sbourat. Opakuj dokola. Tohle je pro ni experiment s příčinou a následkem.",tag:"Hra"},
-          {id:"a-9a-02",icon:"🎶",title:"Tanec s miminkem",body:"Vezmi ji do náruče a pomalu se kolébej k hudbě. Rytmus, blízkost a pohyb — trojkombinace pro dobrý den.",tag:"Pohyb"},
-          {id:"a-9a-03",icon:"👆",title:"Ukáž mi...",body:'"Kde je míček?" "Ukáž mi nos." Tyto otázky budují porozumění i před tím, než umí mluvit.',tag:"Komunikace"},
-        ],
-        evening:[
-          {id:"e-9a-01",icon:"🌙",title:"Dnešek je hotový",body:"Dnes jsi Sofince bezpečně ukázala, jak funguje svět. To je práce na plný úvazek bez pauzy.",tag:"Večer"},
-          {id:"e-9a-02",icon:"🧠",title:"Biologický fakt",body:"Mozek 9měsíčního dítěte zpracovává informace rychlostí, která se pak sníží. Teď se učí doslova vším co vidí, slyší a čuchá.",tag:"Věda"},
-          {id:"e-9a-03",icon:"🌙",title:"Pro tebe",body:"Pokud byl dnešek těžký — normální den vypadá tak a tak. Těžké dny jsou součástí, ne selhání.",tag:"Péče"},
-        ]
-      },
-      { // 9m14d – 10m (285–304)
-        id:"8-10-d", ageFromDays:285, ageToDays:304,
-        morning:[
-          {id:"m-9b-01",icon:"☀️",title:"Dobré ráno",body:"Blíží se rok. Každý den teď přináší něco co tu minulý týden nebylo — slovo, pohyb, reakci. Nestihneš si všechno zapamatovat, ale bude to v tobě.",tag:"Milestone"},
-          {id:"m-9b-02",icon:"🌅",title:"Ranní postřeh",body:"Děti v tomhle věku začínají chápat hru na předstírání — pití z prázdného hrnku, krmení medvídka. Je to obrovský kognitivní skok.",tag:"Vývoj"},
-          {id:"m-9b-03",icon:"☀️",title:"Pro tebe",body:"Dej si dnes alespoň jedno jídlo v klidu. Byť jen 8 minut. Zasloužíš si to.",tag:"Péče"},
-        ],
-        activity:[
-          {id:"a-9b-01",icon:"🍳",title:"Jako by",body:"Předstírejte vaření, nakupování, čtení. Symbolická hra je v tomhle věku trénink empatie a jazyka dohromady.",tag:"Hra"},
-          {id:"a-9b-02",icon:"📚",title:"Knížka s prstem",body:"Ukazuj na obrázky a pojmenuj je. Nesmyslné otázky jako 'kde je kočička?' jsou pro vývoj řeči skvělé — i když ještě neodpovídá.",tag:"Řeč"},
-          {id:"a-9b-03",icon:"🎭",title:"Výrazy obličeje",body:"Dělej přehnané výrazy — překvapení, radost, zamyšlení. Sofinka je kopíruje a zároveň se učí pojmenovávat emoce.",tag:"Emoce"},
-        ],
-        evening:[
-          {id:"e-9b-01",icon:"🌙",title:"Konec dne",body:"Blíží se rok. A ty jsi tu každý den. To není samozřejmé — je to volba.",tag:"Večer"},
-          {id:"e-9b-02",icon:"✨",title:"Dobrá zpráva",body:"Vědecky: bezpečná vazba v prvním roce předpovídá jak bude dítě zvládat stres ve 20 letech. Děláš dlouhodobou práci.",tag:"Věda"},
-          {id:"e-9b-03",icon:"🌙",title:"Pro tebe",body:"Dnešek je hotový. Zítra je nový den a Sofinka si ho bude pamatovat jako dobrý.",tag:"Péče"},
-        ]
-      }
-    ]
-  }
+const SPECIAL_CARDS = {
+  7:  {emoji:'🌙', type:'✦', title:'Týden.', text:'Zvládla jsi to. Sedm dní bez manuálu, bez spánku, bez sebe. A Sofinka je tady a dobře.'},
+  14: {emoji:'👁️', type:'✦', title:'Dva týdny.', text:'Sofinka tě už poznává po hlase. Kdykoli mluvíš, otáčí hlavičku. Jsi její kotva.'},
+  30: {emoji:'🌕', type:'✦', title:'Měsíc.', text:'720 hodin péče bez manuálu — a šlo to. Ne dokonale. Ale dost dobře. Přesně tak jak má.'},
+  60: {emoji:'💪', type:'✦', title:'Dva měsíce.', text:'Pravděpodobně jsi prošla první spánkovou regresí. Přežila jsi. To samo o sobě je hodně.'},
+  100:{emoji:'💯', type:'✦', title:'100 dní.', text:'Sofinka si vybrala dobře. Fakt.'},
+  180:{emoji:'🌗', type:'✦', title:'Půl roku.', text:'Pamatuješ co ses bála před porodem? Podívej se na sebe teď. Tamta ty tě nerozeznala.'},
+  365:{emoji:'🎂', type:'✦', title:'Rok.', text:'Pamatuješ na ten první den? Podívej jak daleko jste obě došly. Rok. Celý rok.'},
+  500:{emoji:'⚡', type:'✦', title:'500 dní.', text:'Tři spánkové regrese, zuby, vývojové skoky. Pořád tady. Pořád jdeš.'},
+  730:{emoji:'🌳', type:'✦', title:'Dva roky.', text:'Udělala jsi z miminka člověka. Opravdově. Tohle nikdo jiný neudělal tak jako ty.'},
 };
 
-function getStoryPackSegment(){
-  const birth=state.settings.birth||'2024-08-14';
-  const bDate=new Date(birth+' 12:00');
-  const today=new Date();today.setHours(12,0,0,0);
-  const ageDays=Math.floor((today-bDate)/86400000);
-  // Najdi správný balíček a segment
-  for(const packKey of Object.keys(STORY_PACKS)){
-    const pack=STORY_PACKS[packKey];
-    for(const seg of pack.segments){
-      if(ageDays>=seg.ageFromDays&&ageDays<=seg.ageToDays) return {seg,ageDays};
-    }
-  }
-  // Fallback — poslední segment
-  const lastPack=STORY_PACKS[Object.keys(STORY_PACKS).pop()];
-  const lastSeg=lastPack.segments[lastPack.segments.length-1];
-  return {seg:lastSeg,ageDays};
-}
+const DAILY_CARDS = [
+  // 0–13 dní
+  {mn:0,mx:13,t:0,e:'🌱',ti:'Sofince je dnes {age}',tx:'Její mozek je teď nejplastičtější za celý život. Každý dotek, hlas a pohled zanechává stopu, která tam zůstane navždy.'},
+  {mn:0,mx:13,t:1,e:'🤲',ti:'Moment dne',tx:'Při přebalování jí povídej co děláš. Tvůj hlas je pro ni teď nejlepší stimulace na světě — lepší než jakákoli hračka.'},
+  {mn:0,mx:13,t:2,e:'👁️',ti:'Jak vidí svět',tx:'Vidí jen na 20–30 cm. Přesně na vzdálenost tvého obličeje při kojení. Evoluce tohle neudělala náhodou.'},
+  {mn:0,mx:13,t:3,e:'💬',ti:'Zkus říct',tx:'Mluv pomalu a přehananě artikuluj. Říká se tomu "motherese" a mozek miminka je na tenhle styl řeči doslova naprogramovaný.'},
+  {mn:0,mx:13,t:4,e:'🫶',ti:'Dnes pro tebe',tx:'Jsi pár dní bez spánku, bez rutiny, bez sebe. To není slabost — to je přesně tak těžké jak to zní. A zvládáš to.'},
+  {mn:0,mx:13,t:5,e:'🧠',ti:'Biologický fakt',tx:'Novorozenec má 100 miliard neuronů — stejně jako dospělý. Rozdíl je v počtu spojení. Ta teprve budujete spolu.'},
+  {mn:0,mx:13,t:6,e:'🌍',ti:'Velký obraz',tx:'Bezpečná vazba v prvních týdnech není o dokonalosti. Je o tom být dost dobrá. A ty jsi.'},
 
-function pickStoryCard(type){
-  const {seg}=getStoryPackSegment();
-  if(!seg)return null;
-  const cards=seg[type]||[];
-  if(!cards.length)return null;
-  // Přečtené karty pro tento segment
-  const usedKey=`sofin:usedCards:${seg.id}:${type}`;
-  let used=[];
-  try{used=JSON.parse(localStorage.getItem(usedKey)||'[]');}catch(e){}
-  // Filtruj nepřečtené
-  let available=cards.filter(c=>!used.includes(c.id));
-  if(!available.length){
-    // Reset — všechny znovu
-    used=[];localStorage.removeItem(usedKey);
-    available=cards;
-  }
-  // Vyber první (nebo náhodnou)
-  const card=available[0];
-  // Označ jako použitou
-  used.push(card.id);
-  localStorage.setItem(usedKey,JSON.stringify(used));
-  return card;
-}
+  // 14–29 dní
+  {mn:14,mx:29,t:0,e:'✨',ti:'Sofince je dnes {age}',tx:'Začíná rozlišovat obličeje od jiných objektů. Tvůj obličej je pro ni nejzajímavější věc na světě.'},
+  {mn:14,mx:29,t:1,e:'😮',ti:'Moment dne',tx:'Udělej obličej — vyplaz jazyk, počkej 20 sekund. Sofinka možná zopakuje. V tomhle věku to děti skutečně umí.'},
+  {mn:14,mx:29,t:2,e:'🌊',ti:'Jak vidí svět',tx:'Svět je pro ni proud vjemů bez hranic. Neví kde končí ona a kde začínáš ty. Jste stále jedno.'},
+  {mn:14,mx:29,t:3,e:'💬',ti:'Zkus říct',tx:'"Vidím že máš hlad." "Vím že tě to bolí." Pojmenování pocitů funguje od prvního dne — mozek to zpracovává.'},
+  {mn:14,mx:29,t:4,e:'🛁',ti:'Dnes pro tebe',tx:'Pokud máš 10 minut — jen pro sebe — dnes je to tvoje oprávnění. Ne odměna. Oprávnění.'},
+  {mn:14,mx:29,t:5,e:'🧠',ti:'Biologický fakt',tx:'Pláč miminka aktivuje v mozku rodiče stejné okruhy jako bolest. Nejde ho ignorovat biologicky. Ty to nevymýšlíš.'},
+  {mn:14,mx:29,t:6,e:'🌍',ti:'Velký obraz',tx:'Každá chvíle kdy Sofinka pláče a ty přijdeš, buduje v jejím mozku model světa: "Pomoc přichází." To je základ všeho.'},
 
-// ---- Stories state ----
-// stories: {sofinka, morning, activity, evening, time}
-// Každá story: {card, date, read}
+  // 30–59 dní
+  {mn:30,mx:59,t:0,e:'😊',ti:'Sofince je dnes {age}',tx:'Brzy přijde první sociální úsměv — ne reflex, ale odpověď na tebe. Čekej na něj. Stojí za to.'},
+  {mn:30,mx:59,t:1,e:'🎮',ti:'Hra dne',tx:'Drž ji tak aby viděla tvůj obličej a střídej výrazy — překvapení, radost, zamyšlení. Je to její první divadlo.'},
+  {mn:30,mx:59,t:2,e:'🌈',ti:'Jak vidí svět',tx:'Začíná vnímat kontrast a pohyb. Stromy ve větru, stíny na stěně — to jsou pro ni fascinující show.'},
+  {mn:30,mx:59,t:3,e:'💬',ti:'Zkus říct',tx:'"Hele, to je zajímavý!" Sdílený zájem — sledovat totéž a komentovat — je základ řeči i vztahu.'},
+  {mn:30,mx:59,t:4,e:'🌿',ti:'Dnes pro tebe',tx:'Únava se kumuluje. Pokud máš pocit že to nezvládáš — to není pravda. Jsi uprostřed nejtěžší části.'},
+  {mn:30,mx:59,t:5,e:'🧠',ti:'Biologický fakt',tx:'Spánkové cykly miminka trvají 45 minut — na rozdíl od dospělých 90 minut. Proto se budí "uprostřed noci". Je to biologie, ne záměr.'},
+  {mn:30,mx:59,t:6,e:'🌍',ti:'Velký obraz',tx:'Věda to potvrzuje: děti které jsou v 6 týdnech jistě připoutané mají v dospělosti lepší vztahy, odolnost a sebevědomí.'},
 
-function getStoriesState(){
-  try{return JSON.parse(localStorage.getItem('sofin:stories')||'{}');}catch(e){return{};}
-}
-function saveStoriesState(s){localStorage.setItem('sofin:stories',JSON.stringify(s));}
+  // 60–89 dní
+  {mn:60,mx:89,t:0,e:'💪',ti:'Sofince je dnes {age}',tx:'Začíná zvedat hlavičku a dívat se kolem. Záběr jejího světa se právě zdvojnásobil.'},
+  {mn:60,mx:89,t:1,e:'🎵',ti:'Hra dne',tx:'Zpívej jí cokoliv — i nákupní seznam. Mozek miminka reaguje na melodii stejně jako na slova. Hlas stačí.'},
+  {mn:60,mx:89,t:2,e:'🔊',ti:'Jak vidí svět',tx:'Začíná propojovat zvuk s obrazem — sleduje odkud hlas přichází. Experimenty se světem právě začínají.'},
+  {mn:60,mx:89,t:3,e:'💬',ti:'Zkus říct',tx:'Když brblá, odpověz. Chvíli počkej — jako v rozhovoru. Učí se střídání, základ veškeré komunikace.'},
+  {mn:60,mx:89,t:4,e:'🫶',ti:'Dnes pro tebe',tx:'Srovnávání s ostatními maminkami je past. Každé miminko, každá rodina, každé ráno — jiné. Tvoje je tvoje.'},
+  {mn:60,mx:89,t:5,e:'🧠',ti:'Biologický fakt',tx:'Úsměv miminka uvolňuje oxytocin u rodiče — stejný hormon jako při zamilování. Evoluce ví jak udržet vztah.'},
+  {mn:60,mx:89,t:6,e:'🌍',ti:'Velký obraz',tx:'Tohle období — 2 až 3 měsíce — je kdy se z přežívání stává začátek vztahu. Cítíš to?'},
 
-function markStoryRead(type){
-  const s=getStoriesState();
-  if(s[type])s[type].read=true;
-  saveStoriesState(s);
-  renderStories();
-}
+  // 90–119 dní
+  {mn:90,mx:119,t:0,e:'🌟',ti:'Sofince je dnes {age}',tx:'Pravděpodobně už se smíchla. Pokud ne — bude brzy. Přichystej si telefon na video.'},
+  {mn:90,mx:119,t:1,e:'🎈',ti:'Hra dne',tx:'Polož ji na bříško na chvíli každý den. Tummy time posiluje krk, záda a připravuje ji na sezení.'},
+  {mn:90,mx:119,t:2,e:'🌸',ti:'Jak vidí svět',tx:'Vidí teď skoro jako dospělý — barvy, vzdálenosti, pohyb. Svět se pro ni otevřel naplno.'},
+  {mn:90,mx:119,t:3,e:'💬',ti:'Zkus říct',tx:'Popisuj rutinu: "Teď si lehneme." "Jdeme ven." Předvídatelnost jazyka buduje jistotu a slovní zásobu zároveň.'},
+  {mn:90,mx:119,t:4,e:'💛',ti:'Dnes pro tebe',tx:'Pokud dnes nebyl tvůj nejlepší den — to je v pořádku. Konstantnost je důležitější než dokonalost.'},
+  {mn:90,mx:119,t:5,e:'🧠',ti:'Biologický fakt',tx:'Ve třech měsících mozek miminka zpracovává zvuky řeči ze všech jazyků světa. Pak se specializuje. Teď je okno otevřené dokořán.'},
+  {mn:90,mx:119,t:6,e:'🌍',ti:'Velký obraz',tx:'Vědecky: kvalita vztahu v prvním roce předpovídá jak bude dítě zvládat stres ve 20 letech. Děláš dlouhodobou práci.'},
 
-function publishStory(type,card){
-  const s=getStoriesState();
-  s[type]={card,date:new Date().toISOString().slice(0,10),read:false};
-  saveStoriesState(s);
-  renderStories();
-}
+  // 120–179 dní
+  {mn:120,mx:179,t:0,e:'🤸',ti:'Sofince je dnes {age}',tx:'Brzy začne sahat po věcech záměrně. Svět se pro ni mění z "co vidím" na "co mohu ovlivnit".'},
+  {mn:120,mx:179,t:1,e:'🌀',ti:'Hra dne',tx:'Dej jí různé textury — měkké, drsné, chladné, teplé. Každý dotek buduje nové nervové dráhy.'},
+  {mn:120,mx:179,t:2,e:'🔍',ti:'Jak vidí svět',tx:'Začíná chápat permanenci objektů — že věci existují i když je nevidí. Peek-a-boo je vážná věda.'},
+  {mn:120,mx:179,t:3,e:'💬',ti:'Zkus říct',tx:'"Kam to zmizelo? Tady je!" Hra na schovanou s hlasem i obličejem je výuka konceptu existence.'},
+  {mn:120,mx:179,t:4,e:'🌙',ti:'Dnes pro tebe',tx:'Jestli spíš lépe — dobrá zpráva. Jestli ne — většina regresí se zlepší sama. Jen ne hned.'},
+  {mn:120,mx:179,t:5,e:'🧠',ti:'Biologický fakt',tx:'Kolem 4 měsíců přichází první velký vývojový skok — proto spánkové regrese. Mozek roste tak rychle že nestíhá spát.'},
+  {mn:120,mx:179,t:6,e:'🌍',ti:'Velký obraz',tx:'Tohle je věk kdy začíná záměrná komunikace. Ne pláč — ale vokalizace, gesta, oční kontakt. Rozhovor začíná.'},
 
-function checkAndPublishStories(){
-  const todayStr=new Date().toISOString().slice(0,10);
-  const s=getStoriesState();
-  // Čas letí — týdně nebo na kulaté dny
-  const birth=state.settings.birth||'2024-08-14';
-  const bDate=new Date(birth+' 12:00');
-  const today=new Date();today.setHours(12,0,0,0);
-  const ageDays=Math.floor((today-bDate)/86400000);
-  const timeLast=s.time?.date||'';
-  if(timeLast!==todayStr&&(ageDays%7===0||ageDays%30===0||(s.time?.ageDays||0)+7<=ageDays)){
-    // Generuj "Čas letí" kartu
-    const nextMonth=30-((ageDays)%30);
-    const toYear=365-ageDays;
-    let body=`Sofinka je na světě **${ageDays} dní**.`;
-    if(nextMonth>0&&nextMonth<7)body+=` Za ${nextMonth} dní bude mít celý nový měsíc.`;
-    if(toYear>0&&toYear<30)body+=` Do prvního roku zbývá jen ${toYear} dní!`;
-    else if(toYear<=0){const toTwo=730-ageDays;if(toTwo>0)body+=` Do 2. narozenin zbývá ${toTwo} dní.`;}
-    const maturita=6570-ageDays;
-    if(maturita>0&&ageDays%30===0)body+=` 🎓 Do maturitního plesu zbývá přibližně ${maturita} dní.`;
-    publishStory('time',{id:'time-'+ageDays,icon:'⏰',title:'Čas letí',body,tag:'Čas letí',ageDays});
-  }
-}
+  // 180–269 dní
+  {mn:180,mx:269,t:0,e:'🥄',ti:'Sofince je dnes {age}',tx:'Příkrmy jsou velká věc — ale pomalejší zavedení je vždy bezpečnější než rychlejší. Žádný spěch.'},
+  {mn:180,mx:269,t:1,e:'🎶',ti:'Hra dne',tx:'Zkus ji pustit hudbu a hýbej se s ní. Rytmus a pohyb jsou pro vývoj mozku jedna z nejcennějších kombinací.'},
+  {mn:180,mx:269,t:2,e:'🌊',ti:'Jak vidí svět',tx:'Začíná rozlišovat "cizí" od "svých". Separační úzkost je vývojový milník, ne problém k řešení.'},
+  {mn:180,mx:269,t:3,e:'💬',ti:'Zkus říct',tx:'"Mám tě ráda." Opakuj to. Mozek miminka tyto věty ukládá dlouho předtím než je dokáže říct zpět.'},
+  {mn:180,mx:269,t:4,e:'🌿',ti:'Dnes pro tebe',tx:'Půl roku je hodně. Pokud máš pocit že jsi "měla být dál" — v čem přesně? Jsi přesně tam kde máš být.'},
+  {mn:180,mx:269,t:5,e:'🧠',ti:'Biologický fakt',tx:'Mozek v prvním roce zdvojnásobí svou velikost. Energeticky je to ekvivalent maratonu — každý den. Proto tolik jí a spí.'},
+  {mn:180,mx:269,t:6,e:'🌍',ti:'Velký obraz',tx:'Každé dítě které ví že je milované bez podmínek roste s jiným nastavením světa. Dáváš jí tenhle základ.'},
 
-function renderStories(){
-  const bar=document.getElementById('storiesBar');
-  if(!bar)return;
-  const s=getStoriesState();
+  // 270–364 dní
+  {mn:270,mx:364,t:0,e:'🚶',ti:'Sofince je dnes {age}',tx:'Možná už se staví nebo plazí. Každý pohyb je výsledek stovek pokusů které nikdo nepočítal.'},
+  {mn:270,mx:364,t:1,e:'📦',ti:'Hra dne',tx:'Dej jí krabici a věci na vkládání a vyndávání. Tato jednoduchá hra je vrchol kognitivního tréninku pro tento věk.'},
+  {mn:270,mx:364,t:2,e:'🗣️',ti:'Jak vidí svět',tx:'Rozumí výrazně víc než říká. Všechno co slyší se ukládá. Mluvíš na ni víc než si myslíš.'},
+  {mn:270,mx:364,t:3,e:'💬',ti:'Zkus říct',tx:'"Ukáž mi..." "Kde je...?" Otázky které vyžadují gesto nebo pohled budují porozumění i před řečí.'},
+  {mn:270,mx:364,t:4,e:'💛',ti:'Dnes pro tebe',tx:'Blíží se rok. Možná se ptáš jestli děláš dost. Děláš. Otázka sama o sobě je důkaz.'},
+  {mn:270,mx:364,t:5,e:'🧠',ti:'Biologický fakt',tx:'Dítě v 9 měsících rozumí záměrům — ví že ty chceš něco, ne jen že pohybuješ rukou. Je to revoluční kognitívní skok.'},
+  {mn:270,mx:364,t:6,e:'🌍',ti:'Velký obraz',tx:'Bezpečná základna — to jsi ty. Z ní Sofinka vychází explorovat svět a vrací se nabít. Tenhle vzorec zůstane celý život.'},
 
-  let html='';
-  // Sofinka — vždy, stabilní ring
-  html+=storyBubbleHtml('sofinka','👶','Sofinka',false,true);
-  // Ostatní — vždy viditelné (i bez obsahu), barevné pokud nepřečtené
-  html+=storyBubbleHtml('morning',s.morning?.card?.icon||'☀️','Ráno',s.morning?!s.morning.read:false,false);
-  html+=storyBubbleHtml('activity',s.activity?.card?.icon||'🎮','Dnes zkus',s.activity?!s.activity.read:false,false);
-  html+=storyBubbleHtml('evening',s.evening?.card?.icon||'🌙','Večer',s.evening?!s.evening.read:false,false);
-  html+=storyBubbleHtml('time',s.time?.card?.icon||'⏰','Čas letí',s.time?!s.time.read:false,false);
+  // 365–499 dní
+  {mn:365,mx:499,t:0,e:'🎉',ti:'Sofince je dnes {age}',tx:'Rok je za námi. Teď přichází exploze řeči, pohybu a personality. Připoj se a uži si to.'},
+  {mn:365,mx:499,t:1,e:'🧩',ti:'Hra dne',tx:'Jednoduché puzzle, skládačky, věže z kostek — a sleduj jak přemýšlí. Neraď hned. Nech ji zkusit.'},
+  {mn:365,mx:499,t:2,e:'🔭',ti:'Jak vidí svět',tx:'Začíná chápat "já" jako oddělené od ostatních. Zrcadlo, jméno, vlastnictví — "moje!" — to je zdravý vývoj.'},
+  {mn:365,mx:499,t:3,e:'💬',ti:'Zkus říct',tx:'Pojmenuj emoce: "Vidím že jsi naštvaná." "To tě mrzí, že jo?" Emoční slovník se buduje takhle.'},
+  {mn:365,mx:499,t:4,e:'🌸',ti:'Dnes pro tebe',tx:'Za první rok jsi se naučila věci o sobě které by normálně trvaly dekádu. To není ztráta — to je zkrácená cesta.'},
+  {mn:365,mx:499,t:5,e:'🧠',ti:'Biologický fakt',tx:'Kolem 18 měsíců přichází druhý velký vývojový skok — mozek reorganizuje jak zpracovává jazyk. Proto najednou "exploduje" slovní zásoba.'},
+  {mn:365,mx:499,t:6,e:'🌍',ti:'Velký obraz',tx:'Vzdorování ve druhém roce není problém — je to zdravý test hranic. Hranice drž laskavě a pevně. Obojí zároveň.'},
 
-  bar.innerHTML=html;
-}
+  // 500–730 dní
+  {mn:500,mx:730,t:0,e:'🌟',ti:'Sofince je dnes {age}',tx:'Je to člověk se svými preferencemi, humorem, a světem. Pamatuješ na miminko? Tohle jsi vybudovala.'},
+  {mn:500,mx:730,t:1,e:'🎭',ti:'Hra dne',tx:'Hrajte si na "jako by" — vaříme, nakupujeme, jdeme k doktorovi. Symbolická hra je trénink empatie a jazyka.'},
+  {mn:500,mx:730,t:2,e:'🌈',ti:'Jak vidí svět',tx:'Svět je pro ni místo plné pravidel které teprve chápe. Konzistentnost tvých reakcí je její mapa.'},
+  {mn:500,mx:730,t:3,e:'💬',ti:'Zkus říct',tx:'"Co si myslíš?" Ptej se i když odpověď nebude dávat smysl. Učíš ji že její myšlenky mají hodnotu.'},
+  {mn:500,mx:730,t:4,e:'🫶',ti:'Dnes pro tebe',tx:'Jedeš na autopilota více dní než ne. To je v pořádku. Rutina je péče, ne selhání.'},
+  {mn:500,mx:730,t:5,e:'🧠',ti:'Biologický fakt',tx:'Prefrontální kortex — část mozku pro regulaci emocí a impulzů — se plně vyvíjí až ve 25 letech. Trpělivost je na místě.'},
+  {mn:500,mx:730,t:6,e:'🌍',ti:'Velký obraz',tx:'Za dva roky jsi udělala víc pro jiného člověka než většina lidí za celý život. A jde to dál.'},
+];
 
-function storyBubbleHtml(type,icon,label,isUnread,isSofinka){
-  const ring=isSofinka?'sofinka':isUnread?'unread':'read';
-  const opacity=(!isSofinka&&type!=='sofinka'&&!window._storiesEverHadContent?.(type))?'':'';
-  return `<div class="story-bubble" onclick="openStory('${type}')">
-    <div class="story-ring ${ring}">
-      <div class="story-inner">${icon}</div>
-    </div>
-    <span class="story-label">${label}</span>
-  </div>`;
-}
+const CARD_TYPE_LABELS = ['Vývojový milník','Hra & moment','Pohled do světa','Zkus říct','Péče o tebe','Biologický fakt','Velký obraz'];
 
-function openStory(type){
-  const s=getStoriesState();
-  const modal=document.getElementById('storyModal');
-  const card=document.getElementById('storyModalCard');
-  
-  let content={icon:'',title:'',body:'',category:'',bg:'#fff5f0',color:'#2c1a18',footer:''};
-  
-  if(type==='sofinka'){
-    const birth=state.settings.birth||'2024-08-14';
-    const bDate=new Date(birth+' 12:00');
-    const today=new Date();today.setHours(12,0,0,0);
-    const ageDays=Math.floor((today-bDate)/86400000);
-    const name=state.settings.name||'Sofinka';
-    const wl=state.weightLog||[];
-    const lastW=wl.length?wl[wl.length-1]:null;
-    content={
-      icon:'👶',title:name,
-      body:`Je jí ${fmtAgeDays(ageDays)} — to je ${ageDays} dní na světě.
-
-${lastW?`Aktuální váha: ${lastW.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})} kg${lastW.cm?' · '+lastW.cm+' cm':''}
-Váženo: ${new Date(lastW.date+' 12:00').getDate()}.${new Date(lastW.date+' 12:00').getMonth()+1}.
-
-`:''}Každý den je pro ni nový malý objev.`,
-      category:'Profil',bg:'#fff0ec',color:'#5a2a22',footer:`Narozen/a ${new Date(birth+' 12:00').toLocaleDateString('cs-CZ')}`
-    };
-  } else if(s[type]){
-    const c=s[type].card;
-    content={icon:c.icon||'✨',title:c.title||'',body:c.body||'',category:c.tag||'',
-      bg:type==='morning'?'#fffaec':type==='activity'?'#f0f4ff':type==='evening'?'#f0ecff':'#fff5fa',
-      color:'#2c1a18',footer:type==='morning'?'☀️ Ranní story':type==='activity'?'🎮 Dnes zkus':type==='evening'?'🌙 Večerní story':'⏰ Čas letí'};
-    markStoryRead(type);
-  } else {return;}
-  
-  card.style.background=content.bg;
-  card.style.color=content.color;
-  card.style.animation='storySlideUp .3s ease';
-  document.getElementById('smCategory').textContent=content.category;
-  document.getElementById('smEmoji').textContent=content.icon;
-  document.getElementById('smTitle').textContent=content.title;
-  document.getElementById('smBody').textContent=content.body;
-  document.getElementById('smFooter').textContent=content.footer;
-  modal.style.display='flex';
-}
-
-function closeStoryModal(){
-  document.getElementById('storyModal').style.display='none';
-  renderStories();
-}
-
-function fmtAgeDays(days){
+function fmtAge(days){
   if(days<14)return days+' dní';
-  if(days<30){const w=Math.floor(days/7);return w+' '+(w===1?'týden':w<5?'týdny':'týdnů');}
-  const m=Math.floor(days/30.44);const rem=Math.round(days-m*30.44);
+  if(days<30){const w=Math.floor(days/7);return w+' '+(w===1?'týden':'týdny');}
+  const m=Math.floor(days/30.44);
+  const rem=Math.round(days-m*30.44);
+  if(m>=24){const y=Math.floor(m/12),rm=m%12;return y+' '+(y===1?'rok':'roky')+(rm?' a '+rm+' m':'');}
   if(m>=12){const y=Math.floor(m/12),rm=m%12;return y+' rok'+(rm?' a '+rm+' měs':'');}
   if(rem<3)return m+' '+(m===1?'měsíc':m<5?'měsíce':'měsíců');
   return m+' '+(m===1?'měsíc':m<5?'měsíce':'měsíců')+' a '+rem+' dní';
 }
 
-// ---- Night sleep ----
-// state.nightSleep = {active:bool, startTs:number} — uloženo v state (synced)
+function getDailyCard(){
+  const birth=state.settings.birth||'2024-08-14';
+  const bDate=new Date(birth+' 12:00');
+  const today=new Date();today.setHours(12,0,0,0);
+  const days=Math.floor((today-bDate)/86400000);
 
-function getNightSleep(){return state.nightSleep||{active:false,startTs:null};}
+  // Speciální dny mají přednost
+  if(SPECIAL_CARDS[days])return{...SPECIAL_CARDS[days],days,special:true};
 
-function toggleNightSleep(){
-  const ns=getNightSleep();
-  if(ns.active){endNightSleep();}else{startNightSleep();}
-}
-
-function startNightSleep(){
-  const now=Date.now();
-  state.nightSleep={active:true,startTs:now};
-  // Live záznam v todayLog — přetrvá přes půlnoc dokud není ukončen
-  state.todayLog=state.todayLog.filter(e=>e.type!=='nightsleep');
-  state.todayLog.push({
-    id:'ns-live',type:'nightsleep',ts:now,
-    name:'Noční spánek',
-    sub:'od '+fmtTime(now)+' · probíhá',
-    live:true,reaction:false,by:whoAmI()
-  });
-  // Večerní story
-  const card=pickStoryCard('evening');
-  if(card)publishStory('evening',card);
-  renderNightSleepCard();renderTodayList();renderStatus();saveAll();
-}
-
-function endNightSleep(){
-  const now=Date.now();
-  const ns=getNightSleep();
-  if(!ns.startTs)return;
-  const dur=now-ns.startTs;
-  const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-  const durStr='celkem '+(h>0?h+'h ':'')+m+'min';
-  const startDay=dateKey(new Date(ns.startTs));
-  // Smaž live záznam → zmizí z home screenu
-  state.todayLog=state.todayLog.filter(e=>e.type!=='nightsleep');
-  // Uloží se do calData dne kdy spánek začal (viditelné v Plánu)
-  if(!state.calData[startDay])state.calData[startDay]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-  state.calData[startDay].entries=state.calData[startDay].entries.filter(e=>e.type!=='nightsleep');
-  state.calData[startDay].entries.push({
-    type:'nightsleep',ts:ns.startTs,
-    name:'Noční spánek',
-    sub:fmtTime(ns.startTs)+'–'+fmtTime(now)+'\n'+durStr,
-    reaction:false
-  });
-  state.nightSleep={active:false,startTs:null};
-  // Ranní story ihned
-  const card=pickStoryCard('morning');
-  if(card)publishStory('morning',card);
-  renderNightSleepCard();renderTodayList();renderStatus();saveAll();
-}
-
-function renderNightSleepCard(){
-  const card=document.getElementById('nightSleepCard');
-  if(!card)return;
-  const ns=getNightSleep();
-  const bedtime=state.settings.bedtime;
-  const now=Date.now();
-  const lbl=document.getElementById('nightCardLabel');
-  const ico=document.getElementById('nightCardIcon');
-  const sub=document.getElementById('nightCardSub');
-  if(ns.active){
-    card.style.display='block';
-    if(lbl)lbl.textContent='☀️ Probudila se';
-    if(ico)ico.textContent='☀️';
-    if(sub)sub.innerHTML='už spí <span id="nightCardTimer">—</span>';
-  } else if(bedtime){
-    const[bh,bm]=bedtime.split(':').map(Number);
-    const bt=new Date();bt.setHours(bh,bm,0,0);
-    if(bt<new Date())bt.setDate(bt.getDate()+1);
-    const diffMs=bt.getTime()-now;
-    if(diffMs>0&&diffMs<=3.5*3600000){
-      card.style.display='block';
-      if(lbl)lbl.textContent='🌙 Usnula';
-      if(ico)ico.textContent='🌙';
-      if(sub)sub.innerHTML='do večerky <span id="nightCardTimer">—</span>';
-    } else {
-      card.style.display='none';
-    }
-  } else {
-    card.style.display='none';
+  const cardType=days%7;
+  const card=DAILY_CARDS.find(c=>c.t===cardType&&days>=c.mn&&days<=c.mx);
+  if(!card){
+    // fallback — vezmi libovolnou kartu pro daný typ
+    const fb=DAILY_CARDS.find(c=>c.t===cardType)||DAILY_CARDS[cardType%DAILY_CARDS.length];
+    return{...fb,days,special:false};
   }
+  return{...card,days,special:false};
 }
 
-let nightTimerInterval=null;
-function updateNightTimer(){
-  const ns=getNightSleep();
-  const el=document.getElementById('nightCardTimer');
-  if(!el)return;
-  if(ns.active&&ns.startTs){
-    const elapsed=Date.now()-ns.startTs;
-    const h=Math.floor(elapsed/3600000),m=Math.floor((elapsed%3600000)/60000),s=Math.floor((elapsed%60000)/1000);
-    el.textContent=h>0?`${h}h ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  } else {
-    const bedtime=state.settings.bedtime;
-    if(!bedtime){el.textContent='—';return;}
-    const[bh,bm]=bedtime.split(':').map(Number);
-    const bt=new Date();bt.setHours(bh,bm,0,0);
-    if(bt<new Date())bt.setDate(bt.getDate()+1);
-    const diffMs=bt.getTime()-Date.now();
-    if(diffMs<0){el.textContent='—';return;}
-    const h=Math.floor(diffMs/3600000),m=Math.floor((diffMs%3600000)/60000),s=Math.floor((diffMs%60000)/1000);
-    el.textContent=h>0?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
-}
-
-// Živý timer pro night sleep záznam v todayList
-let nightListTimerInterval=null;
-function startNightListTimer(){
-  if(nightListTimerInterval)clearInterval(nightListTimerInterval);
-  nightListTimerInterval=setInterval(()=>{
-    const ns=getNightSleep();
-    if(!ns.active||!ns.startTs){clearInterval(nightListTimerInterval);nightListTimerInterval=null;return;}
-    const elapsed=Date.now()-ns.startTs;
-    const h=Math.floor(elapsed/3600000),m=Math.floor((elapsed%3600000)/60000),s=Math.floor((elapsed%60000)/1000);
-    const tStr=h>0?`${h}h ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    const el=document.getElementById('nsListTimer');
-    if(el)el.textContent='už spí '+tStr;
-  },1000);
-}
-
-setInterval(updateNightTimer,1000);
-setInterval(renderNightSleepCard,60000);
-
-// ---- Activity story — po denním spánku ----
-function maybePublishActivityStory(){
-  const s=getStoriesState();
+function showDailyCard(force=false){
   const todayStr=new Date().toISOString().slice(0,10);
-  if(s.activity?.date===todayStr)return; // už dnes bylo
-  const card=pickStoryCard('activity');
-  if(card)publishStory('activity',card);
+  const lastShown=localStorage.getItem('sofin:cardShown')||'';
+  if(!force&&lastShown===todayStr)return;
+  const card=getDailyCard();
+  const ageStr=fmtAge(card.days);
+  const text=(card.tx||card.text||'').replace('{age}',ageStr);
+  const title=(card.ti||card.title||'').replace('{age}',ageStr).replace('{days}',ageStr);
+  document.getElementById('dcEmoji').textContent=card.e||card.emoji||'🌸';
+  document.getElementById('dcType').textContent=card.special?'✦ Zvláštní den ✦':(CARD_TYPE_LABELS[card.t]||'');
+  document.getElementById('dcTitle').textContent=title;
+  document.getElementById('dcText').textContent=text;
+  document.getElementById('dcDay').textContent='Den '+card.days+' · '+ageStr;
+  const el=document.getElementById('dailyCardOverlay');
+  el.style.display='block';el.style.pointerEvents='auto';
 }
 
-// ============================================================
-// STAT DETAIL MODAL
+function closeDailyCard(){
+  const el=document.getElementById('dailyCardOverlay');
+  el.style.display='none';el.style.pointerEvents='none';
+  localStorage.setItem('sofin:cardShown',new Date().toISOString().slice(0,10));
+}
+
 
 // ============================================================
 // STAT DETAIL MODAL
@@ -4496,20 +4173,16 @@ function openStatDetail(metric){
   statDetailMetric=metric;
   statDetailView='week';
   document.getElementById('sdTitle').textContent=(STAT_META[metric]?.icon||'')+'  '+(STAT_META[metric]?.label||metric);
+  document.querySelectorAll('#mStatDetail .type-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('sdW').classList.add('active');
-  document.getElementById('sdM').classList.remove('active');
-  document.getElementById('sdY').classList.remove('active');
   openModal('mStatDetail');
   setTimeout(()=>renderStatDetail(),50);
 }
 
 function setStatDetailView(v,btn){
   statDetailView=v;
-  document.getElementById('sdW').classList.remove('active');
-  document.getElementById('sdM').classList.remove('active');
-  document.getElementById('sdY').classList.remove('active');
-  const idMap={week:'sdW',month:'sdM',year:'sdY'};
-  document.getElementById(idMap[v]).classList.add('active');
+  document.querySelectorAll('#mStatDetail .type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
   renderStatDetail();
 }
 
@@ -4518,37 +4191,39 @@ function renderStatDetail(){
   const meta=STAT_META[metric];
   if(!meta)return;
 
+  // Připrav periody
   const periods=[];
   const now=new Date(TODAY);
-  const isSleep=metric.includes('sleep');
-  const MONTHS_SD=['Led','Ún','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
-  const DAYS_SD=['Po','Út','St','Čt','Pá','So','Ne'];
-
   if(statDetailView==='week'){
-    // Denní hodnoty týdne synchronizovaného s plánem (curWeekStart)
-    const refMonday=new Date(curWeekStart);
-    for(let i=0;i<7;i++){
-      const d=new Date(refMonday);d.setDate(refMonday.getDate()+i);
-      periods.push({label:DAYS_SD[i],days:[d]});
+    // Posledních 8 týdnů
+    for(let w=7;w>=0;w--){
+      const mon=new Date(now);
+      const dow=mon.getDay()===0?6:mon.getDay()-1;
+      mon.setDate(mon.getDate()-dow-w*7);
+      const days=[];
+      for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d);}
+      const label=days[0].getDate()+'.'+(days[0].getMonth()+1)+'.';
+      periods.push({label,days});
     }
   } else if(statDetailView==='month'){
-    // Denní hodnoty měsíce synchronizovaného s plánem (curMonth/curYear)
-    const refYear=statsOffset!==0?now.getFullYear():curYear;
-    const refMonth=statsOffset!==0?now.getMonth()+statsOffset:curMonth;
-    const d0=new Date(refYear,refMonth,1);
-    const dim=new Date(d0.getFullYear(),d0.getMonth()+1,0).getDate();
-    for(let i=1;i<=dim;i++){
-      const d=new Date(d0.getFullYear(),d0.getMonth(),i);
-      periods.push({label:String(i),days:[d]});
+    // Posledních 6 měsíců
+    for(let m=5;m>=0;m--){
+      const d=new Date(now.getFullYear(),now.getMonth()-m,1);
+      const dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+      const days=[];
+      for(let i=1;i<=dim;i++)days.push(new Date(d.getFullYear(),d.getMonth(),i));
+      const MONTHS=['Led','Ún','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+      periods.push({label:MONTHS[d.getMonth()],days});
     }
   } else {
-    // Rok — měsíční průměry (posledních 12 měsíců)
+    // Rok — 12 měsíců
     for(let m=11;m>=0;m--){
       const d=new Date(now.getFullYear(),now.getMonth()-m,1);
       const dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
       const days=[];
       for(let i=1;i<=dim;i++)days.push(new Date(d.getFullYear(),d.getMonth(),i));
-      periods.push({label:MONTHS_SD[d.getMonth()],days});
+      const MONTHS=['Led','Ún','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+      periods.push({label:MONTHS[d.getMonth()],days});
     }
   }
 
@@ -4566,8 +4241,7 @@ function renderStatDetail(){
         });
         if(ms>0){dayVal=ms;count++;}
       } else if(metric==='nightsleep'){
-        const calEntries=(state.calData[k]||{}).entries||[];
-        const ns=calEntries.find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
+        const ns=(state.calData[k]||{}).entries?.find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
         if(ns){const d=getSleepEndTs(ns)-ns.ts;if(d>3600000){dayVal=d;count++;}}
       } else if(metric==='food'){
         const fc=entries.filter(e=>e.type==='food').length;
@@ -4578,109 +4252,63 @@ function renderStatDetail(){
       }
       total+=dayVal;
     });
-    return count>0?meta.fmt(total/count):0;
+    const avg=count>0?total/count:0;
+    return meta.fmt(avg);
   });
 
-  // --- CANVAS ---
+  // Nakresli graf
   const canvas=document.getElementById('sdCanvas');
-  const W=canvas.parentElement.offsetWidth-4||300;
-  const H=160;
-  canvas.width=W*devicePixelRatio;
-  canvas.height=H*devicePixelRatio;
-  canvas.style.width=W+'px';
-  canvas.style.height=H+'px';
+  const W=canvas.parentElement.offsetWidth-32||280,H=160;
+  canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');
-  ctx.scale(devicePixelRatio,devicePixelRatio);
   ctx.clearRect(0,0,W,H);
-
-  const nonZero=values.filter(v=>v>0);
-  if(!nonZero.length){
-    ctx.fillStyle='#c0a8a4';ctx.font='13px -apple-system';ctx.textAlign='center';
-    ctx.fillText('Žádná data pro toto období',W/2,H/2);
-    document.getElementById('sdAvg').textContent='—';
-    document.getElementById('sdMax').textContent='—';
-    document.getElementById('sdMin').textContent='—';
-    return;
-  }
-
-  const maxV=Math.max(...nonZero);
-  // Y osa — krok 15 minut pro spánek (=0.25h), krok 1 pro ostatní
-  const yStep=isSleep?0.25:1;
-  const yMax=Math.ceil(maxV/yStep)*yStep;
   const n=values.length;
+  const mx=Math.max(...values,0.1);
+  const ML=10,MR=10,MT=12,MB=28;
+  const barW=Math.floor((W-ML-MR)/n)-4;
+  const pX=i=>ML+i*(W-ML-MR)/n+(W-ML-MR)/n/2;
+  const pY=v=>H-MB-(v/mx)*(H-MT-MB);
 
-  const YL=isSleep?30:22;
-  const MR=6,MT=10,MB=18;
-  const chartW=W-YL-MR;
-
-  const pX=i=>YL+(i/(n-1||1))*chartW;
-  const pY=v=>MT+(1-v/yMax)*(H-MT-MB);
-
-  // Y grid + labels po 15 min
-  ctx.setLineDash([]);
-  for(let y=0;y<=yMax;y+=yStep){
-    const py=pY(y);
-    ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(YL,py);ctx.lineTo(W-MR,py);ctx.stroke();
-    ctx.fillStyle='#c0a8a4';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='right';
-    const lbl=isSleep?fmtDurShort(y*3600000):(y>0?y+'×':'0');
-    ctx.fillText(lbl,YL-3,py+3);
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,.06)';ctx.lineWidth=1;
+  for(let i=1;i<=3;i++){
+    const y=H-MB-(i/4)*(H-MT-MB);
+    ctx.beginPath();ctx.moveTo(ML,y);ctx.lineTo(W-MR,y);ctx.stroke();
   }
 
-  // Průměrová přerušovaná linie
-  const avgV=nonZero.reduce((a,b)=>a+b,0)/nonZero.length;
-  ctx.strokeStyle='rgba(212,148,138,0.45)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
-  ctx.beginPath();ctx.moveTo(YL,pY(avgV));ctx.lineTo(W-MR,pY(avgV));ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Body grafu
-  const pts=values.map((v,i)=>({x:pX(i),y:v>0?pY(v):null}));
-
-  // Fill pod čarou
-  const grad=ctx.createLinearGradient(0,MT,0,H-MB);
-  grad.addColorStop(0,meta.color+'30');
-  grad.addColorStop(1,meta.color+'04');
-  ctx.fillStyle=grad;
-  ctx.beginPath();
-  let fs=false;
-  pts.forEach(p=>{
-    if(p.y===null)return;
-    if(!fs){ctx.moveTo(p.x,H-MB);ctx.lineTo(p.x,p.y);fs=true;}
-    else ctx.lineTo(p.x,p.y);
-  });
-  for(let i=pts.length-1;i>=0;i--){if(pts[i].y!==null){ctx.lineTo(pts[i].x,H-MB);break;}}
-  ctx.closePath();ctx.fill();
-
-  // Spojnicová čára
-  ctx.strokeStyle=meta.color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
-  ctx.beginPath();let ls=false;
-  pts.forEach(p=>{
-    if(p.y===null){ls=false;return;}
-    if(!ls){ctx.moveTo(p.x,p.y);ls=true;}else ctx.lineTo(p.x,p.y);
-  });
-  ctx.stroke();
-
-  // Tečky — bez hodnot na bodech
-  pts.forEach(p=>{
-    if(p.y===null)return;
-    ctx.fillStyle=meta.color;
-    ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fill();
+  // Bars
+  values.forEach((v,i)=>{
+    const x=pX(i);const bh=Math.max(2,(v/mx)*(H-MT-MB));
+    const isLast=i===n-1;
+    ctx.fillStyle=isLast?meta.color:meta.color+'88';
+    ctx.beginPath();
+    const bx=x-barW/2;
+    const by=H-MB-bh;
+    const r=4;
+    ctx.moveTo(bx+r,by);ctx.lineTo(bx+barW-r,by);ctx.quadraticCurveTo(bx+barW,by,bx+barW,by+r);
+    ctx.lineTo(bx+barW,H-MB);ctx.lineTo(bx,H-MB);ctx.lineTo(bx,by+r);
+    ctx.quadraticCurveTo(bx,by,bx+r,by);ctx.closePath();ctx.fill();
+    // Value label
+    if(v>0){
+      ctx.fillStyle=isLast?meta.color:'#666';ctx.font=`${isLast?'600 ':''}9px -apple-system,sans-serif`;ctx.textAlign='center';
+      const disp=metric.includes('sleep')?fmtDurShort(v*3600000):v.toFixed(1);
+      ctx.fillText(disp,x,by-3);
+    }
   });
 
-  // X labels — smart subsetting
-  const maxXLabels=statDetailView==='month'?8:n;
-  const xStep=Math.ceil(n/maxXLabels);
-  ctx.fillStyle='#c0a8a4';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='center';
-  periods.forEach((p,i)=>{
-    if(i%xStep!==0&&i!==n-1)return;
-    ctx.fillText(p.label,pX(i),H-4);
-  });
+  // X labels
+  ctx.fillStyle='#aaa';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='center';
+  periods.forEach((p,i)=>ctx.fillText(p.label,pX(i),H-8));
 
-  // Summary
-  const fmtV=v=>v>0?(isSleep?fmtDurShort(v*3600000):v.toFixed(1)+'×'):'—';
-  document.getElementById('sdAvg').textContent=fmtV(avgV);
-  document.getElementById('sdMax').textContent=fmtV(Math.max(...nonZero));
-  document.getElementById('sdMin').textContent=fmtV(Math.min(...nonZero));
+  // Tabulka
+  document.getElementById('sdTable').innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+      ${periods.map((p,i)=>`
+        <div style="flex:1;min-width:60px;background:${i===n-1?'var(--rose-light)':'var(--card)'};border-radius:8px;padding:5px 6px;border:.5px solid var(--rose-mid)">
+          <div style="font-size:9px;color:var(--text-3)">${p.label}</div>
+          <div style="font-size:12px;font-weight:${i===n-1?'600':'400'}">${values[i]>0?(metric.includes('sleep')?fmtDurShort(values[i]*3600000):values[i].toFixed(1)+meta.unit):'—'}</div>
+        </div>`).join('')}
+    </div>`;
 }
 
 function fmtDurShort(ms){
