@@ -444,44 +444,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 
   <div id="scr-plan" class="screen">
     <div class="sticky-top">
-      <div class="header">
-        <div class="header-top">
-          <h1>Plán</h1>
-          <div style="display:flex;gap:6px">
-            <button class="select-btn" id="statsBtn" onclick="togglePlanStats()">📊 Statistiky</button>
-            <button class="select-btn" id="planSelectBtn" onclick="togglePlanSelect()">Vybrat</button>
+      <!-- Plán / Statistiky toggle nahoře -->
+      <div style="display:flex;padding:10px 16px 0;gap:0;border-bottom:.5px solid var(--rose-mid)">
+        <button id="tabPlan" onclick="switchPlanTab('plan')" style="flex:1;padding:9px 0;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--rose-btn);color:var(--rose-dark)">Plán</button>
+        <button id="tabStats" onclick="switchPlanTab('stats')" style="flex:1;padding:9px 0;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-3)">Statistiky</button>
+      </div>
+      <!-- Plán controls -->
+      <div id="calControls">
+        <div class="cal-nav" style="padding:6px 16px 4px;display:flex;align-items:center;gap:6px">
+          <button class="nav-btn" onclick="navPrev()">&#8592;</button>
+          <span class="cal-lbl" id="calLbl" style="flex:1;text-align:center"></span>
+          <button class="nav-btn" onclick="navNext()">&#8594;</button>
+          <button onclick="goToToday()" style="padding:4px 10px;border-radius:8px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:11px;font-weight:500;cursor:pointer">Dnes</button>
+          <button class="select-btn" id="planSelectBtn" onclick="togglePlanSelect()" style="margin-left:0">Vybrat</button>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 16px 6px;gap:8px">
+          <div class="view-toggle" style="flex:1;margin:0">
+            <button class="vt active" id="vtW" onclick="setCalView('week')">Týden</button>
+            <button class="vt" id="vtM" onclick="setCalView('month')">Měsíc</button>
           </div>
         </div>
-        <div class="subtitle">Sofinka</div>
-      </div>
-      <div id="planSelBar" class="sel-bar">
-        <span class="sel-count" id="planSelCount">0 vybráno</span>
-        <div style="display:flex;gap:6px">
-          <button class="sel-action-btn sel-del" onclick="deleteSelectedDays()">🗑 Smazat</button>
-          <button class="sel-action-btn sel-cancel" onclick="togglePlanSelect()">Zrušit</button>
+        <!-- Sel bar — pod navigací -->
+        <div id="planSelBar" class="sel-bar" style="margin:0 16px 6px;display:none">
+          <span class="sel-count" id="planSelCount">0 vybráno</span>
+          <div style="display:flex;gap:6px">
+            <button class="sel-action-btn sel-del" onclick="deleteSelectedDays()">🗑 Smazat</button>
+            <button class="sel-action-btn sel-cancel" onclick="togglePlanSelect()">Zrušit</button>
+          </div>
         </div>
       </div>
-      <div id="calControls">
-        <div class="view-toggle">
-          <button class="vt active" id="vtW" onclick="setCalView('week')">Týden</button>
-          <button class="vt" id="vtM" onclick="setCalView('month')">Měsíc</button>
-        </div>
-        <div class="cal-nav">
-          <button class="nav-btn" onclick="navPrev()">&#8592;</button>
-          <span class="cal-lbl" id="calLbl"></span>
-          <button class="nav-btn" onclick="navNext()">&#8594;</button>
-          <button onclick="goToToday()" style="padding:4px 10px;border-radius:8px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:11px;font-weight:500;cursor:pointer;margin-left:4px">Dnes</button>
-        </div>
-      </div>
+      <!-- Stats controls -->
       <div id="statsControls" style="display:none">
-        <div class="view-toggle">
-          <button class="vt active" id="vsW" onclick="setStatsView('week')">Týden</button>
-          <button class="vt" id="vsM" onclick="setStatsView('month')">Měsíc</button>
-        </div>
-        <div class="cal-nav">
+        <div class="cal-nav" style="padding:6px 16px 4px;display:flex;align-items:center;gap:6px">
           <button class="nav-btn" onclick="statsNavPrev()">&#8592;</button>
-          <span class="cal-lbl" id="statsLbl"></span>
+          <span class="cal-lbl" id="statsLbl" style="flex:1;text-align:center"></span>
           <button class="nav-btn" onclick="statsNavNext()">&#8594;</button>
+        </div>
+        <div style="padding:0 16px 6px">
+          <div class="view-toggle" style="margin:0">
+            <button class="vt active" id="vsW" onclick="setStatsView('week')">Týden</button>
+            <button class="vt" id="vsM" onclick="setStatsView('month')">Měsíc</button>
+          </div>
         </div>
       </div>
     </div>
@@ -654,7 +657,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.05 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.06 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3153,9 +3156,10 @@ if(savedState){
 let planSelectMode=false,selectedDays=new Set();
 function togglePlanSelect(){
   planSelectMode=!planSelectMode;selectedDays=new Set();
-  document.getElementById('planSelectBtn').classList.toggle('active',planSelectMode);
-  document.getElementById('planSelectBtn').textContent=planSelectMode?'Hotovo':'Vybrat';
-  document.getElementById('planSelBar').classList.toggle('show',planSelectMode);
+  const btn=document.getElementById('planSelectBtn');
+  if(btn){btn.classList.toggle('active',planSelectMode);btn.textContent=planSelectMode?'Hotovo':'Vybrat';}
+  const selbar=document.getElementById('planSelBar');
+  if(selbar)selbar.style.display=planSelectMode?'flex':'none';
   updatePlanSelCount();renderCal();
 }
 function toggleDaySelect(k){
@@ -3711,15 +3715,44 @@ let statsMode=false;
 let statsView='week';
 let statsOffset=0; // 0=aktuální, -1=předchozí...
 
-function togglePlanStats(){
-  statsMode=!statsMode;
-  const btn=document.getElementById('statsBtn');
-  btn.textContent=statsMode?'← Plán':'📊 Statistiky';
+function switchPlanTab(tab){
+  statsMode=(tab==='stats');
+  const tPlan=document.getElementById('tabPlan');
+  const tStats=document.getElementById('tabStats');
+  if(tPlan){tPlan.style.borderBottomColor=statsMode?'transparent':'var(--rose-btn)';tPlan.style.color=statsMode?'var(--text-3)':'var(--rose-dark)';}
+  if(tStats){tStats.style.borderBottomColor=statsMode?'var(--rose-btn)':'transparent';tStats.style.color=statsMode?'var(--rose-dark)':'var(--text-3)';}
   document.getElementById('calView').style.display=statsMode?'none':'block';
   document.getElementById('statsView').style.display=statsMode?'block':'none';
   document.getElementById('calControls').style.display=statsMode?'none':'block';
   document.getElementById('statsControls').style.display=statsMode?'block':'none';
-  document.getElementById('planSelectBtn').style.display=statsMode?'none':'block';
+  if(statsMode){
+    const isMonth=calView==='month';
+    statsView=isMonth?'month':'week';
+    document.getElementById('vsW').classList.toggle('active',!isMonth);
+    document.getElementById('vsM').classList.toggle('active',isMonth);
+    if(isMonth){
+      statsOffset=curMonth-TODAY.getMonth()+(curYear-TODAY.getFullYear())*12;
+    } else {
+      const msPerWeek=7*24*3600000;
+      statsOffset=Math.round((curWeekStart.getTime()-getMonday(TODAY).getTime())/msPerWeek);
+    }
+    renderStats();
+  } else {
+    renderCal();
+  }
+}
+
+function togglePlanStats(){switchPlanTab(statsMode?'plan':'stats');}
+
+function togglePlanStats_old(){
+  statsMode=!statsMode;
+  const btn=document.getElementById('statsBtn');
+  if(btn)btn.textContent=statsMode?'← Plán':'📊 Statistiky';
+  document.getElementById('calView').style.display=statsMode?'none':'block';
+  document.getElementById('statsView').style.display=statsMode?'block':'none';
+  document.getElementById('calControls').style.display=statsMode?'none':'block';
+  document.getElementById('statsControls').style.display=statsMode?'block':'none';
+  const psbtn=document.getElementById('planSelectBtn');if(psbtn)psbtn.style.display=statsMode?'none':'block';
   if(statsMode){
     // Synchronizuj view s plánem
     const isMonth=calView==='month';
@@ -4654,19 +4687,27 @@ function renderStatDetail(){
   }
 
   const maxV=Math.max(...nonZero);
-  // Y osa — krok 15 minut pro spánek (=0.25h), krok 1 pro ostatní
-  const yStep=isSleep?0.25:1;
+  // Y osa — noční spánek po 1h, denní spánek po 15min, ostatní po 1
+  const isNightSleep=metric==='nightsleep';
+  const yStep=isNightSleep?1:isSleep?0.25:1;
   const yMax=Math.ceil(maxV/yStep)*yStep;
   const n=values.length;
 
-  const YL=isSleep?30:22;
+  // Aktualizuj podtitul s obdobím
+  const periodLabels={week:'Týden',month:'Měsíc',year:'Rok'};
+  const titleEl=document.getElementById('sdTitle');
+  if(titleEl){
+    titleEl.innerHTML=`<span>${(STAT_META[metric]?.icon||'')} ${(STAT_META[metric]?.label||metric)}</span><span style="font-size:11px;font-weight:500;color:var(--text-3);margin-left:8px">${periodLabels[statDetailView]||''}</span>`;
+  }
+
+  const YL=isSleep?32:22;
   const MR=6,MT=10,MB=18;
   const chartW=W-YL-MR;
 
   const pX=i=>YL+(i/(n-1||1))*chartW;
   const pY=v=>MT+(1-v/yMax)*(H-MT-MB);
 
-  // Y grid + labels po 15 min
+  // Y grid + labels
   ctx.setLineDash([]);
   for(let y=0;y<=yMax;y+=yStep){
     const py=pY(y);
