@@ -2512,26 +2512,46 @@ function deleteReaction(){
 // Sync today's log entries into calData so Plan shows them immediately
 // Migrace starých dat: bedtime+wakeup → nightsleep (BEZPEČNÁ — jen přidává, nic nemaže)
 function migrateOldNightSleepData(){
-  let migrated=0;
+  if(localStorage.getItem('sofin:migrated:nightsleep')==='2')return;
+  // Nejdřív odstraň duplicitní nightsleep záznamy ze všech dnů
   Object.keys(state.calData).forEach(k=>{
+    const entries=state.calData[k].entries||[];
+    const ns=entries.filter(e=>e.type==='nightsleep');
+    if(ns.length>1){
+      // Zachovej jen první (nejstarší timestamp)
+      ns.sort((a,b)=>a.ts-b.ts);
+      state.calData[k].entries=entries.filter(e=>e.type!=='nightsleep');
+      state.calData[k].entries.push(ns[0]);
+      state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
+    }
+  });
+  let migrated=0;
+  const sortedKeys=Object.keys(state.calData).sort();
+  sortedKeys.forEach((k,ki)=>{
     const entries=state.calData[k].entries||[];
     const hasBedtime=entries.some(e=>e.type==='bedtime');
     const hasNightSleep=entries.some(e=>e.type==='nightsleep');
-    if(!hasBedtime||hasNightSleep)return; // nic nemigrovat
+    if(!hasBedtime||hasNightSleep)return;
     const bed=entries.find(e=>e.type==='bedtime');
     if(!bed)return;
-    // Hledej wakeup ve stejném dni
-    const wake=entries.find(e=>e.type==='wakeup'&&e.ts>bed.ts);
+    // Hledej wakeup ve stejném dni NEBO v následujícím dni
+    let wake=entries.find(e=>e.type==='wakeup'&&e.ts>bed.ts);
+    if(!wake&&ki+1<sortedKeys.length){
+      const nextKey=sortedKeys[ki+1];
+      const nextEntries=(state.calData[nextKey]||{}).entries||[];
+      wake=nextEntries.find(e=>e.type==='wakeup');
+    }
     const dur=wake?wake.ts-bed.ts:0;
     const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
     const sub=wake?(fmtTime(bed.ts)+'–'+fmtTime(wake.ts)+'\ncelkem '+(h>0?h+'h ':'')+m+'min'):('od '+fmtTime(bed.ts));
-    // Přidej nightsleep — NEMAŽ bedtime ani wakeup ani nic jiného!
     state.calData[k].entries.push({type:'nightsleep',ts:bed.ts,name:'Noční spánek',sub,reaction:false});
     state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
     migrated++;
   });
+  localStorage.setItem('sofin:migrated:nightsleep','2');
   if(migrated>0){console.log('Migrated',migrated,'nightsleep entries');saveAll();}
 }
+
 
 function syncTodayToCalData(){
   const todayKey=dateKey(TODAY);
