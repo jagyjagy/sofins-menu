@@ -713,6 +713,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
+
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -720,6 +721,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
+
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -919,6 +921,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
+
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -1624,13 +1627,17 @@ function renderStatus(){
     if(awakeVal)awakeVal.textContent='spí';
     if(awakeLbl)awakeLbl.textContent='právě spí';
   } else {
-    let awakeFrom=null;
-    // Sbírej všechny možné "od kdy je vzhůru" a vezmi nejnovější
     const candidates=[];
-    // 1. Wakeup entry v todayLog
+    // Konec denních spánků dnes (nejdůležitější — bije vše ostatní pokud je novější)
+    const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+    todaySleeps.forEach(e=>{
+      const endTs=getSleepEndTs(e);
+      if(endTs>0&&endTs<now)candidates.push(endTs);
+    });
+    // Wakeup entry v todayLog
     const wakeEntry=allToday.filter(e=>e.type==='wakeup').sort((a,b)=>b.ts-a.ts)[0];
     if(wakeEntry)candidates.push(wakeEntry.ts);
-    // 2. Konec nightsleep z calData včerejška nebo předevčírejška
+    // Konec nightsleep z předchozích dnů (jen pokud nejsou novější kandidáti)
     for(let d=1;d<=2;d++){
       const past=new Date(now-d*86400000);
       const pastKey=dateKey(past);
@@ -1640,14 +1647,7 @@ function renderStatus(){
         if(endTs>0&&endTs<now&&endTs>now-16*3600000)candidates.push(endTs);
       }
     }
-    // 3. Konec denních spánků dnes (bere nejnovější)
-    const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
-    todaySleeps.forEach(e=>{
-      const endTs=getSleepEndTs(e);
-      if(endTs>0&&endTs<now)candidates.push(endTs);
-    });
-    // Vezmi nejnovější
-    if(candidates.length)awakeFrom=Math.max(...candidates);
+    const awakeFrom=candidates.length?Math.max(...candidates):null;
     if(awakeEl)awakeEl.className='sdash-cell'+(awakeFrom&&(now-awakeFrom)>7200000?' warn':'');
     if(awakeIcon)awakeIcon.textContent='🌤';
     if(awakeVal)awakeVal.textContent=awakeFrom?mStr(now-awakeFrom):'—';
