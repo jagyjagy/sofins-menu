@@ -1572,6 +1572,8 @@ function _showErr(ctx,e){
 }
 
 function renderAll(){
+  // Vždy zkontroluj wakeup ze zakončených nočních spánků
+  syncNightSleepWakeups();
   try{renderTodayBadge();}catch(e){_showErr('badge',e);}
   try{renderStatus();}catch(e){_showErr('status',e);}
   try{renderTodayList();}catch(e){_showErr('todayList',e);}
@@ -2559,36 +2561,37 @@ function deleteReaction(){
 function syncNightSleepWakeups(){
   const todayKey=dateKey(TODAY);
   const sortedKeys=Object.keys(state.calData).sort();
+  let changed=false;
   sortedKeys.forEach(k=>{
     const entries=state.calData[k].entries||[];
     const ns=findNightSleepEntry(entries);
     if(!ns||ns._synthetic||ns.live)return;
     const endTs=getSleepEndTs(ns);
     if(!endTs||endTs<=ns.ts)return;
-    // Zjisti do kterého dne konec patří
     const endDay=dateKey(new Date(endTs));
-    if(endDay===k)return; // konec ve stejném dni — nepotřebujeme wakeup
-    // Wakeup patří do endDay
+    if(endDay===k)return; // konec ve stejném dni
     if(endDay===todayKey){
       // Přidej do todayLog pokud tam není
       const hasWakeup=state.todayLog.some(e=>e.type==='wakeup');
       if(!hasWakeup){
         state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,
-          name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});
+          name:'Probudila se',sub:'vstávání',reaction:false,by:state.todayLog[0]?.by||'mama'});
         state.todayLog.sort((a,b)=>a.ts-b.ts);
+        changed=true;
       }
-    } else {
-      // Přidej do calData toho dne pokud tam není
-      if(!state.calData[endDay])return;
+    } else if(state.calData[endDay]){
+      // Přidej do calData jiného dne pokud tam není
       const hasWakeup=(state.calData[endDay].entries||[]).some(e=>e.type==='wakeup');
       if(!hasWakeup){
         state.calData[endDay].entries=state.calData[endDay].entries||[];
         state.calData[endDay].entries.push({type:'wakeup',ts:endTs,
           name:'Probudila se',sub:'vstávání',reaction:false});
         state.calData[endDay].entries.sort((a,b)=>a.ts-b.ts);
+        changed=true;
       }
     }
   });
+  if(changed)saveAll();
 }
 
 function migrateOldNightSleepData(){
