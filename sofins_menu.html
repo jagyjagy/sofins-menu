@@ -1366,7 +1366,7 @@ function applyRemoteState(remote) {
   }
   if (remote.nightSleep!==undefined) state.nightSleep = remote.nightSleep;
   // Migruj stará bedtime→nightsleep data
-  setTimeout(()=>migrateOldNightSleepData(),100);
+  setTimeout(()=>{migrateOldNightSleepData();syncNightSleepWakeups();},100);
   const sleepNowActive = state.sleep && state.sleep.active;
   if (sleepWasActive !== sleepNowActive) updateSleepUI();
   renderAll();
@@ -1625,21 +1625,30 @@ function renderStatus(){
     if(awakeLbl)awakeLbl.textContent='právě spí';
   } else {
     let awakeFrom=null;
-    // 1. Konec nočního spánku (z calData dnešního nebo včerejšího dne)
-    const yesterKey=dateKey(new Date(now-86400000));
-    for(const dk of [todayKey,yesterKey]){
-      const ns=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
-      if(ns){const endTs=getSleepEndTs(ns);if(endTs>0&&endTs<now&&(!awakeFrom||endTs>awakeFrom))awakeFrom=endTs;}
+    // 1. Wakeup entry v todayLog (nejpřesnější)
+    const wakeEntry=allToday.filter(e=>e.type==='wakeup').sort((a,b)=>b.ts-a.ts)[0];
+    if(wakeEntry)awakeFrom=wakeEntry.ts;
+    // 2. Konec nightsleep z calData včerejška nebo předevčírejška
+    if(!awakeFrom){
+      for(let d=1;d<=2;d++){
+        const past=new Date(now-d*86400000);
+        const pastKey=dateKey(past);
+        const ns=findNightSleepEntry((state.calData[pastKey]||{}).entries||[]);
+        if(ns&&!ns._synthetic){
+          const endTs=getSleepEndTs(ns);
+          if(endTs>0&&endTs<now&&endTs>now-16*3600000){awakeFrom=endTs;break;}
+        }
+      }
     }
-    // 2. Konec posledního denního spánku
-    const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
-    if(todaySleeps.length){
-      todaySleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
-      const endTs=getSleepEndTs(todaySleeps[0]);
-      if(endTs>0&&endTs<now&&(!awakeFrom||endTs>awakeFrom))awakeFrom=endTs;
+    // 3. Konec posledního denního spánku dnes
+    if(!awakeFrom){
+      const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+      if(todaySleeps.length){
+        todaySleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
+        const endTs=getSleepEndTs(todaySleeps[0]);
+        if(endTs>0&&endTs<now)awakeFrom=endTs;
+      }
     }
-    // 3. Wakeup entry
-    if(lastWB&&lastWB.type==='wakeup'&&(!awakeFrom||lastWB.ts>awakeFrom))awakeFrom=lastWB.ts;
     if(awakeEl)awakeEl.className='sdash-cell'+(awakeFrom&&(now-awakeFrom)>7200000?' warn':'');
     if(awakeIcon)awakeIcon.textContent='🌤';
     if(awakeVal)awakeVal.textContent=awakeFrom?mStr(now-awakeFrom):'—';
@@ -2546,6 +2555,42 @@ function deleteReaction(){
 
 // Sync today's log entries into calData so Plan shows them immediately
 // Migrace starých dat: bedtime+wakeup → nightsleep (BEZPEČNÁ — jen přidává, nic nemaže)
+// Synchronizuj wakeup záznamy z nightsleep — pro všechny dny kde chybí
+function syncNightSleepWakeups(){
+  const todayKey=dateKey(TODAY);
+  const sortedKeys=Object.keys(state.calData).sort();
+  sortedKeys.forEach(k=>{
+    const entries=state.calData[k].entries||[];
+    const ns=findNightSleepEntry(entries);
+    if(!ns||ns._synthetic||ns.live)return;
+    const endTs=getSleepEndTs(ns);
+    if(!endTs||endTs<=ns.ts)return;
+    // Zjisti do kterého dne konec patří
+    const endDay=dateKey(new Date(endTs));
+    if(endDay===k)return; // konec ve stejném dni — nepotřebujeme wakeup
+    // Wakeup patří do endDay
+    if(endDay===todayKey){
+      // Přidej do todayLog pokud tam není
+      const hasWakeup=state.todayLog.some(e=>e.type==='wakeup');
+      if(!hasWakeup){
+        state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,
+          name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});
+        state.todayLog.sort((a,b)=>a.ts-b.ts);
+      }
+    } else {
+      // Přidej do calData toho dne pokud tam není
+      if(!state.calData[endDay])return;
+      const hasWakeup=(state.calData[endDay].entries||[]).some(e=>e.type==='wakeup');
+      if(!hasWakeup){
+        state.calData[endDay].entries=state.calData[endDay].entries||[];
+        state.calData[endDay].entries.push({type:'wakeup',ts:endTs,
+          name:'Probudila se',sub:'vstávání',reaction:false});
+        state.calData[endDay].entries.sort((a,b)=>a.ts-b.ts);
+      }
+    }
+  });
+}
+
 function migrateOldNightSleepData(){
   if(localStorage.getItem('sofin:migrated:nightsleep')==='2')return;
   // Nejdřív odstraň duplicitní nightsleep záznamy ze všech dnů
@@ -3628,6 +3673,8 @@ if(savedState){
     applyTheme(state.settings.theme||state.settings.gender);
     // Migruj stará data
     migrateOldNightSleepData();
+    // Synchronizuj wakeup ze zakončených nočních spánků
+    syncNightSleepWakeups();
   }catch(e){seedCalData();}
 } else {
   seedCalData();
