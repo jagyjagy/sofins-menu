@@ -1348,6 +1348,8 @@ function applyRemoteState(remote) {
   }
   if (remote.calData) state.calData = remote.calData;
   if (remote.nightSleep!==undefined) state.nightSleep = remote.nightSleep;
+  // Migruj stará data po sync
+  migrateOldNightSleepData();
   const sleepNowActive = state.sleep && state.sleep.active;
   if (sleepWasActive !== sleepNowActive) updateSleepUI();
   renderAll();
@@ -1455,9 +1457,31 @@ function fmtDuration(ms){
   const h=Math.floor(mins/60),m=mins%60;
   return h+'h'+(m?' '+m+'min':'');
 }
-// Najdi záznam nočního spánku — podporuje starý (sleep+Noční) i nový (nightsleep) formát
+// Najdi záznam nočního spánku — podporuje starý (sleep+Noční / bedtime+wakeup) i nový (nightsleep) formát
 function findNightSleepEntry(entries){
-  return (entries||[]).find(e=>e.type==='nightsleep'||(e.type==='sleep'&&(e.name||'').includes('Noční')));
+  const arr=entries||[];
+  // Nový formát
+  const ns=arr.find(e=>e.type==='nightsleep');
+  if(ns)return ns;
+  // Starý formát 1: type='sleep' name contains 'Noční'
+  const old1=arr.find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
+  if(old1)return old1;
+  // Starý formát 2: type='bedtime' — páruj s wakeup
+  const bed=arr.find(e=>e.type==='bedtime');
+  if(bed){
+    const wake=arr.find(e=>e.type==='wakeup'&&e.ts>bed.ts);
+    if(wake){
+      // Vytvoř syntetický nightsleep záznam
+      const dur=wake.ts-bed.ts;
+      const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+      return {type:'nightsleep',ts:bed.ts,name:'Noční spánek',
+        sub:fmtTime(bed.ts)+'–'+fmtTime(wake.ts)+'\ncelkem '+(h>0?h+'h ':'')+m+'min',
+        reaction:false,_synthetic:true};
+    }
+    // Bedtime bez wakeup — jen začátek
+    return {type:'nightsleep',ts:bed.ts,name:'Noční spánek',sub:'od '+fmtTime(bed.ts)+' · probíhá',reaction:false,_synthetic:true,live:true};
+  }
+  return null;
 }
 
 function getSleepEndTs(entry){  const sub=entry.sub||'';
@@ -2469,6 +2493,37 @@ function deleteReaction(){
 }
 
 // Sync today's log entries into calData so Plan shows them immediately
+// Migrace starých dat: bedtime+wakeup → nightsleep
+function migrateOldNightSleepData(){
+  let migrated=0;
+  Object.keys(state.calData).forEach(k=>{
+    const entries=state.calData[k].entries||[];
+    const hasBedtime=entries.some(e=>e.type==='bedtime');
+    const hasNightSleep=entries.some(e=>e.type==='nightsleep');
+    if(!hasBedtime||hasNightSleep)return;
+    const bed=entries.find(e=>e.type==='bedtime');
+    if(!bed)return;
+    // Hledej wakeup ve stejném nebo následujícím dni
+    let wake=entries.find(e=>e.type==='wakeup'&&e.ts>bed.ts);
+    if(!wake){
+      // Zkus následující den
+      const nextD=new Date(k);nextD.setDate(nextD.getDate()+1);
+      const nextKey=dateKey(nextD);
+      const nextEntries=(state.calData[nextKey]||{}).entries||[];
+      wake=nextEntries.find(e=>e.type==='wakeup');
+    }
+    const dur=wake?wake.ts-bed.ts:0;
+    const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+    const sub=wake?(fmtTime(bed.ts)+'–'+fmtTime(wake.ts)+'\ncelkem '+(h>0?h+'h ':'')+m+'min'):('od '+fmtTime(bed.ts)+' · probíhá');
+    // Nahraď bedtime nightsleep záznamem
+    state.calData[k].entries=entries.filter(e=>e.type!=='bedtime');
+    state.calData[k].entries.push({type:'nightsleep',ts:bed.ts,name:'Noční spánek',sub,reaction:false});
+    state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
+    migrated++;
+  });
+  if(migrated>0){console.log('Migrated',migrated,'nightsleep entries');saveAll();}
+}
+
 function syncTodayToCalData(){
   const todayKey=dateKey(TODAY);
 
@@ -2750,14 +2805,36 @@ function renderWeek(){
         const durStr=totalM>0?(sh>0?sh+'h'+(sm?' '+sm+'min':''):sm+'min'):'';
         sleepStr=`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dayNaps.length}× spánek${durStr?' ('+durStr+')':''}</div>`;
       }
-      // Noční spánek
+      // Noční spánek — hledej v entries tohoto dne, nebo v todayLog pokud je to dnes
       let nightStr='';
-      const nightSleep=(dd.entries||[]).find(e=>e.type==='nightsleep'||(e.type==='sleep'&&(e.name||'').includes('Noční')));
+      const todayKey2=dateKey(TODAY);
+      let nightSleep=findNightSleepEntry(dd.entries||[]);
+      // Pokud je to dnešní den a nightsleep je live v todayLog
+      if(!nightSleep&&k===todayKey2){
+        nightSleep=state.todayLog.find(e=>e.type==='nightsleep');
+      }
+      // Také hledej v PŘEDCHOZÍM dni calData — noční spánek mohl začít předchozí den a přes půlnoc
+      if(!nightSleep){
+        const prevD=new Date(d);prevD.setDate(prevD.getDate()-1);
+        const prevKey=dateKey(prevD);
+        const prevNS=findNightSleepEntry((state.calData[prevKey]||{}).entries||[]);
+        if(prevNS){
+          // Zkontroluj jestli konec je v tomto dni
+          const endTs=getSleepEndTs(prevNS);
+          const endD=new Date(endTs);
+          if(endTs>0&&dateKey(endD)===k)nightSleep=prevNS;
+        }
+      }
       if(nightSleep){
         const dur=getSleepEndTs(nightSleep)-nightSleep.ts;
-        const nh=Math.floor(dur/3600000),nm=Math.floor((dur%3600000)/60000);
-        const nightDurStr=nh>0?nh+'h'+(nm?' '+nm+'min':''):nm+'min';
-        nightStr=`<div class="wc-stat"><div class="wsd" style="background:#4a6fa8"></div>🌙 ${nightDurStr}</div>`;
+        if(dur>0){
+          const nh=Math.floor(dur/3600000),nm=Math.floor((dur%3600000)/60000);
+          const nightDurStr=nh>0?nh+'h'+(nm?' '+nm+'min':''):nm+'min';
+          nightStr=`<div class="wc-stat"><div class="wsd" style="background:#4a6fa8"></div>🌙 ${nightDurStr}</div>`;
+        } else if(nightSleep.live){
+          // Probíhající — ukáž bez délky
+          nightStr=`<div class="wc-stat"><div class="wsd" style="background:#4a6fa8"></div>🌙 probíhá</div>`;
+        }
       }
       const st=[dd.breast?`<div class="wc-stat"><div class="wsd" style="background:#9b7fbd"></div>${dd.breast}× kojení</div>`:'',nightStr,sleepStr].filter(Boolean).join('');
       if(st)body+=`<div class="wc-stats">${st}</div>`;
@@ -3479,6 +3556,8 @@ if(savedState){
     syncTodayToCalData();
     // Aplikuj téma hned po načtení
     applyTheme(state.settings.theme||state.settings.gender);
+    // Migruj stará data
+    migrateOldNightSleepData();
   }catch(e){seedCalData();}
 } else {
   seedCalData();
