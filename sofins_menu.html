@@ -872,10 +872,15 @@ body[data-theme="neutral"]{background:#d0d0d0}
 
 <div class="modal-wrap" id="mDoctor"><div class="movl" onclick="closeModal('mDoctor')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div><div class="mtitle" id="mDoctorTitle">Přidat lékaře</div>
-  <div class="mrow"><label>Typ</label><div class="type-btns">
+  <div class="mrow"><label>Typ</label><div class="type-btns" style="flex-wrap:wrap;gap:5px">
     <button class="type-btn sel" onclick="selType(this)">Pediatr</button>
     <button class="type-btn" onclick="selType(this)">Alergolog</button>
     <button class="type-btn" onclick="selType(this)">Gastroenterolog</button>
+    <button class="type-btn" onclick="selType(this)">Oční</button>
+    <button class="type-btn" onclick="selType(this)">ORL</button>
+    <button class="type-btn" onclick="selType(this)">Zubař</button>
+    <button class="type-btn" onclick="selType(this)">Neurolog</button>
+    <button class="type-btn" onclick="selType(this)">Ortopéd</button>
     <button class="type-btn" onclick="selType(this)">Jiný</button>
   </div></div>
   <div class="mrow"><label>Jméno</label><input type="text" id="dName" placeholder="MUDr. ..."/></div>
@@ -1309,7 +1314,14 @@ function applyRemoteState(remote) {
   const wasMe = (Date.now() - lastSaveTime) < 15000;
   if (wasMe) return;
   const sleepWasActive = state.sleep && state.sleep.active;
+  // Zachovej live nightsleep záznam z lokálního stavu při merge
+  const localNSLive = state.todayLog.find(e=>e.type==='nightsleep'&&e.live);
   state.todayLog = remote.todayLog || state.todayLog;
+  // Pokud je noční spánek aktivní, obnov live záznam pokud chybí
+  if(state.nightSleep?.active && localNSLive && !state.todayLog.find(e=>e.type==='nightsleep'&&e.live)){
+    state.todayLog = state.todayLog.filter(e=>e.type!=='nightsleep');
+    state.todayLog.push(localNSLive);
+  }
   state.sleep = remote.sleep || state.sleep;
   state.freezer = remote.freezer || state.freezer;
   state.settings = remote.settings || state.settings;
@@ -1565,12 +1577,21 @@ function renderStatus(){
     if(awakeLbl)awakeLbl.textContent='právě spí';
   } else {
     let awakeFrom=null;
+    // 1. Konec nočního spánku (z calData dnešního nebo včerejšího dne)
+    const yesterKey=dateKey(new Date(now-86400000));
+    for(const dk of [todayKey,yesterKey]){
+      const ns=(state.calData[dk]||{}).entries?.find(e=>e.type==='nightsleep');
+      if(ns){const endTs=getSleepEndTs(ns);if(endTs>0&&endTs<now&&(!awakeFrom||endTs>awakeFrom))awakeFrom=endTs;}
+    }
+    // 2. Konec posledního denního spánku
     const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
     if(todaySleeps.length){
       todaySleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
       const endTs=getSleepEndTs(todaySleeps[0]);
-      if(endTs>0&&endTs<now)awakeFrom=endTs;
-    } else if(lastWB&&lastWB.type==='wakeup'){awakeFrom=lastWB.ts;}
+      if(endTs>0&&endTs<now&&(!awakeFrom||endTs>awakeFrom))awakeFrom=endTs;
+    }
+    // 3. Wakeup entry
+    if(lastWB&&lastWB.type==='wakeup'&&(!awakeFrom||lastWB.ts>awakeFrom))awakeFrom=lastWB.ts;
     if(awakeEl)awakeEl.className='sdash-cell'+(awakeFrom&&(now-awakeFrom)>7200000?' warn':'');
     if(awakeIcon)awakeIcon.textContent='🌤';
     if(awakeVal)awakeVal.textContent=awakeFrom?mStr(now-awakeFrom):'—';
@@ -1760,10 +1781,15 @@ function saveFood(){
   if(_planAddTargetDay){
     const k=_planAddTargetDay;_planAddTargetDay=null;
     if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-    state.calData[k].entries.push({type:'food',ts,name,sub,brand:brand||null,reaction:false});
+    // Použij správné datum cílového dne
+    const[yr,mo,dy]=k.split('-').map(Number);
+    const timeVal=document.getElementById('foodTime').value||'12:00';
+    const[hh,mm]=timeVal.split(':').map(Number);
+    const tsFixed=new Date(yr,mo-1,dy,hh,mm,0,0).getTime();
+    state.calData[k].entries.push({type:'food',ts:tsFixed,name,sub,brand:brand||null,reaction:false});
     state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
     selFoods=[];renderSelFoodsEl();closeModal('mFood');saveAll();
-    const dp=new Date(k);selDay(dp.getFullYear(),dp.getMonth(),dp.getDate());
+    selDay(yr,mo-1,dy);
     return;
   }
   state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub,brand:brand||null,reaction:false,by:whoAmI()});
@@ -1905,10 +1931,14 @@ function saveBreast(){
   if(_planAddTargetDay){
     const k=_planAddTargetDay;_planAddTargetDay=null;
     if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-    state.calData[k].entries.push({type:'breast',ts,name:'Kojení',sub,reaction:false});
+    const[yr,mo,dy]=k.split('-').map(Number);
+    const timeVal=document.getElementById('breastTime').value||'12:00';
+    const[hh,mm]=timeVal.split(':').map(Number);
+    const tsFixed=new Date(yr,mo-1,dy,hh,mm,0,0).getTime();
+    state.calData[k].entries.push({type:'breast',ts:tsFixed,name:'Kojení',sub,reaction:false});
     state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
     closeModal('mBreast');saveAll();
-    const dp=new Date(k);selDay(dp.getFullYear(),dp.getMonth(),dp.getDate());
+    selDay(yr,mo-1,dy);
     return;
   }
   state.todayLog.push({id:'b'+Date.now(),type:'breast',ts,name:'Kojení',sub,reaction:false,by:whoAmI()});
@@ -3165,13 +3195,11 @@ const CHILD_EMOJIS=[
   '🎶','🌹','🌷','🏵','💐','🫧','🧸','🪆','🪅','🎁','💫','✨','💛','💙','💜','❤️','💚','🩷','🩵','🩶'
 ];
 function openEmojiPicker(){
-  const grid=document.getElementById('emojiGrid');
-  if(!grid)return;
   const cur=state.settings.childEmoji||'👶';
-  grid.innerHTML=CHILD_EMOJIS.map(e=>`
-    <div onclick="selectChildEmoji('${e}')" style="font-size:26px;text-align:center;padding:6px;border-radius:8px;cursor:pointer;background:${e===cur?'var(--rose-light)':'transparent'};border:${e===cur?'1.5px solid var(--rose-btn)':'1.5px solid transparent'}">${e}</div>
-  `).join('');
-  openModal('mEmojiPicker');
+  const val=prompt('Zadej emoji pro dítě (otevři klávesnici s emoji):',cur);
+  if(val&&val.trim()){
+    selectChildEmoji(val.trim());
+  }
 }
 function selectChildEmoji(emoji){
   state.settings.childEmoji=emoji;
@@ -3253,7 +3281,7 @@ function renderSettings(){
   document.getElementById('cBedtime').value=s.bedtime||'19:30';
   const warnSel=document.getElementById('cBedtimeWarn');
   if(warnSel)warnSel.value=String(warn);
-  const icons={pediatr:'👩‍⚕️',alergolog:'🔬',gastroenterolog:'🩺',jiný:'👨‍⚕️'};
+  const icons={pediatr:'👩‍⚕️',alergolog:'🔬',gastroenterolog:'🩺',oční:'👁️',orl:'👂',zubař:'🦷',neurolog:'🧠',ortopéd:'🦴',jiný:'👨‍⚕️'};
   const labels={pediatr:'Pediatr',alergolog:'Alergolog',gastroenterolog:'Gastroenterolog',jiný:'Jiný'};
   document.getElementById('docList').innerHTML=s.doctors.map((d,i)=>`
     <div class="doc-card">
