@@ -1346,8 +1346,27 @@ function applyRemoteState(remote) {
       state.weightLog=remote.weightLog;
     }
   }
-  if (remote.calData) state.calData = remote.calData;
+  if (remote.calData) {
+    // Zachovaj lokální nightsleep záznamy — přepiš calData ale zachovej nightsleep
+    const localNS={};
+    Object.keys(state.calData).forEach(k=>{
+      const ns=(state.calData[k].entries||[]).filter(e=>e.type==='nightsleep');
+      if(ns.length)localNS[k]=ns;
+    });
+    state.calData = remote.calData;
+    // Obnov nightsleep záznamy pokud remote je nemá
+    Object.keys(localNS).forEach(k=>{
+      if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+      const hasNS=(state.calData[k].entries||[]).some(e=>e.type==='nightsleep');
+      if(!hasNS){
+        state.calData[k].entries=(state.calData[k].entries||[]).concat(localNS[k]);
+        state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
+      }
+    });
+  }
   if (remote.nightSleep!==undefined) state.nightSleep = remote.nightSleep;
+  // Migruj stará bedtime→nightsleep data
+  setTimeout(()=>migrateOldNightSleepData(),100);
   const sleepNowActive = state.sleep && state.sleep.active;
   if (sleepWasActive !== sleepNowActive) updateSleepUI();
   renderAll();
