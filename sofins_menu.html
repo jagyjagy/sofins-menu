@@ -713,7 +713,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
-
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -721,7 +720,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
-
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -765,6 +763,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
   </div>
   <div id="fzSugBox" class="fz-sug-box"><p>❄️ Dostupné v mrazáku — použít?</p><div id="fzSugItems"></div></div>
   <div class="mrow"><label>Čas</label><input type="time" id="foodTime" value="12:00"/></div>
+  <div class="mrow"><label>Poznámka</label><input type="text" id="foodNote" placeholder="volitelně..."/></div>
   <button class="msave" onclick="saveFood()">Uložit jídlo</button>
   <button class="mcancel" onclick="closeModal('mFood')">Zrušit</button>
 </div></div></div>
@@ -921,7 +920,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
-
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -1837,7 +1835,8 @@ function saveFood(){
   const name=rawName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}]\s*/u,'').trim()||rawName;
   const ts=parseTimeToTs(document.getElementById('foodTime').value);
   const brand=document.getElementById('brandInput')?.value.trim()||'';
-  const sub=[brand?'🏪 '+brand:'',selFoods.join(', ')].filter(Boolean).join(' · ');
+  const note=document.getElementById('foodNote')?.value.trim()||'';
+  const sub=[brand?'🏪 '+brand:'',selFoods.join(', '),note].filter(Boolean).join(' · ');
   // Přidat do minulého dne z plánu?
   if(_planAddTargetDay){
     const k=_planAddTargetDay;_planAddTargetDay=null;
@@ -3587,6 +3586,7 @@ function openModal(id){
     document.getElementById('foodSug').style.display='none';
     document.getElementById('fzSugBox').style.display='none';
     document.getElementById('rowBrand').style.display='none';
+    const fn=document.getElementById('foodNote');if(fn)fn.value='';
     const now=new Date();
     document.getElementById('foodTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
     // Předvyplnění typu podle času dne
