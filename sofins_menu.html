@@ -699,7 +699,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.11 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.12 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -2377,13 +2377,25 @@ function saveEditEntry(){
   } else if(e.type==='nightsleep'){
     const start=document.getElementById('editNSStart')?.value||fmtTime(e.ts);
     const end=document.getElementById('editNSEnd')?.value||'';
-    e.ts=parseTimeToTs(start);
-    if(state.nightSleep&&state.nightSleep.active)state.nightSleep.startTs=e.ts;
+    const newStartTs=parseTimeToTs(start);
+    e.ts=newStartTs;
+    if(state.nightSleep&&state.nightSleep.active)state.nightSleep.startTs=newStartTs;
     if(end){
-      const [sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);
+      const[sh,sm]=start.split(':').map(Number);const[eh,em]=end.split(':').map(Number);
       let mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;
       const h=Math.floor(mins/60),m=mins%60;
       e.sub=start+'–'+end+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
+      // Aktualizuj wakeup entry v todayLog
+      const endTs=parseTimeToTs(end);
+      const wu=state.todayLog.find(x=>x.type==='wakeup');
+      if(wu){wu.ts=endTs;}
+      else{state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});}
+      // Aktualizuj i v calData pokud je nightsleep v calData
+      if(currentCalEntry){
+        const dk=currentCalEntry.dayKey;
+        const calNS=(state.calData[dk]||{}).entries?.find(x=>x.type==='nightsleep');
+        if(calNS){calNS.ts=newStartTs;calNS.sub=start+'–'+end+'\ncelkem '+(h>0?h+'h ':'')+m+'min';}
+      }
     } else {
       e.sub='od '+start+' · probíhá';
     }
@@ -4932,9 +4944,10 @@ function endNightSleep(){
   const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
   const durStr='celkem '+(h>0?h+'h ':'')+m+'min';
   const startDay=dateKey(new Date(ns.startTs));
+  const todayKey=dateKey(TODAY);
   // Smaž live záznam → zmizí z home screenu
-  state.todayLog=state.todayLog.filter(e=>e.type!=='nightsleep');
-  // Uloží se do calData dne kdy spánek začal (viditelné v Plánu)
+  state.todayLog=state.todayLog.filter(e=>e.type!=='nightsleep'&&e.type!=='wakeup');
+  // Uloží nightsleep do calData dne kdy spánek začal
   if(!state.calData[startDay])state.calData[startDay]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
   state.calData[startDay].entries=state.calData[startDay].entries.filter(e=>e.type!=='nightsleep');
   state.calData[startDay].entries.push({
@@ -4942,6 +4955,13 @@ function endNightSleep(){
     name:'Noční spánek',
     sub:fmtTime(ns.startTs)+'–'+fmtTime(now)+'\n'+durStr,
     reaction:false
+  });
+  state.calData[startDay].entries.sort((a,b)=>a.ts-b.ts);
+  // Přidej wakeup do dnešního todayLog — "Probudila se" zůstává viditelné a editovatelné
+  state.todayLog.push({
+    id:'wakeup-'+now,type:'wakeup',ts:now,
+    name:'Probudila se',sub:'vstávání',
+    reaction:false,by:whoAmI()
   });
   state.nightSleep={active:false,startTs:null};
   // Ranní story ihned
