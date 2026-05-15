@@ -713,7 +713,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
-
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -721,7 +720,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
-
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -921,7 +919,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
-
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -2917,7 +2914,7 @@ function renderWeek(){
         const durStr=totalM>0?(sh>0?sh+'h'+(sm?' '+sm+'min':''):sm+'min'):'';
         sleepStr=`<div class="wc-stat"><div class="wsd" style="background:#7a8fa8"></div>${dayNaps.length}× spánek${durStr?' ('+durStr+')':''}</div>`;
       }
-      // Noční spánek — hledej v entries tohoto dne, nebo v todayLog pokud je to dnes
+      // Noční spánek — hledej v entries tohoto dne, nebo v todayLog pokud je to dnes (live)
       let nightStr='';
       const todayKey2=dateKey(TODAY);
       let nightSleep=findNightSleepEntry(dd.entries||[]);
@@ -2925,18 +2922,7 @@ function renderWeek(){
       if(!nightSleep&&k===todayKey2){
         nightSleep=state.todayLog.find(e=>e.type==='nightsleep');
       }
-      // Také hledej v PŘEDCHOZÍM dni calData — noční spánek mohl začít předchozí den a přes půlnoc
-      if(!nightSleep){
-        const prevD=new Date(d);prevD.setDate(prevD.getDate()-1);
-        const prevKey=dateKey(prevD);
-        const prevNS=findNightSleepEntry((state.calData[prevKey]||{}).entries||[]);
-        if(prevNS){
-          // Zkontroluj jestli konec je v tomto dni
-          const endTs=getSleepEndTs(prevNS);
-          const endD=new Date(endTs);
-          if(endTs>0&&dateKey(endD)===k)nightSleep=prevNS;
-        }
-      }
+      // NEZOBRAZUJ noční spánek předchozího dne v aktuálním dni — patří do dne kde začal
       if(nightSleep){
         const dur=getSleepEndTs(nightSleep)-nightSleep.ts;
         if(dur>0){
