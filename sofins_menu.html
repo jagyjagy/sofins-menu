@@ -275,7 +275,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 .type-btn.sel{background:var(--rose-btn);color:#fff;border-color:var(--rose-btn)}
 .msave{width:100%;padding:12px;border-radius:13px;background:var(--rose-btn);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:5px}
 .mcancel{width:100%;padding:8px;border-radius:13px;background:transparent;border:none;color:var(--text-2);font-size:12px;cursor:pointer;margin-top:3px}
-.fsug{background:var(--card);border:.5px solid var(--rose-mid);border-radius:10px;max-height:130px;overflow-y:auto;position:absolute;left:0;right:0;bottom:calc(100% + 4px);z-index:200;box-shadow:0 -4px 16px rgba(44,26,24,.12)}
+.fsug{background:var(--card);border:.5px solid var(--rose-mid);border-radius:10px;max-height:130px;overflow-y:auto;position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:200;box-shadow:0 4px 16px rgba(44,26,24,.12)}
 .fsug-item{padding:8px 11px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:.5px solid var(--rose-light)}
 .fsug-item:last-child{border-bottom:none}
 .fsug-item:active{background:var(--rose-light)}
@@ -1623,8 +1623,13 @@ function renderStatus(){
 
   if(isSleeping){
     if(awakeEl)awakeEl.className='sdash-cell';
-    if(awakeIcon)awakeIcon.textContent='💤';
-    if(awakeVal)awakeVal.textContent='spí';
+    if(awakeIcon)awakeIcon.textContent='😴';
+    // Zjisti od kdy spí
+    let sleepingSince=null;
+    if(state.sleep.active&&state.sleep.startTs)sleepingSince=state.sleep.startTs;
+    else if(getNightSleep().active&&getNightSleep().startTs)sleepingSince=getNightSleep().startTs;
+    else if(lastWB&&lastWB.type==='bedtime')sleepingSince=lastWB.ts;
+    if(awakeVal)awakeVal.textContent=sleepingSince?mStr(now-sleepingSince):'spí';
     if(awakeLbl)awakeLbl.textContent='právě spí';
   } else {
     const candidates=[];
@@ -2069,10 +2074,10 @@ function showSuggest(val){
   sg.style.display='block';
   let html='';
   brands.slice(0,3).forEach(b=>{
-    html+=`<div class="fsug-item" onclick="addBrandToFood('${b.name}')" style="border-left:3px solid var(--rose-btn);display:flex;align-items:center;gap:6px"><span style="font-size:14px">${b.emoji||'🥣'}</span><span><strong>${b.name}</strong><span style="font-size:10px;color:var(--text-3);margin-left:4px">${b.ingredients.join(', ')}</span></span></div>`;
+    html+=`<div class="fsug-item" onmousedown="event.preventDefault();addBrandToFood('${b.name}')" style="border-left:3px solid var(--rose-btn);display:flex;align-items:center;gap:6px"><span style="font-size:14px">${b.emoji||'🥣'}</span><span><strong>${b.name}</strong><span style="font-size:10px;color:var(--text-3);margin-left:4px">${b.ingredients.join(', ')}</span></span></div>`;
   });
   foods.slice(0,5).forEach(f=>{
-    html+=`<div class="fsug-item" onclick="addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||'nezařazeno'}</span></div>`;
+    html+=`<div class="fsug-item" onmousedown="event.preventDefault();addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||'nezařazeno'}</span></div>`;
   });
   sg.innerHTML=html;
 }
@@ -5323,7 +5328,20 @@ function renderStatDetail(){
   const n=values.length;
 
   // Aktualizuj podtitul s obdobím
-  const periodLabels={week:'Týden',month:'Měsíc',year:'Rok'};
+  const periodLabels={
+    week:(()=>{
+      // Zobraz datum týdne
+      const mon=new Date(curWeekStart);
+      const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+      const fmt=d=>d.getDate()+'.'+(d.getMonth()+1)+'.';
+      return fmt(mon)+'–'+fmt(sun);
+    })(),
+    month:(()=>{
+      const d=new Date(curYear,curMonth,1);
+      return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});
+    })(),
+    year:'Rok'
+  };
   const titleEl=document.getElementById('sdTitle');
   if(titleEl){
     titleEl.innerHTML=`<span>${(STAT_META[metric]?.icon||'')} ${(STAT_META[metric]?.label||metric)}</span><span style="font-size:11px;font-weight:500;color:var(--text-3);margin-left:8px">${periodLabels[statDetailView]||''}</span>`;
