@@ -2327,7 +2327,30 @@ function saveEditEntry(){
   // wakeup/bedtime — jen čas
   if(e.type==='wakeup'||e.type==='bedtime'){
     const t=document.getElementById('wbEditTime')?.value;
-    if(t)e.ts=parseTimeToTs(t);
+    if(t){
+      e.ts=parseTimeToTs(t);
+      // Wakeup → aktualizuj konec nightsleep v předchozím dni (nebo v calData dnes)
+      if(e.type==='wakeup'){
+        const newWakeTs=e.ts;
+        // Hledej nightsleep v předchozím dni calData
+        const prevD=new Date(TODAY);prevD.setDate(prevD.getDate()-1);
+        const prevKey=dateKey(prevD);
+        const todayKey2=dateKey(TODAY);
+        let nsEntry=null,nsDay=null;
+        // Hledej v calData včerejška i dnešku
+        for(const dk of [prevKey,todayKey2]){
+          const ns=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
+          if(ns&&!ns._synthetic){nsEntry=ns;nsDay=dk;break;}
+        }
+        if(nsEntry){
+          const startTime=fmtTime(nsEntry.ts);
+          const endTime=fmtTime(newWakeTs);
+          const dur=newWakeTs-nsEntry.ts;
+          const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+          nsEntry.sub=startTime+'–'+endTime+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
+        }
+      }
+    }
     closeModal('mEditEntry');renderTodayList();renderStatus();updateWakeSleepBtn();saveAll();
     return;
   }
@@ -2385,16 +2408,16 @@ function saveEditEntry(){
       let mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;
       const h=Math.floor(mins/60),m=mins%60;
       e.sub=start+'–'+end+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
-      // Aktualizuj wakeup entry v todayLog
       const endTs=parseTimeToTs(end);
+      // Aktualizuj wakeup entry v todayLog
       const wu=state.todayLog.find(x=>x.type==='wakeup');
       if(wu){wu.ts=endTs;}
       else{state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});}
-      // Aktualizuj i v calData pokud je nightsleep v calData
-      if(currentCalEntry){
-        const dk=currentCalEntry.dayKey;
-        const calNS=(state.calData[dk]||{}).entries?.find(x=>x.type==='nightsleep');
-        if(calNS){calNS.ts=newStartTs;calNS.sub=start+'–'+end+'\ncelkem '+(h>0?h+'h ':'')+m+'min';}
+      // Aktualizuj v calData — použij currentEditingCalEntry nebo currentCalEntry
+      const dk=(currentEditingCalEntry?.dayKey)||(currentCalEntry?.dayKey);
+      if(dk){
+        const calNS=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
+        if(calNS&&!calNS._synthetic){calNS.ts=newStartTs;calNS.sub=e.sub;}
       }
     } else {
       e.sub='od '+start+' · probíhá';
@@ -3123,6 +3146,12 @@ function _planAddNightSleepDirect(dayKey){
   if(!state.calData[dayKey])state.calData[dayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
   state.calData[dayKey].entries.push({type:'nightsleep',ts:startD.getTime(),name:'Noční spánek',sub:fmtTime(startD.getTime())+'–'+fmtTime(endD.getTime())+'\n'+durStr,reaction:false});
   state.calData[dayKey].entries.sort((a,b)=>a.ts-b.ts);
+  // Pokud konec nočního spánku je dnes, přidej wakeup do todayLog
+  const todayKey3=dateKey(TODAY);
+  if(dateKey(endD)===todayKey3){
+    state.todayLog=state.todayLog.filter(e=>e.type!=='wakeup');
+    state.todayLog.push({id:'wakeup-'+endD.getTime(),type:'wakeup',ts:endD.getTime(),name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});
+  }
   saveAll();
   selDay(yr,mo-1,dy);
 }
