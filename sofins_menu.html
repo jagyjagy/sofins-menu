@@ -1284,6 +1284,7 @@ function saveAll() {
   syncTodayToCalData();
   state.ts = Date.now();
   lastSaveTime = state.ts;
+  lastRemoteTs = state.ts; // Prevent our own save from being re-applied via Firebase polling
   // uložit lokálně
   try{localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}catch(e){}
   // uložit do Firebase
@@ -1624,30 +1625,29 @@ function renderStatus(){
     if(awakeLbl)awakeLbl.textContent='právě spí';
   } else {
     let awakeFrom=null;
-    // 1. Wakeup entry v todayLog (nejpřesnější)
+    // Sbírej všechny možné "od kdy je vzhůru" a vezmi nejnovější
+    const candidates=[];
+    // 1. Wakeup entry v todayLog
     const wakeEntry=allToday.filter(e=>e.type==='wakeup').sort((a,b)=>b.ts-a.ts)[0];
-    if(wakeEntry)awakeFrom=wakeEntry.ts;
+    if(wakeEntry)candidates.push(wakeEntry.ts);
     // 2. Konec nightsleep z calData včerejška nebo předevčírejška
-    if(!awakeFrom){
-      for(let d=1;d<=2;d++){
-        const past=new Date(now-d*86400000);
-        const pastKey=dateKey(past);
-        const ns=findNightSleepEntry((state.calData[pastKey]||{}).entries||[]);
-        if(ns&&!ns._synthetic){
-          const endTs=getSleepEndTs(ns);
-          if(endTs>0&&endTs<now&&endTs>now-16*3600000){awakeFrom=endTs;break;}
-        }
+    for(let d=1;d<=2;d++){
+      const past=new Date(now-d*86400000);
+      const pastKey=dateKey(past);
+      const ns=findNightSleepEntry((state.calData[pastKey]||{}).entries||[]);
+      if(ns&&!ns._synthetic){
+        const endTs=getSleepEndTs(ns);
+        if(endTs>0&&endTs<now&&endTs>now-16*3600000)candidates.push(endTs);
       }
     }
-    // 3. Konec posledního denního spánku dnes
-    if(!awakeFrom){
-      const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
-      if(todaySleeps.length){
-        todaySleeps.sort((a,b)=>getSleepEndTs(b)-getSleepEndTs(a));
-        const endTs=getSleepEndTs(todaySleeps[0]);
-        if(endTs>0&&endTs<now)awakeFrom=endTs;
-      }
-    }
+    // 3. Konec denních spánků dnes (bere nejnovější)
+    const todaySleeps=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
+    todaySleeps.forEach(e=>{
+      const endTs=getSleepEndTs(e);
+      if(endTs>0&&endTs<now)candidates.push(endTs);
+    });
+    // Vezmi nejnovější
+    if(candidates.length)awakeFrom=Math.max(...candidates);
     if(awakeEl)awakeEl.className='sdash-cell'+(awakeFrom&&(now-awakeFrom)>7200000?' warn':'');
     if(awakeIcon)awakeIcon.textContent='🌤';
     if(awakeVal)awakeVal.textContent=awakeFrom?mStr(now-awakeFrom):'—';
@@ -4830,39 +4830,81 @@ function getStoriesState(){
 }
 function saveStoriesState(s){localStorage.setItem('sofin:stories',JSON.stringify(s));}
 
+// Per-identity read state — každý profil má vlastní přečtené
+function getReadKey(type){return 'sofin:read:'+type+':'+(myIdentity||'mama');}
+function isStoryReadByMe(type){return localStorage.getItem(getReadKey(type))==='1';}
+function setStoryReadByMe(type){localStorage.setItem(getReadKey(type),'1');}
+
 function markStoryRead(type){
-  const s=getStoriesState();
-  if(s[type])s[type].read=true;
-  saveStoriesState(s);
+  setStoryReadByMe(type);
   renderStories();
 }
 
 function publishStory(type,card){
   const s=getStoriesState();
-  s[type]={card,date:new Date().toISOString().slice(0,10),read:false};
+  const todayStr=new Date().toISOString().slice(0,10);
+  const prev=s[type];
+  // Nová karta = reset read pro všechny profily
+  if(!prev||prev.date!==todayStr||prev.card?.id!==card.id){
+    // Smaž read příznaky pro oba profily
+    localStorage.removeItem('sofin:read:'+type+':mama');
+    localStorage.removeItem('sofin:read:'+type+':tata');
+  }
+  s[type]={card,date:todayStr,read:false};
   saveStoriesState(s);
   renderStories();
 }
 
+// Vrátí timestamp kdy bylo probuzení dnes
+function getTodayWakeupTs(){
+  const wu=state.todayLog.find(e=>e.type==='wakeup');
+  if(wu)return wu.ts;
+  // Zkus konec nightsleep z včerejška
+  const prevKey=dateKey(new Date(Date.now()-86400000));
+  const ns=findNightSleepEntry((state.calData[prevKey]||{}).entries||[]);
+  if(ns){const e=getSleepEndTs(ns);if(e>0)return e;}
+  return null;
+}
+
 function checkAndPublishStories(){
   const todayStr=new Date().toISOString().slice(0,10);
+  const now=Date.now();
   const s=getStoriesState();
-  // Seed prázdných stories — pokud nikdy nebyly publikovány, publikuj hned
-  if(!s.morning){
+  const wakeupTs=getTodayWakeupTs();
+  const wakeupMins=wakeupTs?(now-wakeupTs)/60000:null;
+
+  // Morning — 45 min po probuzení
+  const morningReady=wakeupMins!==null&&wakeupMins>=45;
+  if(morningReady){
+    if(!s.morning||s.morning.date!==todayStr){
+      const c=pickStoryCard('morning');if(c)publishStory('morning',c);
+    }
+  } else if(!s.morning){
+    // Bez probuzení — zobraz kartu z předchozího dne (ponech stávající, jen seeduj pokud nikdy)
     const c=pickStoryCard('morning');if(c)publishStory('morning',c);
   }
-  if(!s.activity){
+
+  // Activity (Dnes zkus) — 3h po probuzení
+  const activityReady=wakeupMins!==null&&wakeupMins>=180;
+  if(activityReady){
+    if(!s.activity||s.activity.date!==todayStr){
+      const c=pickStoryCard('activity');if(c)publishStory('activity',c);
+    }
+  } else if(!s.activity){
     const c=pickStoryCard('activity');if(c)publishStory('activity',c);
   }
+
+  // Evening — 20 min po začátku nočního spánku (triggeruje se v startNightSleep)
   if(!s.evening){
     const c=pickStoryCard('evening');if(c)publishStory('evening',c);
   }
-  // Nový den — obnov obsah stories pokud je datum jiné
-  const s2=getStoriesState();
-  ['morning','activity','evening'].forEach(type=>{
-    if(s2[type]&&s2[type].date!==todayStr){
-      const c=pickStoryCard(type);
-      if(c)publishStory(type,c);
+
+  // Nový den — resetuj stories které jsou ze včerejška (ale jen pokud je čas)
+  ['morning','activity'].forEach(type=>{
+    const ready=type==='morning'?morningReady:activityReady;
+    const st=getStoriesState();
+    if(ready&&st[type]&&st[type].date!==todayStr){
+      const c=pickStoryCard(type);if(c)publishStory(type,c);
     }
   });
   // Čas letí — týdně nebo na kulaté dny
@@ -4897,10 +4939,10 @@ function renderStories(){
   // Sofinka — vždy, stabilní ring
   html+=storyBubbleHtml('sofinka',childEmoji,childName,false,true);
   // Ostatní — vždy viditelné (i bez obsahu), barevné pokud nepřečtené
-  html+=storyBubbleHtml('morning',s.morning?.card?.icon||'☀️','Ráno',s.morning?!s.morning.read:false,false);
-  html+=storyBubbleHtml('activity',s.activity?.card?.icon||'🎮','Dnes zkus',s.activity?!s.activity.read:false,false);
-  html+=storyBubbleHtml('evening',s.evening?.card?.icon||'🌙','Večer',s.evening?!s.evening.read:false,false);
-  html+=storyBubbleHtml('time',s.time?.card?.icon||'⏰','Čas letí',s.time?!s.time.read:false,false);
+  html+=storyBubbleHtml('morning',s.morning?.card?.icon||'☀️','Ráno',s.morning?!isStoryReadByMe('morning'):false,false);
+  html+=storyBubbleHtml('activity',s.activity?.card?.icon||'🎮','Dnes zkus',s.activity?!isStoryReadByMe('activity'):false,false);
+  html+=storyBubbleHtml('evening',s.evening?.card?.icon||'🌙','Večer',s.evening?!isStoryReadByMe('evening'):false,false);
+  html+=storyBubbleHtml('time',s.time?.card?.icon||'⏰','Čas letí',s.time?!isStoryReadByMe('time'):false,false);
 
   bar.innerHTML=html;
 }
@@ -4995,9 +5037,13 @@ function startNightSleep(){
     sub:'od '+fmtTime(now)+' · probíhá',
     live:true,reaction:false,by:whoAmI()
   });
-  // Večerní story
-  const card=pickStoryCard('evening');
-  if(card)publishStory('evening',card);
+  // Večerní story — 20 minut po začátku nočního spánku
+  setTimeout(()=>{
+    if(getNightSleep().active){
+      const card=pickStoryCard('evening');
+      if(card)publishStory('evening',card);
+    }
+  },20*60*1000);
   renderNightSleepCard();renderTodayList();renderStatus();saveAll();
 }
 
