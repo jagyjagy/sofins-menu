@@ -713,6 +713,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
+
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -720,6 +721,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
+
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -919,6 +921,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
+
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -1452,8 +1455,12 @@ function fmtDuration(ms){
   const h=Math.floor(mins/60),m=mins%60;
   return h+'h'+(m?' '+m+'min':'');
 }
-function getSleepEndTs(entry){
-  const sub=entry.sub||'';
+// Najdi záznam nočního spánku — podporuje starý (sleep+Noční) i nový (nightsleep) formát
+function findNightSleepEntry(entries){
+  return (entries||[]).find(e=>e.type==='nightsleep'||(e.type==='sleep'&&(e.name||'').includes('Noční')));
+}
+
+function getSleepEndTs(entry){  const sub=entry.sub||'';
   // ignoruj live záznamy a "probíhá"
   if(entry.live||sub.includes('probíhá')) return 0;
   // Formát 1: "14:15 – 15:50" nebo "14:15–15:50"
@@ -1580,7 +1587,7 @@ function renderStatus(){
     // 1. Konec nočního spánku (z calData dnešního nebo včerejšího dne)
     const yesterKey=dateKey(new Date(now-86400000));
     for(const dk of [todayKey,yesterKey]){
-      const ns=(state.calData[dk]||{}).entries?.find(e=>e.type==='nightsleep');
+      const ns=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
       if(ns){const endTs=getSleepEndTs(ns);if(endTs>0&&endTs<now&&(!awakeFrom||endTs>awakeFrom))awakeFrom=endTs;}
     }
     // 2. Konec posledního denního spánku
@@ -2745,7 +2752,7 @@ function renderWeek(){
       }
       // Noční spánek
       let nightStr='';
-      const nightSleep=(dd.entries||[]).find(e=>e.type==='sleep'&&(e.name||'').includes('Noční'));
+      const nightSleep=(dd.entries||[]).find(e=>e.type==='nightsleep'||(e.type==='sleep'&&(e.name||'').includes('Noční')));
       if(nightSleep){
         const dur=getSleepEndTs(nightSleep)-nightSleep.ts;
         const nh=Math.floor(dur/3600000),nm=Math.floor((dur%3600000)/60000);
@@ -4156,7 +4163,7 @@ function renderStats(){
     if(fc>0){foodCount+=fc;foodDays++;}
     // noční spánek — záznamy nightsleep z calData
     const nightEntries=(state.calData[k]||{}).entries||[];
-    nightEntries.filter(e=>e.type==='nightsleep').forEach(e=>{
+    nightEntries.filter(e=>e.type==='nightsleep'||(e.type==='sleep'&&(e.name||'').includes('Noční'))).forEach(e=>{
       const dur=getSleepEndTs(e)-e.ts;
       if(dur>3600000&&dur<14*3600000){nightSleepMs+=dur;nightSleepDays++;}
       // Začátek noci (usnutí) — hodiny od půlnoci
@@ -4166,7 +4173,7 @@ function renderStats(){
       nsBedMins+=normalizedMins;nsBedDays++;
     });
     // Vstávání — wakeup entries nebo konce nočního spánku
-    nightEntries.filter(e=>e.type==='nightsleep').forEach(e=>{
+    nightEntries.filter(e=>e.type==='nightsleep'||(e.type==='sleep'&&(e.name||'').includes('Noční'))).forEach(e=>{
       const endTs=getSleepEndTs(e);
       if(endTs&&endTs>e.ts){
         const endD=new Date(endTs);wakeupMins+=endD.getHours()*60+endD.getMinutes();wakeupDays++;
@@ -4244,10 +4251,10 @@ function renderStats(){
   function fmtNum(n,dec=1){return Number(n.toFixed(dec)).toLocaleString('cs-CZ');}
 
   const statCard=(icon,label,val,dlt,metric='')=>`
-    <div onclick="${metric?`openStatDetail('${metric}')`:''}" style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;flex:1;min-width:0;${metric?'cursor:pointer;':''}">
-      <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${icon} ${label}${metric?` <span style="float:right;opacity:.4;font-size:10px">›</span>`:''}</div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:18px;font-weight:600;color:var(--text)">${val}</span>
+    <div onclick="${metric?`openStatDetail('${metric}')`:''}" style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:10px 8px;flex:1;min-width:0;${metric?'cursor:pointer;':''}">
+      <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;line-height:1.3;min-height:24px">${icon} ${label}${metric?` <span style="opacity:.4">›</span>`:''}</div>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap">
+        <span style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap">${val}</span>
         ${dlt}
       </div>
     </div>`;
@@ -4303,9 +4310,8 @@ function renderStats(){
 
   document.getElementById('statsContent').innerHTML=`
     ${weightBlock}
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000),'sleep')}
-      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','','nightsleep')}
+    <div style="display:flex;gap:5px;margin-bottom:6px">
+      ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000),'sleep')}      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','','nightsleep')}
       ${(()=>{
         // Průměrné vstávání
         const avgWakeupMin=wakeupDays?wakeupMins/wakeupDays:0;
@@ -5011,18 +5017,18 @@ function renderStatDetail(){
         if(ms>0){dayVal=ms;count++;}
       } else if(metric==='nightsleep'){
         const calEntries=(state.calData[k]||{}).entries||[];
-        const ns=calEntries.find(e=>e.type==='nightsleep');
+        const ns=findNightSleepEntry(calEntries);
         if(ns){const d=getSleepEndTs(ns)-ns.ts;if(d>3600000){dayVal=d;count++;}}
       } else if(metric==='wakeuptime'){
         // Vstávání — konec nightsleep nebo wakeup entry, jako minuty od půlnoci
         const calEntries=(state.calData[k]||{}).entries||[];
-        const ns=calEntries.find(e=>e.type==='nightsleep');
+        const ns=findNightSleepEntry(calEntries);
         if(ns){const endTs=getSleepEndTs(ns);if(endTs>ns.ts){const d=new Date(endTs);dayVal=(d.getHours()*60+d.getMinutes())*60000;count++;}}
         else{const wu=entries.find(e=>e.type==='wakeup');if(wu){const d=new Date(wu.ts);dayVal=(d.getHours()*60+d.getMinutes())*60000;count++;}}
       } else if(metric==='bedtimetime'){
         // Usnutí — začátek nightsleep, jako minuty od půlnoci (normalizováno — večer>12h)
         const calEntries=(state.calData[k]||{}).entries||[];
-        const ns=calEntries.find(e=>e.type==='nightsleep');
+        const ns=findNightSleepEntry(calEntries);
         if(ns){const d=new Date(ns.ts);let mins=d.getHours()*60+d.getMinutes();if(mins<12*60)mins+=24*60;dayVal=mins*60000;count++;}
       } else if(metric==='food'){
         const fc=entries.filter(e=>e.type==='food').length;
@@ -5059,11 +5065,22 @@ function renderStatDetail(){
   }
 
   const maxV=Math.max(...nonZero);
-  // Y osa — noční spánek po 2h, denní spánek po 15min, ostatní po 1
+  const minV=Math.min(...nonZero);
+  // Y osa — noční spánek po 2h, denní spánek po 15min, clock časy po 1h
   const isNightSleep=metric==='nightsleep';
   const isClockTime=metric==='wakeuptime'||metric==='bedtimetime';
   const yStep=isNightSleep?2:isSleep?0.25:isClockTime?1:1;
-  const yMax=Math.ceil(maxV/yStep)*yStep;
+  // Pro clock metriky — zobraz jen interval kolem hodnot (±2h), ne celý den
+  let yMin=0,yMax;
+  if(isClockTime){
+    const avgV=nonZero.reduce((a,b)=>a+b,0)/nonZero.length;
+    const span=Math.max(maxV-minV,2); // min 2h span
+    yMin=Math.floor((avgV-span*0.7)/yStep)*yStep;
+    yMax=Math.ceil((avgV+span*0.7)/yStep)*yStep;
+    if(yMin<0)yMin=0;
+  } else {
+    yMax=Math.ceil(maxV/yStep)*yStep;
+  }
   const n=values.length;
 
   // Aktualizuj podtitul s obdobím
@@ -5078,18 +5095,17 @@ function renderStatDetail(){
   const chartW=W-YL-MR;
 
   const pX=i=>YL+(i/(n-1||1))*chartW;
-  const pY=v=>MT+(1-v/yMax)*(H-MT-MB);
+  const pY=v=>MT+(1-(v-yMin)/(yMax-yMin||1))*(H-MT-MB);
 
   // Y grid
   ctx.setLineDash([]);
-  for(let y=0;y<=yMax;y+=yStep){
+  for(let y=yMin;y<=yMax;y+=yStep){
     const py=pY(y);
     ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(YL,py);ctx.lineTo(W-MR,py);ctx.stroke();
     ctx.fillStyle='#c0a8a4';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='right';
     let lbl;
     if(isClockTime){
-      // y is in hours from midnight (e.g. 6.5 = 06:30, 22 = 22:00)
       const normalH=Math.round(y*60);const hh=Math.floor(normalH/60)%24;const mm=normalH%60;
       lbl=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
     } else {
