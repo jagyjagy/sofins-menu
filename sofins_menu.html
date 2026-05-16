@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.19 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.20 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -732,6 +732,19 @@ body[data-theme="neutral"]{background:#d0d0d0}
     <button onclick="planAddEntry('wakeup')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid var(--rose-mid);background:var(--rose-light);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">☀️</span>Probudila se</button>
     <button onclick="planAddEntry('nightsleep')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #c5c0e8;background:#f0ecff;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">🌙</span>Noční spánek</button>
   </div>
+</div></div></div>
+
+<!-- PLAN SIMPLE ADD MODAL -->
+<div class="modal-wrap" id="mPlanSimple"><div class="movl" onclick="closeModal('mPlanSimple')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+    <div class="mtitle" id="planSimpleTitle" style="margin:0">Přidat záznam</div>
+    <span id="planSimpleDay" style="font-size:13px;color:var(--text-3)"></span>
+  </div>
+  <input type="hidden" id="planSimpleType"/>
+  <div id="planSimpleBody"></div>
+  <button class="msave" onclick="savePlanSimple()">Uložit</button>
+  <button class="mcancel" onclick="closeModal('mPlanSimple')">Zrušit</button>
 </div></div></div>
 
 <!-- MODALS -->
@@ -3185,60 +3198,116 @@ function planAddEntry(type){
   }
 }
 
-let _planAddTargetDay=null;
+let _planAddDayKey=null;
 
-function _planAddSimple(dayKey,type,name,sub){
-  if(type==='wakeup'){
-    const existing=(state.calData[dayKey]||{}).entries||[];
-    if(existing.find(e=>e.type==='wakeup')){
-      alert('Záznam "Probudila se" v tento den už existuje. Klikni na něj pro úpravu.');
-      return;
-    }
+function planAddEntry(type){
+  const dayKey=document.getElementById('planAddDayKey').value;
+  closeModal('mPlanAdd');
+  if(!dayKey)return;
+  _planAddDayKey=dayKey;
+  if(type==='food'){
+    _planAddTargetDay=dayKey;
+    // Nastav čas na typický pro daný den
+    const[yr,mo,dy]=dayKey.split('-').map(Number);
+    const d=new Date(yr,mo-1,dy,9,0,0);
+    document.getElementById('foodTime').value='09:00';
+    openModal('mFood');
+  } else if(type==='breast'){
+    _planAddTargetDay=dayKey;
+    openModal('mBreast');
+  } else if(type==='sleep'||type==='wakeup'||type==='nightsleep'){
+    _openPlanSimpleModal(dayKey,type);
   }
-  const time=prompt('Čas záznamu (HH:MM):',type==='wakeup'?'07:00':'09:00');
-  if(!time)return;
-  const[hh,mm]=(time+':00').split(':').map(Number);
-  const[yr,mo,dy]=dayKey.split('-').map(Number);
-  const d=new Date(yr,mo-1,dy,hh,mm,0,0);
-  if(!state.calData[dayKey])state.calData[dayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-  state.calData[dayKey].entries.push({type,ts:d.getTime(),name,sub,reaction:false});
-  state.calData[dayKey].entries.sort((a,b)=>a.ts-b.ts);
-  saveAll();
-  selDay(yr,mo-1,dy);
 }
 
-function _planAddNightSleepDirect(dayKey){
+function _openPlanSimpleModal(dayKey,type){
+  const[yr,mo,dy]=dayKey.split('-').map(Number);
+  const d=new Date(yr,mo-1,dy);
+  const dayStr=d.getDate()+'.'+(d.getMonth()+1)+'.';
+  const titles={sleep:'Přidat spánek',wakeup:'Přidat probuzení',nightsleep:'Přidat noční spánek'};
+  // Kontroly duplicit
   const existing=(state.calData[dayKey]||{}).entries||[];
-  if(existing.find(e=>e.type==='nightsleep')){
+  if(type==='wakeup'&&existing.find(e=>e.type==='wakeup')){
+    alert('Záznam "Probudila se" v tento den už existuje. Klikni na něj pro úpravu.');
+    return;
+  }
+  if(type==='nightsleep'&&existing.find(e=>e.type==='nightsleep')){
     alert('Noční spánek v tento den už existuje. Klikni na záznam pro úpravu.');
     return;
   }
-  const startTime=prompt('Čas usnula (HH:MM):','20:00');
-  if(!startTime)return;
-  const endTime=prompt('Čas probudila se (HH:MM):','06:30');
-  if(!endTime)return;
-  const[yr,mo,dy]=dayKey.split('-').map(Number);
-  const[sh,sm]=(startTime+':00').split(':').map(Number);
-  const startD=new Date(yr,mo-1,dy,sh,sm,0,0);
-  const[eh,em]=(endTime+':00').split(':').map(Number);
-  const endD=new Date(yr,mo-1,dy,eh,em,0,0);
-  if(endD<=startD)endD.setDate(endD.getDate()+1);
-  const dur=endD-startD;
-  const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-  const durStr='celkem '+(h>0?h+'h ':'')+m+'min';
-  if(!state.calData[dayKey])state.calData[dayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-  state.calData[dayKey].entries.push({type:'nightsleep',ts:startD.getTime(),name:'Noční spánek',sub:fmtTime(startD.getTime())+'–'+fmtTime(endD.getTime())+'\n'+durStr,reaction:false});
-  state.calData[dayKey].entries.sort((a,b)=>a.ts-b.ts);
-  // Pokud konec nočního spánku je dnes, přidej wakeup do todayLog
-  const todayKey3=dateKey(TODAY);
-  if(dateKey(endD)===todayKey3){
-    state.todayLog=state.todayLog.filter(e=>e.type!=='wakeup');
-    state.todayLog.push({id:'wakeup-'+endD.getTime(),type:'wakeup',ts:endD.getTime(),name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});
+  let bodyHtml='';
+  if(type==='sleep'){
+    bodyHtml=`
+      <div class="mrow"><label>Začátek</label><input type="time" id="paStart" value="09:00"/></div>
+      <div class="mrow"><label>Konec</label><input type="time" id="paEnd" value="10:00"/></div>
+      <div class="mrow"><label>Poznámka</label><input type="text" id="paNote" placeholder="volitelně..."/></div>`;
+  } else if(type==='wakeup'){
+    bodyHtml=`<div class="mrow"><label>Čas probuzení</label><input type="time" id="paStart" value="07:00"/></div>`;
+  } else if(type==='nightsleep'){
+    bodyHtml=`
+      <div class="mrow"><label>Usnula</label><input type="time" id="paStart" value="20:00"/></div>
+      <div class="mrow"><label>Probudila se</label><input type="time" id="paEnd" value="06:30"/></div>`;
   }
+  const modal=document.getElementById('mPlanSimple');
+  if(!modal)return;
+  document.getElementById('planSimpleTitle').textContent=titles[type]||'Přidat záznam';
+  document.getElementById('planSimpleDay').textContent=dayStr;
+  document.getElementById('planSimpleBody').innerHTML=bodyHtml;
+  document.getElementById('planSimpleType').value=type;
+  openModal('mPlanSimple');
+}
+
+function savePlanSimple(){
+  const type=document.getElementById('planSimpleType').value;
+  const dayKey=_planAddDayKey;
+  if(!dayKey)return;
+  const[yr,mo,dy]=dayKey.split('-').map(Number);
+  const startVal=document.getElementById('paStart')?.value||'09:00';
+  const endVal=document.getElementById('paEnd')?.value||'';
+  const noteVal=document.getElementById('paNote')?.value||'';
+  const[sh,sm]=startVal.split(':').map(Number);
+  const startD=new Date(yr,mo-1,dy,sh,sm,0,0);
+  if(!state.calData[dayKey])state.calData[dayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+  if(type==='sleep'){
+    const[eh,em]=(endVal||'10:00').split(':').map(Number);
+    const endD=new Date(yr,mo-1,dy,eh,em,0,0);
+    if(endD<=startD)endD.setDate(endD.getDate()+1);
+    const dur=endD-startD;
+    const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+    const sub=startVal+' – '+endVal+' · '+(h>0?h+'h ':'')+m+'min'+(noteVal?' · '+noteVal:'');
+    state.calData[dayKey].entries.push({id:'s'+startD.getTime(),type:'sleep',ts:startD.getTime(),name:'Spánek',sub,reaction:false});
+  } else if(type==='wakeup'){
+    state.calData[dayKey].entries.push({id:'w'+startD.getTime(),type:'wakeup',ts:startD.getTime(),name:'Probudila se',sub:'vstávání',reaction:false});
+    // Aktualizuj noční spánek předchozího dne
+    const prevD=new Date(yr,mo-1,dy-1);
+    const prevKey=dateKey(prevD);
+    const ns=findNightSleepEntry((state.calData[prevKey]||{}).entries||[]);
+    if(ns&&!ns._synthetic){
+      const dur=startD.getTime()-ns.ts;
+      const h=Math.floor(dur/3600000),m2=Math.floor((dur%3600000)/60000);
+      ns.sub=fmtTime(ns.ts)+'–'+startVal+'\ncelkem '+(h>0?h+'h ':'')+m2+'min';
+    }
+  } else if(type==='nightsleep'){
+    const[eh,em]=(endVal||'06:30').split(':').map(Number);
+    const endD=new Date(yr,mo-1,dy,eh,em,0,0);
+    if(endD<=startD)endD.setDate(endD.getDate()+1);
+    const dur=endD-startD;
+    const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+    const sub=startVal+'–'+endVal+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
+    state.calData[dayKey].entries.push({id:'ns'+startD.getTime(),type:'nightsleep',ts:startD.getTime(),name:'Noční spánek',sub,reaction:false});
+    // Přidej wakeup do následujícího dne v calData
+    const nextKey=dateKey(endD);
+    if(nextKey!==dayKey){
+      if(!state.calData[nextKey])state.calData[nextKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+      const hasWu=(state.calData[nextKey].entries||[]).some(e=>e.type==='wakeup');
+      if(!hasWu)state.calData[nextKey].entries.push({id:'w'+endD.getTime(),type:'wakeup',ts:endD.getTime(),name:'Probudila se',sub:'vstávání',reaction:false});
+    }
+  }
+  state.calData[dayKey].entries.sort((a,b)=>a.ts-b.ts);
+  closeModal('mPlanSimple');
   saveAll();
   selDay(yr,mo-1,dy);
 }
-
 function closePlanDetail(){planDetOpen=false;planSelDate=null;document.getElementById('planDetail').style.display='none';renderCal();}
 function setCalView(v){
   calView=v;
