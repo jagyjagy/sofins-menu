@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.12 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.13 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -2584,7 +2584,7 @@ function deleteReaction(){
 // Wakeup = konec nočního spánku, nesmí být jiný čas
 function syncNightSleepWakeups(){
   const todayKey=dateKey(TODAY);
-  // Hledej noční spánek z předchozích 2 dnů
+  // Hledej noční spánek z předchozích 2 dnů — pro dnešní todayLog
   for(let d=1;d<=2;d++){
     const past=new Date(Date.now()-d*86400000);
     const pastKey=dateKey(past);
@@ -2594,20 +2594,35 @@ function syncNightSleepWakeups(){
     if(!endTs||endTs<=ns.ts)continue;
     const endDay=dateKey(new Date(endTs));
     if(endDay!==todayKey)continue;
-    // Noční spánek z předchozího dne končí dnes
-    // Zkontroluj/oprav wakeup v todayLog
     const existingWakeup=state.todayLog.find(e=>e.type==='wakeup');
     if(!existingWakeup){
-      // Přidej wakeup se správným časem — BEZ saveAll
       state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,
         name:'Probudila se',sub:'vstávání',reaction:false,by:state.todayLog[0]?.by||'mama'});
       state.todayLog.sort((a,b)=>a.ts-b.ts);
     } else if(Math.abs(existingWakeup.ts-endTs)>60000){
-      // Wakeup má jiný čas než konec nočního spánku — oprav ho (tiše, bez saveAll)
       existingWakeup.ts=endTs;
     }
-    break; // Našli jsme relevantní noční spánek
+    break;
   }
+  // Oprav wakeup v calData pro minulé dny kde nesedí s nočním spánkem
+  let needSave=false;
+  Object.keys(state.calData).forEach(k=>{
+    if(k===todayKey)return;
+    const entries=state.calData[k].entries||[];
+    const wu=entries.find(e=>e.type==='wakeup');
+    if(!wu)return;
+    const prevD=new Date(k);prevD.setDate(prevD.getDate()-1);
+    const prevKey=dateKey(prevD);
+    const ns=findNightSleepEntry((state.calData[prevKey]||{}).entries||[]);
+    if(!ns||ns._synthetic||ns.live)return;
+    const endTs=getSleepEndTs(ns);
+    if(!endTs||endTs<=ns.ts)return;
+    if(dateKey(new Date(endTs))===k&&Math.abs(wu.ts-endTs)>60000){
+      wu.ts=endTs;
+      needSave=true;
+    }
+  });
+  if(needSave)saveAll();
 }
 
 function migrateOldNightSleepData(){
