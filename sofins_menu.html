@@ -696,6 +696,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <div class="set-sec" style="margin-top:8px">
         <div class="set-card">
           <div class="set-row" onclick="exportAlergolog()"><div class="si si-s">📤</div><div class="set-lbl"><div class="set-lbl-t">Export pro alergologa</div><div class="set-lbl-s">seznam reakcí ke kopírování</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
+          <div class="set-row" onclick="restoreFromLocalStorage()" style="cursor:pointer"><div class="si" style="background:#e8f5e8">🔄</div><div class="set-lbl"><div class="set-lbl-t" style="color:#3a6a3a">Obnovit z lokálních dat</div><div class="set-lbl-s">přepíše Firebase lokálními daty z tohoto telefonu</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
@@ -1372,8 +1373,7 @@ function applyRemoteState(remote) {
     });
   }
   if (remote.nightSleep!==undefined) state.nightSleep = remote.nightSleep;
-  // Migruj stará bedtime→nightsleep data (bezpečná — jen přidává, spustí se jednou)
-  setTimeout(()=>migrateOldNightSleepData(),500);
+  // Migrace odstraněna
   const sleepNowActive = state.sleep && state.sleep.active;
   if (sleepWasActive !== sleepNowActive) updateSleepUI();
   renderAll();
@@ -1693,6 +1693,7 @@ function renderStatus(){
 
 
 function renderTodayList(){
+  syncNightSleepWakeups(); // Zajisti správný wakeup čas z nočního spánku
   const sorted=[...state.todayLog].sort((a,b)=>b.ts-a.ts);
   const byMap={'mama':'who-mama','tata':'who-tata'};
   const el=document.getElementById('todayList');
@@ -2346,26 +2347,41 @@ function saveEditEntry(){
   if(e.type==='wakeup'||e.type==='bedtime'){
     const t=document.getElementById('wbEditTime')?.value;
     if(t){
-      e.ts=parseTimeToTs(t);
-      // Wakeup → aktualizuj konec nightsleep v předchozím dni (nebo v calData dnes)
+      // Použij správné datum — buď z currentEditingCalEntry nebo z origTs
+      const baseDate=new Date(origTs);
+      const[hh,mm]=t.split(':').map(Number);
+      baseDate.setHours(hh,mm,0,0);
+      const newTs=baseDate.getTime();
+      e.ts=newTs;
+      // Pokud je to calData entry, aktualizuj originál
+      if(currentEditingCalEntry){
+        const dk=currentEditingCalEntry.dayKey;
+        const dayEntries=(state.calData[dk]||{}).entries||[];
+        const orig=dayEntries.find(x=>x.ts===currentEditingCalEntry.ts&&x.type==='wakeup');
+        if(orig)orig.ts=newTs;
+      } else {
+        // todayLog
+        const wu=state.todayLog.find(x=>x.type==='wakeup');
+        if(wu)wu.ts=newTs;
+      }
+      // Wakeup → aktualizuj konec nightsleep v předchozím dni
       if(e.type==='wakeup'){
-        const newWakeTs=e.ts;
-        // Hledej nightsleep v předchozím dni calData
-        const prevD=new Date(TODAY);prevD.setDate(prevD.getDate()-1);
+        const prevD=new Date(baseDate);prevD.setDate(prevD.getDate()-1);
         const prevKey=dateKey(prevD);
         const todayKey2=dateKey(TODAY);
-        let nsEntry=null,nsDay=null;
-        // Hledej v calData včerejška i dnešku
-        for(const dk of [prevKey,todayKey2]){
+        const cdk=currentEditingCalEntry?.dayKey;
+        // Hledej nightsleep v dni před tímto wakeupem
+        const searchKeys=cdk?[dateKey(new Date(new Date(cdk).getTime()-86400000)),cdk]:[prevKey,todayKey2];
+        for(const dk of searchKeys){
           const ns=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
-          if(ns&&!ns._synthetic){nsEntry=ns;nsDay=dk;break;}
-        }
-        if(nsEntry){
-          const startTime=fmtTime(nsEntry.ts);
-          const endTime=fmtTime(newWakeTs);
-          const dur=newWakeTs-nsEntry.ts;
-          const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-          nsEntry.sub=startTime+'–'+endTime+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
+          if(ns&&!ns._synthetic){
+            const startTime=fmtTime(ns.ts);
+            const endTime=t;
+            const dur=newTs-ns.ts;
+            const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
+            ns.sub=startTime+'–'+endTime+'\ncelkem '+(h>0?h+'h ':'')+m+'min';
+            break;
+          }
         }
       }
     }
@@ -2565,28 +2581,33 @@ function deleteReaction(){
 // Sync today's log entries into calData so Plan shows them immediately
 // Migrace starých dat: bedtime+wakeup → nightsleep (BEZPEČNÁ — jen přidává, nic nemaže)
 // Synchronizuj wakeup záznamy z nightsleep — POUZE pro zobrazení, NESAVUJE
+// Wakeup = konec nočního spánku, nesmí být jiný čas
 function syncNightSleepWakeups(){
   const todayKey=dateKey(TODAY);
-  const sortedKeys=Object.keys(state.calData).sort();
-  sortedKeys.forEach(k=>{
-    const entries=state.calData[k].entries||[];
-    const ns=findNightSleepEntry(entries);
-    if(!ns||ns._synthetic||ns.live)return;
+  // Hledej noční spánek z předchozích 2 dnů
+  for(let d=1;d<=2;d++){
+    const past=new Date(Date.now()-d*86400000);
+    const pastKey=dateKey(past);
+    const ns=findNightSleepEntry((state.calData[pastKey]||{}).entries||[]);
+    if(!ns||ns._synthetic||ns.live)continue;
     const endTs=getSleepEndTs(ns);
-    if(!endTs||endTs<=ns.ts)return;
+    if(!endTs||endTs<=ns.ts)continue;
     const endDay=dateKey(new Date(endTs));
-    if(endDay===k)return;
-    if(endDay===todayKey){
-      const hasWakeup=state.todayLog.some(e=>e.type==='wakeup');
-      if(!hasWakeup){
-        state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,
-          name:'Probudila se',sub:'vstávání',reaction:false,by:state.todayLog[0]?.by||'mama'});
-        state.todayLog.sort((a,b)=>a.ts-b.ts);
-        // NESAVUJEME — uložení je jen explicitní akcí uživatele nebo po endNightSleep
-      }
+    if(endDay!==todayKey)continue;
+    // Noční spánek z předchozího dne končí dnes
+    // Zkontroluj/oprav wakeup v todayLog
+    const existingWakeup=state.todayLog.find(e=>e.type==='wakeup');
+    if(!existingWakeup){
+      // Přidej wakeup se správným časem — BEZ saveAll
+      state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,
+        name:'Probudila se',sub:'vstávání',reaction:false,by:state.todayLog[0]?.by||'mama'});
+      state.todayLog.sort((a,b)=>a.ts-b.ts);
+    } else if(Math.abs(existingWakeup.ts-endTs)>60000){
+      // Wakeup má jiný čas než konec nočního spánku — oprav ho (tiše, bez saveAll)
+      existingWakeup.ts=endTs;
     }
-    // Nezapisujeme do calData jiných dnů — to se děje jen přes endNightSleep nebo migraci
-  });
+    break; // Našli jsme relevantní noční spánek
+  }
 }
 
 function migrateOldNightSleepData(){
@@ -3659,8 +3680,7 @@ if(savedState){
     syncTodayToCalData();
     // Aplikuj téma hned po načtení
     applyTheme(state.settings.theme||state.settings.gender);
-    // Migruj stará data
-    migrateOldNightSleepData();
+    // Migrace odstraněna — bezpečnější je bez automatických konverzí
   }catch(e){seedCalData();}
 } else {
   seedCalData();
@@ -3953,6 +3973,24 @@ function deleteBrand(idx){
 // ============================================================
 // SMAZAT VŠECHNA DATA
 // ============================================================
+function restoreFromLocalStorage(){
+  if(!confirm('Přepsat Firebase daty z tohoto telefonu?\n\nToto obnoví záznamy uložené lokálně na tomto zařízení.'))return;
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw){alert('Žádná lokální data nenalezena.');return;}
+    const s=JSON.parse(raw);
+    // Aktualizuj timestamp aby Firebase přijal
+    s.ts=Date.now();
+    // Ulož do state
+    Object.assign(state,s);
+    state.ts=s.ts;
+    // Přepiš Firebase
+    fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)})
+      .then(()=>{alert('Obnoveno! Data z tohoto telefonu byla uložena do Firebase.');renderAll();})
+      .catch(()=>alert('Chyba při ukládání do Firebase.'));
+  }catch(e){alert('Chyba: '+e.message);}
+}
+
 function deleteAllData(){
   if(!confirm('Opravdu smazat VŠECHNA data?\nToto nelze vrátit zpět.'))return;
   if(!confirm('Jsi si jistý/á? Smažou se všechny záznamy, mrazák, potraviny i nastavení.'))return;
