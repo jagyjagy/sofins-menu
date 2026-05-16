@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.16 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.17 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1004,7 +1004,10 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <button class="type-btn" onclick="selType(this)">✅ Bez reakce</button>
     </div>
   </div>
-  <div class="mrow"><label>Poznámka</label><input type="text" id="efNote" placeholder="volitelně..."/></div>
+  <div style="display:flex;gap:8px;padding:0 0 2px">
+    <div class="mrow" style="flex:1;margin:0"><label>Váha (g)</label><input type="number" id="efGrams" placeholder="volitelně" min="1" max="999" step="1"/></div>
+    <div class="mrow" style="flex:1;margin:0"><label>Poznámka</label><input type="text" id="efNote" placeholder="volitelně..."/></div>
+  </div>
   <button class="msave" onclick="saveEditFood()">Uložit změny</button>
   <button class="mcancel" onclick="closeModal('mEditFood')">Zrušit</button>
 </div></div></div>
@@ -2221,11 +2224,20 @@ function openEditEntryModal(e){
     if(foodSubPart.includes('🏪')&&foodSubPart.includes('·')){
       foodSubPart=foodSubPart.split('·').slice(1).join('·').trim();
     }
-    foodSubPart.split(',').map(s=>s.trim()).filter(s=>s&&!s.startsWith('🏪')).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
+    // Parsuj existující váhu a poznámku ze sub
+    const subParts2=(e.sub||'').split('·').map(s=>s.trim()).filter(s=>s&&!s.startsWith('🏪'));
+    const gramsMatch=subParts2.find(s=>/^\d+g$/.test(s));
+    const existingGrams=gramsMatch?gramsMatch.replace('g',''):'';
+    const existingNote2=subParts2.filter(s=>!/^\d+g$/.test(s)&&s!==foodSubPart.split('·')[0]?.trim()).join(' · ');
+    foodSubPart.split(',').map(s=>s.trim()).filter(s=>s&&!s.startsWith('🏪')&&!/^\d+g$/.test(s)).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
     html+=`<div class="mrow"><label>Složky</label>
       <input type="text" id="editIngInput" placeholder="začni psát..." oninput="showEditSuggest(this.value)" autocomplete="off"/>
       <div class="fsug" id="editFoodSug" style="display:none"></div>
       <div class="sel-foods" id="editSelFoods"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="mrow" style="flex:1;margin:0"><label>Váha (g)</label><input type="number" id="editFoodGrams" value="${existingGrams}" placeholder="volitelně" min="1" max="999" step="1"/></div>
+      <div class="mrow" style="flex:1;margin:0"><label>Poznámka</label><input type="text" id="editFoodNote" value="${existingNote2}" placeholder="volitelně..."/></div>
     </div>`;
   } else if(e.type==='breast'){
     const sides=['Levá','Pravá','Obě'];
@@ -2398,7 +2410,11 @@ function saveEditEntry(){
     if(timeInp)e.ts=parseTimeToTs(timeInp.value);
     const typeBtn=document.querySelector('#mEditEntry .type-btn.sel');
     if(typeBtn&&!typeBtn.id.startsWith('sleepEdit'))e.name=typeBtn.textContent;
-    if(editSelFoods.length)e.sub=editSelFoods.join(', ');
+    const editGrams=document.getElementById('editFoodGrams')?.value.trim()||'';
+    const editNote=document.getElementById('editFoodNote')?.value.trim()||'';
+    if(editSelFoods.length){
+      e.sub=[editSelFoods.join(', '),editGrams?editGrams+'g':'',editNote].filter(Boolean).join(' · ');
+    }
     editSelFoods=[];
   } else if(e.type==='breast'){
     if(timeInp)e.ts=parseTimeToTs(timeInp.value);
