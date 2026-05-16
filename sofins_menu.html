@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.14 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.16 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -766,7 +766,10 @@ body[data-theme="neutral"]{background:#d0d0d0}
   </div>
   <div id="fzSugBox" class="fz-sug-box"><p>❄️ Dostupné v mrazáku — použít?</p><div id="fzSugItems"></div></div>
   <div class="mrow"><label>Čas</label><input type="time" id="foodTime" value="12:00"/></div>
-  <div class="mrow"><label>Poznámka</label><input type="text" id="foodNote" placeholder="volitelně..."/></div>
+  <div style="display:flex;gap:8px;padding:0 0 2px">
+    <div class="mrow" style="flex:1;margin:0"><label>Váha (g)</label><input type="number" id="foodGrams" placeholder="volitelně" min="1" max="999" step="1"/></div>
+    <div class="mrow" style="flex:1;margin:0"><label>Poznámka</label><input type="text" id="foodNote" placeholder="volitelně..."/></div>
+  </div>
   <button class="msave" onclick="saveFood()">Uložit jídlo</button>
   <button class="mcancel" onclick="closeModal('mFood')">Zrušit</button>
 </div></div></div>
@@ -1843,7 +1846,8 @@ function saveFood(){
   const ts=parseTimeToTs(document.getElementById('foodTime').value);
   const brand=document.getElementById('brandInput')?.value.trim()||'';
   const note=document.getElementById('foodNote')?.value.trim()||'';
-  const sub=[brand?'🏪 '+brand:'',selFoods.join(', '),note].filter(Boolean).join(' · ');
+  const grams=document.getElementById('foodGrams')?.value.trim()||'';
+  const sub=[brand?'🏪 '+brand:'',selFoods.join(', '),grams?grams+'g':'',note].filter(Boolean).join(' · ');
   // Přidat do minulého dne z plánu?
   if(_planAddTargetDay){
     const k=_planAddTargetDay;_planAddTargetDay=null;
@@ -3611,6 +3615,7 @@ function openModal(id){
     document.getElementById('fzSugBox').style.display='none';
     document.getElementById('rowBrand').style.display='none';
     const fn=document.getElementById('foodNote');if(fn)fn.value='';
+    const fg=document.getElementById('foodGrams');if(fg)fg.value='';
     const now=new Date();
     document.getElementById('foodTime').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
     // Předvyplnění typu podle času dne
