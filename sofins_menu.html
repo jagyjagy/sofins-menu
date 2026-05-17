@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.20 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.21 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -714,6 +714,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
+
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -721,6 +722,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
+
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -735,6 +737,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN SIMPLE ADD MODAL -->
+
 <div class="modal-wrap" id="mPlanSimple"><div class="movl" onclick="closeModal('mPlanSimple')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
@@ -937,6 +940,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
+
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -3199,12 +3203,14 @@ function planAddEntry(type){
 }
 
 let _planAddDayKey=null;
+let _planAddTargetDay=null; // alias používaný v saveFood/saveBreast
 
 function planAddEntry(type){
   const dayKey=document.getElementById('planAddDayKey').value;
   closeModal('mPlanAdd');
   if(!dayKey)return;
   _planAddDayKey=dayKey;
+  _planAddTargetDay=dayKey;
   if(type==='food'){
     _planAddTargetDay=dayKey;
     // Nastav čas na typický pro daný den
