@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.21 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.22 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3790,6 +3790,19 @@ if(savedState){
       if(e.type==='nightsleep')return state.nightSleep&&state.nightSleep.active;
       return e.ts>staleCutoff;
     });
+    // Pokud nightSleep.active ale calData má ukončený nightsleep → resetuj
+    if(state.nightSleep&&state.nightSleep.active){
+      const yesterK=dateKey(new Date(Date.now()-86400000));
+      const todayK=dateKey(TODAY);
+      for(const dk of [yesterK,todayK]){
+        const ns=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
+        if(ns&&!ns.live&&getSleepEndTs(ns)>0){
+          state.nightSleep={active:false,startTs:null};
+          state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
+          break;
+        }
+      }
+    }
     // ihned zkontroluj rollover
     syncTodayToCalData();
     // Aplikuj téma hned po načtení
