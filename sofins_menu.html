@@ -342,7 +342,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 /* Stories */
 .story-bubble{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;width:58px}
 .story-ring{width:52px;height:52px;border-radius:50%;padding:2.5px;background:var(--rose-light)}
-.story-ring.unread{background:linear-gradient(135deg,#e8748a,#d4948a,#c9857a)}
+.story-ring.unread{background:linear-gradient(135deg,#e05070,#d4748a,#c9857a);padding:3px;box-shadow:0 0 0 1.5px #e05070}
 .story-ring.read{background:#ddd}
 .story-ring.sofinka{background:linear-gradient(135deg,#d4948a,#c9857a)}
 .story-inner{width:100%;height:100%;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;border:2px solid var(--surface)}
@@ -700,7 +700,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.22 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.23 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -714,7 +714,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
-
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -722,7 +721,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
-
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -737,7 +735,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN SIMPLE ADD MODAL -->
-
 <div class="modal-wrap" id="mPlanSimple"><div class="movl" onclick="closeModal('mPlanSimple')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
@@ -940,7 +937,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
-
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -962,7 +958,11 @@ body[data-theme="neutral"]{background:#d0d0d0}
 
 <div class="modal-wrap" id="mStatDetail"><div class="movl" onclick="closeModal('mStatDetail')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
   <div class="mhandle"></div>
-  <div class="mtitle" id="sdTitle" style="margin-bottom:10px"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <button onclick="navStatDetail(-1)" style="width:28px;height:28px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);font-size:14px;cursor:pointer;flex-shrink:0">‹</button>
+    <div class="mtitle" id="sdTitle" style="margin:0;flex:1;font-size:15px;text-align:center"></div>
+    <button onclick="navStatDetail(1)" style="width:28px;height:28px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);font-size:14px;cursor:pointer;flex-shrink:0">›</button>
+  </div>
   <div class="view-toggle" style="margin:0 0 14px">
     <button class="vt" id="sdW" onclick="setStatDetailView('week',this)">Týden</button>
     <button class="vt" id="sdM" onclick="setStatDetailView('month',this)">Měsíc</button>
@@ -1743,6 +1743,15 @@ function renderTodayList(){
       const parts=(e.sub||'').split('·');
       subText=parts.slice(1).map(s=>s.trim()).filter(Boolean).join(' · ')||e.sub;
     }
+    // Jídlo — oddělené zobrazení gramáže
+    if(e.type==='food'){
+      const parts=(e.sub||'').split('·').map(s=>s.trim()).filter(Boolean);
+      const gramsP=parts.find(p=>/^\d+g$/.test(p));
+      const otherParts=parts.filter(p=>!/^\d+g$/.test(p)&&!p.startsWith('🏪'));
+      const brandP=parts.find(p=>p.startsWith('🏪'));
+      const foodsNote=[brandP,...otherParts].filter(Boolean).join(' · ');
+      subText=foodsNote+(gramsP?` <span style="display:inline-block;background:#f0ece8;border-radius:6px;padding:0 5px;font-size:10px;color:var(--text-2);font-weight:500">${gramsP}</span>`:'');
+    }
     // Noční spánek — speciální zobrazení
     if(isNightSleep&&e.live){
       subText=e.sub||''; // "od 22:57 · probíhá"
@@ -1755,9 +1764,8 @@ function renderTodayList(){
         <div class="eicon ${ic}" style="${isNightSleep?'background:#e8e4f5':''}">${em}</div>
         <div class="einfo">
           <div class="ename" style="${isReaction?'color:var(--red);font-weight:600':''}">${e.name}</div>
-          <div class="esub">${subText}</div>
-          ${isNightSleep&&e.live?`<div class="esub" id="nsListTimer" style="color:#7a6fbf;font-size:10px;font-weight:500">—</div>`:''}
-        </div>
+          <div class="esub"${e.type==='food'?' style="overflow:visible"':''}>${subText}</div>
+          ${isNightSleep&&e.live?`<div class="esub" id="nsListTimer" style="color:#7a6fbf;font-size:10px;font-weight:500">—</div>`:''}        </div>
         <div class="eright">${who}${rd}${isNightSleep&&e.live?`<span class="livebadge" style="background:#c5c0e8;color:#3d3580">probíhá</span>`:(e.live?`<span class="livebadge" id="liveCardTimer">0:00</span>`:'')}<svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
       </div>
     </div>`;
@@ -4964,20 +4972,15 @@ function pickStoryCard(type){
   if(!seg)return null;
   const cards=seg[type]||[];
   if(!cards.length)return null;
-  // Přečtené karty pro tento segment
+  // Rotace podle dne — každý den jiná karta
+  const dayIndex=Math.floor(Date.now()/86400000);
   const usedKey=`sofin:usedCards:${seg.id}:${type}`;
   let used=[];
   try{used=JSON.parse(localStorage.getItem(usedKey)||'[]');}catch(e){}
-  // Filtruj nepřečtené
   let available=cards.filter(c=>!used.includes(c.id));
-  if(!available.length){
-    // Reset — všechny znovu
-    used=[];localStorage.removeItem(usedKey);
-    available=cards;
-  }
-  // Vyber první (nebo náhodnou)
-  const card=available[0];
-  // Označ jako použitou
+  if(!available.length){used=[];localStorage.removeItem(usedKey);available=cards;}
+  // Vyber podle dne (deterministicky ale rotující)
+  const card=available[dayIndex%available.length];
   used.push(card.id);
   localStorage.setItem(usedKey,JSON.stringify(used));
   return card;
@@ -5343,6 +5346,9 @@ function maybePublishActivityStory(){
 // ============================================================
 let statDetailMetric='sleep';
 let statDetailView='week';
+let statDetailWeekStart=getMonday(TODAY);
+let statDetailMonth=TODAY.getMonth();
+let statDetailYear=TODAY.getFullYear();
 
 const STAT_META={
   sleep:      {icon:'😴',label:'Průměrný spánek/den',color:'#7a8fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
@@ -5356,12 +5362,30 @@ const STAT_META={
 function openStatDetail(metric){
   statDetailMetric=metric;
   statDetailView='week';
+  // Inicializuj na aktuálně zobrazený týden/měsíc v plánu
+  statDetailWeekStart=new Date(curWeekStart);
+  statDetailMonth=curMonth;
+  statDetailYear=curYear;
   document.getElementById('sdTitle').textContent=(STAT_META[metric]?.icon||'')+'  '+(STAT_META[metric]?.label||metric);
   document.getElementById('sdW').classList.add('active');
   document.getElementById('sdM').classList.remove('active');
   document.getElementById('sdY').classList.remove('active');
   openModal('mStatDetail');
   setTimeout(()=>renderStatDetail(),50);
+}
+
+function navStatDetail(dir){
+  if(statDetailView==='week'){
+    statDetailWeekStart=new Date(statDetailWeekStart);
+    statDetailWeekStart.setDate(statDetailWeekStart.getDate()+dir*7);
+  } else if(statDetailView==='month'){
+    statDetailMonth+=dir;
+    if(statDetailMonth>11){statDetailMonth=0;statDetailYear++;}
+    if(statDetailMonth<0){statDetailMonth=11;statDetailYear--;}
+  } else {
+    statDetailYear+=dir;
+  }
+  renderStatDetail();
 }
 
 function setStatDetailView(v,btn){
@@ -5386,26 +5410,21 @@ function renderStatDetail(){
   const DAYS_SD=['Po','Út','St','Čt','Pá','So','Ne'];
 
   if(statDetailView==='week'){
-    // Denní hodnoty týdne synchronizovaného s plánem (curWeekStart)
-    const refMonday=new Date(curWeekStart);
+    const refMonday=new Date(statDetailWeekStart);
     for(let i=0;i<7;i++){
       const d=new Date(refMonday);d.setDate(refMonday.getDate()+i);
       periods.push({label:DAYS_SD[i],days:[d]});
     }
   } else if(statDetailView==='month'){
-    // Denní hodnoty měsíce synchronizovaného s plánem (curMonth/curYear)
-    const refYear=statsOffset!==0?now.getFullYear():curYear;
-    const refMonth=statsOffset!==0?now.getMonth()+statsOffset:curMonth;
-    const d0=new Date(refYear,refMonth,1);
+    const d0=new Date(statDetailYear,statDetailMonth,1);
     const dim=new Date(d0.getFullYear(),d0.getMonth()+1,0).getDate();
     for(let i=1;i<=dim;i++){
       const d=new Date(d0.getFullYear(),d0.getMonth(),i);
       periods.push({label:String(i),days:[d]});
     }
   } else {
-    // Rok — měsíční průměry (posledních 12 měsíců)
     for(let m=11;m>=0;m--){
-      const d=new Date(now.getFullYear(),now.getMonth()-m,1);
+      const d=new Date(statDetailYear,now.getMonth()-m,1);
       const dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
       const days=[];
       for(let i=1;i<=dim;i++)days.push(new Date(d.getFullYear(),d.getMonth(),i));
@@ -5497,17 +5516,16 @@ function renderStatDetail(){
   // Aktualizuj podtitul s obdobím
   const periodLabels={
     week:(()=>{
-      // Zobraz datum týdne
-      const mon=new Date(curWeekStart);
+      const mon=new Date(statDetailWeekStart);
       const sun=new Date(mon);sun.setDate(mon.getDate()+6);
       const fmt=d=>d.getDate()+'.'+(d.getMonth()+1)+'.';
       return fmt(mon)+'–'+fmt(sun);
     })(),
     month:(()=>{
-      const d=new Date(curYear,curMonth,1);
+      const d=new Date(statDetailYear,statDetailMonth,1);
       return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});
     })(),
-    year:'Rok'
+    year:String(statDetailYear)
   };
   const titleEl=document.getElementById('sdTitle');
   if(titleEl){
