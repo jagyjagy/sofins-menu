@@ -731,7 +731,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.42 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.44 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -5056,15 +5056,20 @@ function renderStats(){
   const maxSleepTimeIdx=sleepDayH.indexOf(Math.max(...sleepDayH));
 
   function barGraph(vals,color,refH,refLabel){
-    const mx=Math.max(...vals.filter(v=>v>0),refH||1,0.1);
+    const nonZero=vals.filter(v=>v>0);
+    const avg=nonZero.length?nonZero.reduce((a,b)=>a+b,0)/nonZero.length:0;
+    const mx=Math.max(...vals.filter(v=>v>0),refH||1,avg||0,0.1);
     const CH=60;
-    return '<div style="position:relative;display:flex;align-items:flex-end;gap:2px;height:'+(CH+16)+'px">'+
-      (refH?'<div style="position:absolute;left:0;right:0;bottom:calc('+Math.round((refH/mx)*CH)+'px + 16px);border-top:1.5px dashed rgba(0,0,0,.2)"><span style="position:absolute;right:0;top:-10px;font-size:8px;color:rgba(0,0,0,.35)">'+refLabel+'</span></div>':'')+
+    const refPct=refH?Math.round((refH/mx)*CH):null;
+    const avgPct=avg?Math.round((avg/mx)*CH):null;
+    const refLine=refPct?'<div style="position:absolute;left:0;right:0;bottom:calc('+refPct+'px + 16px);border-top:1.5px dashed rgba(0,0,0,.2);z-index:1"><span style="position:absolute;right:0;top:-10px;font-size:8px;color:rgba(0,0,0,.35)">'+refLabel+' '+refH+'h</span></div>':'';
+    const avgLine=avgPct?'<div style="position:absolute;left:0;right:0;bottom:calc('+avgPct+'px + 16px);border-top:1.5px solid '+color+';opacity:.5;z-index:1"><span style="position:absolute;left:0;top:-10px;font-size:8px;color:'+color+'">\u2300 '+(Math.round(avg*10)/10)+'h</span></div>':'';
+    return '<div style="position:relative;display:flex;align-items:flex-end;gap:2px;height:'+(CH+16)+'px">'+refLine+avgLine+
       vals.map((v,i)=>{
         const h=v>0?Math.max(4,Math.round((v/mx)*CH)):2;
         const isT=dateKey(days[i])===dateKey(TODAY);
         return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0">'+
-          '<div style="width:100%;max-width:22px;border-radius:4px 4px 0 0;background:'+(v>0?color:'rgba(0,0,0,.08)')+';height:'+h+'px'+(isT?';outline:2px solid '+color+';outline-offset:1px':'')+'"></div>'+
+          '<div style="width:100%;max-width:22px;border-radius:4px 4px 0 0;background:'+(v>0?color:'rgba(0,0,0,.08)')+';height:'+h+'px'+(isT?';outline:2px solid '+color+';outline-offset:1px':'')+';position:relative;z-index:2"></div>'+
           '<div style="font-size:7.5px;color:var(--text-3);white-space:nowrap">'+dayLabels[i]+'</div>'+
           '</div>';
       }).join('')+'</div>';
@@ -5091,17 +5096,17 @@ function renderStats(){
     '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Denní spánek</div></div>'+
   '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'breast\')">'+
     '<div style="font-size:16px;margin-bottom:2px">🤱</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+breastCount+'×</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Kojení</div></div>'+
+    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(avgBreast?fmtNum(avgBreast,1)+'×':'—')+'</div>'+
+    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Kojení / den</div></div>'+
   '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'food\')">'+
     '<div style="font-size:16px;margin-bottom:2px">🍽</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+foodCount+'×</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Jídla</div></div></div>'+
+    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(avgFood?fmtNum(avgFood,1)+'×':'—')+'</div>'+
+    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Jídla / den</div></div></div>'+
   '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'+
   '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:10px">'+
     '<div style="font-size:9px;color:var(--text-3);margin-bottom:3px">🥣 Nové pot.</div>'+
     '<div style="font-size:17px;font-weight:700">'+newFoods.size+'</div>'+
-    '<div style="font-size:8px;color:var(--text-3)">'+wkStr+'</div></div>'+
+    '<div style="font-size:8px;color:var(--text-2);margin-top:2px;line-height:1.4;word-break:break-word">'+(newFoods.size?[...newFoods].slice(0,3).join(', ')+(newFoods.size>3?' +'+(newFoods.size-3):''):'—')+'</div></div>'+
   '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:10px">'+
     '<div style="font-size:9px;color:var(--text-3);margin-bottom:3px">⚠️ Reakce</div>'+
     '<div style="font-size:17px;font-weight:700;color:'+(reactions?'var(--red)':'var(--text)')+'">'+reactions+'</div>'+
@@ -5156,8 +5161,12 @@ function renderStats(){
         wGainHtml+
         (wLatest.cm?'<span style="font-size:11px;color:var(--text-3)">'+wLatest.cm+' cm</span>':'')+
       '</div>'+
-      '<canvas id="weightInlineCanvas" style="width:100%;height:80px;border-radius:8px;background:#f9f7f5;display:block;margin-bottom:10px"></canvas>'+
-      '<div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Záznamy</div>'+
+      '<canvas id="weightInlineCanvas" style="width:100%;height:160px;border-radius:8px;background:#f9f7f5;display:block;margin-bottom:10px"></canvas>'+
+      '<div onclick="document.getElementById(\'wDiaryWrap\').style.display=document.getElementById(\'wDiaryWrap\').style.display===\'none\'?\'block\':\'none\'" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 0">'+
+        '<div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em">Záznamy</div>'+
+        '<span style="font-size:12px;color:var(--text-3)">▼</span>'+
+      '</div>'+
+      '<div id="wDiaryWrap" style="display:none">'+
       allWeightSorted.slice().reverse().map((w,ri)=>{
         const realIdx=allWeightSorted.length-1-ri;
         const prev=realIdx>0?allWeightSorted[realIdx-1]:null;
@@ -5176,29 +5185,53 @@ function renderStats(){
             '<button onclick="deleteWeightEntry('+realIdx+')" style="font-size:11px;padding:2px 7px;border-radius:7px;border:.5px solid #f09595;background:var(--red-bg);color:var(--red);cursor:pointer">🗑</button>'+
           '</div>'+
         '</div>';
-      }).join('')
+      }).join('')+
+      '</div>'
     :'<div style="text-align:center;color:var(--text-3);font-size:13px;padding:16px 0">Zatím žádné záznamy váhy</div>')+
   '</div>';
 
-  // Vykresli mini váhový graf
-  if(allWeightSorted.length>1){
+  // Váhový graf s WHO křivkou
+  if(allWeightSorted.length>0){
     setTimeout(()=>{
       const canvas=document.getElementById('weightInlineCanvas');
       if(!canvas)return;
       const dpr=window.devicePixelRatio||1;
-      const W=canvas.offsetWidth,H=80;
+      const W=canvas.offsetWidth,H=160;
       canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.height=H+'px';
       const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
-      const kgs=allWeightSorted.map(w=>w.kg);
-      const minKg=Math.min(...kgs)-0.2,maxKg=Math.max(...kgs)+0.2;
-      const xP=i=>8+(W-16)*i/(allWeightSorted.length-1);
-      const yP=kg=>H-8-((kg-minKg)/(maxKg-minKg))*(H-16);
-      ctx.beginPath();ctx.strokeStyle='#5a8a5a';ctx.lineWidth=2;ctx.lineJoin='round';
-      allWeightSorted.forEach((w,i)=>i===0?ctx.moveTo(xP(i),yP(w.kg)):ctx.lineTo(xP(i),yP(w.kg)));
-      ctx.stroke();
-      allWeightSorted.forEach((w,i)=>{ctx.beginPath();ctx.fillStyle='#5a8a5a';ctx.arc(xP(i),yP(w.kg),3,0,Math.PI*2);ctx.fill();});
-      ctx.fillStyle='#8a8a8a';ctx.font='8px -apple-system,sans-serif';ctx.textAlign='center';
-      allWeightSorted.forEach((w,i)=>{if(i===0||i===allWeightSorted.length-1||allWeightSorted.length<=5){const d=new Date(w.date+' 12:00');ctx.fillText(d.getDate()+'.'+(d.getMonth()+1)+'.',xP(i),H-1);}});
+      const birth=state.settings.birth;
+      const ML=28,MR=8,MT=8,MB=18;
+      const CW=W-ML-MR,CH=H-MT-MB;
+      const maxMonth=24;
+      const minKg=1.5,maxKg=16;
+      const xP=m=>ML+m/maxMonth*CW;
+      const yP=kg=>MT+(1-(kg-minKg)/(maxKg-minKg))*CH;
+      // WHO percentiles p3,p15,p50,p85,p97 pro dívky
+      const WHO={0:[2.4,2.8,3.2,3.7,4.2],1:[3.2,3.6,4.2,4.8,5.5],2:[4.0,4.5,5.1,5.8,6.6],3:[4.6,5.2,5.8,6.6,7.5],4:[5.1,5.7,6.4,7.3,8.2],5:[5.5,6.1,6.9,7.8,8.8],6:[5.7,6.5,7.3,8.2,9.3],7:[6.0,6.7,7.6,8.6,9.7],8:[6.2,7.0,7.9,8.9,10.0],9:[6.4,7.2,8.2,9.2,10.4],10:[6.6,7.5,8.5,9.5,10.7],11:[6.8,7.7,8.7,9.8,11.0],12:[7.0,7.9,9.0,10.1,11.3],14:[7.4,8.3,9.4,10.6,11.9],16:[7.7,8.7,9.8,11.1,12.5],18:[8.1,9.1,10.2,11.6,13.0],20:[8.4,9.4,10.6,12.0,13.5],22:[8.7,9.7,11.0,12.4,14.0],24:[9.0,10.1,11.5,12.9,14.5]};
+      const whoMs=Object.keys(WHO).map(Number).sort((a,b)=>a-b);
+      const pColors=['#c8d8b8','#a8c890','#5a8a5a','#a8c890','#c8d8b8'];
+      [0,1,2,3,4].forEach(pi=>{
+        ctx.beginPath();ctx.strokeStyle=pColors[pi];ctx.lineWidth=pi===2?1.5:1;ctx.setLineDash(pi===2?[]:[3,3]);
+        whoMs.forEach((m,i)=>{const kg=WHO[m][pi];i===0?ctx.moveTo(xP(m),yP(kg)):ctx.lineTo(xP(m),yP(kg));});
+        ctx.stroke();ctx.setLineDash([]);
+      });
+      // Y axis
+      ctx.fillStyle='#b0a8a4';ctx.font='8px -apple-system,sans-serif';ctx.textAlign='right';
+      [2,4,6,8,10,12,14].forEach(kg=>{if(kg>=minKg&&kg<=maxKg){ctx.fillText(kg+'kg',ML-2,yP(kg)+3);}});
+      // X axis
+      ctx.textAlign='center';ctx.fillStyle='#b0a8a4';
+      [0,6,12,18,24].forEach(m=>{ctx.fillText(m+'m',xP(m),H-3);});
+      // Reálná data
+      if(birth&&allWeightSorted.length>0){
+        const birthD=new Date(birth+' 12:00');
+        const wPoints=allWeightSorted.map(w=>({ageM:(new Date(w.date+' 12:00')-birthD)/(30.44*86400000),kg:w.kg})).filter(p=>p.ageM>=0&&p.ageM<=maxMonth);
+        if(wPoints.length>0){
+          ctx.beginPath();ctx.strokeStyle='#d4748a';ctx.lineWidth=2;ctx.lineJoin='round';
+          wPoints.forEach((p,i)=>i===0?ctx.moveTo(xP(p.ageM),yP(p.kg)):ctx.lineTo(xP(p.ageM),yP(p.kg)));
+          ctx.stroke();
+          wPoints.forEach(p=>{ctx.beginPath();ctx.fillStyle='#d4748a';ctx.arc(xP(p.ageM),yP(p.kg),3.5,0,Math.PI*2);ctx.fill();});
+        }
+      }
     },100);
   }
 }
