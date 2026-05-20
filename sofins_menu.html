@@ -692,7 +692,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.28 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.30 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -4683,48 +4683,131 @@ function renderStats(){
 
   const avgBreast=breastDays?breastCount/breastDays:0;
   const pAvgBreast=pBreastDays?pBreast/pBreastDays:0;
-
   const avgNightSleep=nightSleepDays?nightSleepMs/nightSleepDays:0;
+  const avgWakeupMin=wakeupDays?wakeupMins/wakeupDays:0;
+  const avgBedMin=nsBedDays?nsBedMins/nsBedDays:0;
+  const fmtHM=mins=>{if(!mins)return'—';const h=Math.floor(mins/60)%24,m=Math.round(mins%60);return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');};
+  const wkStr=statsView==='week'?'vs. min. týden':'vs. min. měsíc';
 
-  document.getElementById('statsContent').innerHTML=`
-    <div style="display:flex;gap:5px;margin-bottom:6px">
-      ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000),'sleep')}      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','','nightsleep')}
-      ${(()=>{
-        // Průměrné vstávání
-        const avgWakeupMin=wakeupDays?wakeupMins/wakeupDays:0;
-        const wh=Math.floor(avgWakeupMin/60),wm=Math.round(avgWakeupMin%60);
-        const wStr=avgWakeupMin?String(wh).padStart(2,'0')+':'+String(wm).padStart(2,'0'):'—';
-        // Průměrné usnutí
-        const avgBedMin=nsBedDays?nsBedMins/nsBedDays:0;
-        const bh=Math.floor(avgBedMin/60)%24,bm=Math.round(avgBedMin%60);
-        const bStr=nsBedDays?String(bh).padStart(2,'0')+':'+String(bm).padStart(2,'0'):'—';
-        return statCard('🌅','Průměrné vstávání',wStr,'','wakeuptime')+statCard('🌃','Průměrné usnutí',bStr,'','bedtimetime');
-      })()}
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${statCard('🍽','Jídla / den',avgFood?fmtNum(avgFood)+'×':'—',delta(avgFood,pAvgFood),'food')}
-      ${statCard('🤱','Kojení / den',avgBreast?fmtNum(avgBreast,1)+'×':'—',delta(avgBreast,pAvgBreast),'breast')}
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      ${reactionCard}
-      ${newFoods.size>0
-        ?`<div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;flex:1;min-width:0">
-          <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">🥣 Nové potraviny</div>
-          <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px">${newFoods.size}</div>
-          <div style="font-size:10px;color:var(--text-2);line-height:1.4">${[...newFoods].join(', ')}</div>
-        </div>`
-        :statCard('🥣','Nové pot.','0','')}
-    </div>
-    <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:4px">
-      ▲▼ = porovnání s předchozím ${statsView==='week'?'týdnem':'měsícem'} · klikni na kartu pro vývoj
-    </div>
-    <div style="margin-top:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">⚖️ Váha</div>
-        <button onclick="openModal('mWeight')" style="width:26px;height:26px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer">+</button>
-      </div>
-      ${weightBlock||'<div style="text-align:center;color:var(--text-3);font-size:13px;padding:12px 0">Zatím žádné záznamy váhy</div>'}
-    </div>`;
+  function getSleepRec(){
+    const birth=state.settings.birth;
+    if(!birth)return{ns:'10–12',day:'2–4'};
+    const ageM=(Date.now()-new Date(birth+' 12:00').getTime())/(30.44*86400000);
+    if(ageM<3)return{ns:'14–17',day:'4–5'};
+    if(ageM<6)return{ns:'12–15',day:'3–4'};
+    if(ageM<12)return{ns:'11–14',day:'2–3'};
+    if(ageM<24)return{ns:'11–14',day:'1–3'};
+    if(ageM<36)return{ns:'10–13',day:'1–2'};
+    return{ns:'10–12',day:'1'};
+  }
+  const rec=getSleepRec();
+  const recNsH=parseFloat(rec.ns.split('–')[0])||10;
+  const recDayH=parseFloat(rec.day.split('–')[0])||2;
+
+  const dayLabels=days.map(d=>(['Po','Út','St','Čt','Pá','So','Ne'][d.getDay()===0?6:d.getDay()-1])+' '+d.getDate()+'.'+String(d.getMonth()+1)+'.');
+  const nsDayH=keys.map(k=>{
+    const e=findNightSleepEntry((state.calData[k]||{}).entries||[]);
+    const dur=e?getSleepEndTs(e)-e.ts:0;
+    return dur>3600000?dur/3600000:0;
+  });
+  const sleepDayH=keys.map(k=>{
+    const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+    return entries.filter(e=>e.type==='sleep'&&!(e.sub||'').includes('probíhá')).reduce((s,e)=>{const d=getSleepEndTs(e)-e.ts;return s+(d>60000&&d<6*3600000?d/3600000:0);},0);
+  });
+  const sleepDayCount=keys.map(k=>{
+    const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+    return entries.filter(e=>e.type==='sleep'&&!(e.sub||'').includes('probíhá')).length;
+  });
+  const nsWithDay=nsDayH.map((h,i)=>({h,i})).filter(x=>x.h>0);
+  const longestNs=nsWithDay.reduce((b,x)=>x.h>b.h?x:b,{h:0,i:-1});
+  const shortestNs=nsWithDay.reduce((b,x)=>x.h<b.h?x:b,{h:Infinity,i:-1});
+  const maxSleepIdx=sleepDayCount.indexOf(Math.max(...sleepDayCount));
+  const maxSleepTimeIdx=sleepDayH.indexOf(Math.max(...sleepDayH));
+
+  function barGraph(vals,color,refH,refLabel){
+    const mx=Math.max(...vals.filter(v=>v>0),refH||1,0.1);
+    const CH=60;
+    return '<div style="position:relative;display:flex;align-items:flex-end;gap:2px;height:'+(CH+16)+'px">'+
+      (refH?'<div style="position:absolute;left:0;right:0;bottom:calc('+Math.round((refH/mx)*CH)+'px + 16px);border-top:1.5px dashed rgba(0,0,0,.2)"><span style="position:absolute;right:0;top:-10px;font-size:8px;color:rgba(0,0,0,.35)">'+refLabel+'</span></div>':'')+
+      vals.map((v,i)=>{
+        const h=v>0?Math.max(4,Math.round((v/mx)*CH)):2;
+        const isT=dateKey(days[i])===dateKey(TODAY);
+        return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0">'+
+          '<div style="width:100%;max-width:22px;border-radius:4px 4px 0 0;background:'+(v>0?color:'rgba(0,0,0,.08)')+';height:'+h+'px'+(isT?';outline:2px solid '+color+';outline-offset:1px':'')+'"></div>'+
+          '<div style="font-size:7.5px;color:var(--text-3);white-space:nowrap">'+dayLabels[i]+'</div>'+
+          '</div>';
+      }).join('')+'</div>';
+  }
+
+  const lw=(state.weightLog||[]).slice(-1)[0];
+  const pw=(state.weightLog||[]).slice(-2,-1)[0];
+  const wtBlock=(()=>{
+    if(!lw)return '<div style="font-size:11px;color:var(--text-3)">—</div>';
+    const g=pw!=null?Math.round((lw.kg-pw.kg)*1000):null;
+    const gainHtml=g!=null?'<div style="font-size:9px;padding:1px 5px;border-radius:5px;display:inline-block;background:'+(g>0?'#eaf3de':'#fcebeb')+';color:'+(g>0?'#27500a':'#a32d2d')+'">'+(g>0?'+':'')+g+'g</div>':'';
+    return '<div style="font-size:16px;font-weight:700">'+lw.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})+' kg</div>'+gainHtml;
+  })();
+
+  document.getElementById('statsContent').innerHTML=
+  '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:10px">'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:12px;cursor:pointer" onclick="openStatDetail(\'nightsleep\')">'+
+    '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="font-size:15px">🌙</span><span style="font-size:9px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Noční spánek</span></div>'+
+    '<div style="font-size:20px;font-weight:700">'+fmtDur(avgNightSleep)+'</div>'+
+    '<div style="font-size:9px;color:#7a8fbd;margin-top:2px">⌀ '+fmtHM(avgBedMin)+'–'+fmtHM(avgWakeupMin)+'</div></div>'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:12px;cursor:pointer" onclick="openStatDetail(\'sleep\')">'+
+    '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="font-size:15px">☀️</span><span style="font-size:9px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Denní spánek</span></div>'+
+    '<div style="font-size:20px;font-weight:700">'+fmtDur(avgSleep)+'</div>'+
+    '<div style="font-size:9px;color:#e8a050;margin-top:2px">⌀ '+( sleepDays?fmtNum(sleepDayCount.reduce((a,b)=>a+b,0)/sleepDays,1):0)+' sp./den</div></div>'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:12px;cursor:pointer" onclick="openStatDetail(\'breast\')">'+
+    '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="font-size:15px">🤱</span><span style="font-size:9px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Kojení</span></div>'+
+    '<div style="font-size:20px;font-weight:700">'+breastCount+'×</div>'+
+    '<div style="font-size:9px;color:#9b7fbd;margin-top:2px">⌀ '+( avgBreast?fmtNum(avgBreast,1)+'×/den':'—')+'</div></div>'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:12px;cursor:pointer" onclick="openStatDetail(\'food\')">'+
+    '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="font-size:15px">🍽</span><span style="font-size:9px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Jídla</span></div>'+
+    '<div style="font-size:20px;font-weight:700">'+foodCount+'×</div>'+
+    '<div style="font-size:9px;color:var(--rose-dark);margin-top:2px">⌀ '+(avgFood?fmtNum(avgFood,1)+'×/den':'—')+'</div></div></div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:10px">'+
+    '<div style="font-size:9px;color:var(--text-3);margin-bottom:3px">🥣 Nové pot.</div>'+
+    '<div style="font-size:17px;font-weight:700">'+newFoods.size+'</div>'+
+    '<div style="font-size:8px;color:var(--text-3)">'+wkStr+'</div></div>'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:10px">'+
+    '<div style="font-size:9px;color:var(--text-3);margin-bottom:3px">⚠️ Reakce</div>'+
+    '<div style="font-size:17px;font-weight:700;color:'+(reactions?'var(--red)':'var(--text)')+'">'+reactions+'</div>'+
+    '<div style="font-size:8px;color:var(--text-3)">'+(reactions?'Pozor!':'Skvělé!')+'</div></div>'+
+  '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:10px;cursor:pointer" onclick="openStatDetail(\'weight\')">'+
+    '<div style="font-size:9px;color:var(--text-3);margin-bottom:3px">⚖️ Váha</div>'+
+    wtBlock+'</div></div>'+
+  '<div style="background:var(--card);border-radius:16px;border:.5px solid var(--rose-mid);padding:14px;margin-bottom:10px">'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:10px">🌙 Noční spánek</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'+
+      '<div style="text-align:center"><div style="font-size:9px;color:var(--text-3)">Usínání</div>'+
+        '<div style="font-size:17px;font-weight:700">🌙 '+fmtHM(avgBedMin)+'</div>'+
+        '<div style="font-size:8px;color:var(--text-3)">⌀ '+fmtHM(avgBedMin)+'</div></div>'+
+      '<div style="text-align:center"><div style="font-size:9px;color:var(--text-3)">průměr</div>'+
+        '<div style="font-size:24px;font-weight:700;color:#7a8fbd">'+(fmtDur(avgNightSleep)||'—')+'</div></div>'+
+      '<div style="text-align:center"><div style="font-size:9px;color:var(--text-3)">Buzení</div>'+
+        '<div style="font-size:17px;font-weight:700">☀️ '+fmtHM(avgWakeupMin)+'</div>'+
+        '<div style="font-size:8px;color:var(--text-3)">⌀ '+fmtHM(avgWakeupMin)+'</div></div></div>'+
+        barGraph(nsDayH,'#9b99d4',recNsH,'Doporuč.')+
+    '<div style="display:flex;justify-content:space-between;margin-top:8px">'+
+      '<div style="font-size:9px;color:var(--text-3)">🌙 Nejdelší<br><b style="color:var(--text)">'+(longestNs.i>=0?dayLabels[longestNs.i]:'—')+'</b> '+(longestNs.i>=0?fmtDur(longestNs.h*3600000):'')+'</div>'+
+      '<div style="font-size:9px;color:var(--text-3);text-align:right">Nejkratší<br><b style="color:var(--text)">'+(shortestNs.i>=0&&shortestNs.h!==Infinity?dayLabels[shortestNs.i]:'—')+'</b> '+(shortestNs.i>=0&&shortestNs.h!==Infinity?fmtDur(shortestNs.h*3600000):'')+'</div></div></div>'+
+  '<div style="background:var(--card);border-radius:16px;border:.5px solid var(--rose-mid);padding:14px;margin-bottom:10px">'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:10px">☀️ Denní spánek <span style="font-size:10px;color:var(--text-3);font-weight:400">(součet všech spánků)</span></div>'+
+    '<div style="display:flex;gap:20px;margin-bottom:10px">'+
+      '<div><div style="font-size:9px;color:var(--text-3)">⌀ počet spánků</div>'+
+        '<div style="font-size:20px;font-weight:700">'+(sleepDays?fmtNum(sleepDayCount.reduce((a,b)=>a+b,0)/sleepDays,1):0)+'<span style="font-size:10px;color:var(--text-3);font-weight:400"> / den</span></div></div>'+
+      '<div><div style="font-size:9px;color:var(--text-3)">⌀ celkový čas</div>'+
+        '<div style="font-size:20px;font-weight:700">'+(fmtDur(avgSleep)||'—')+'</div></div></div>'+
+        barGraph(sleepDayH,'#e8a850',recDayH,'Doporuč.')+
+    '<div style="display:flex;justify-content:space-between;margin-top:8px">'+
+      '<div style="font-size:9px;color:var(--text-3)">☀️ Nejvíce spánků<br><b style="color:var(--text)">'+(maxSleepIdx>=0&&sleepDayCount[maxSleepIdx]>0?dayLabels[maxSleepIdx]:'—')+'</b> '+(maxSleepIdx>=0&&sleepDayCount[maxSleepIdx]>0?'('+sleepDayCount[maxSleepIdx]+' spánků)':'')+'</div>'+
+      '<div style="font-size:9px;color:var(--text-3);text-align:right">Nejvíce času<br><b style="color:var(--text)">'+(maxSleepTimeIdx>=0&&sleepDayH[maxSleepTimeIdx]>0?dayLabels[maxSleepTimeIdx]:'—')+'</b> '+(maxSleepTimeIdx>=0&&sleepDayH[maxSleepTimeIdx]>0?'('+fmtDur(sleepDayH[maxSleepTimeIdx]*3600000)+')':'')+'</div></div></div>'+
+  '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">⚖️ Váha</div>'+
+    '<button onclick="openModal(\'mWeight\')" style="width:26px;height:26px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button></div>'+
+  (weightBlock||'<div style="text-align:center;color:var(--text-3);font-size:13px;padding:12px 0">Zatím žádné záznamy váhy</div>');
 }
 
 function getPrevDays(n,offset){
