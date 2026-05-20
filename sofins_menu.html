@@ -475,10 +475,11 @@ body[data-theme="neutral"]{background:#d0d0d0}
 
   <div id="scr-plan" class="screen">
     <div class="sticky-top">
-      <!-- Plán / Statistiky toggle nahoře -->
+      <!-- Statistiky / Plán / Archiv toggle nahoře -->
       <div style="display:flex;padding:10px 16px 0;gap:0;border-bottom:.5px solid var(--rose-mid)">
-        <button id="tabPlan" onclick="switchPlanTab('plan')" style="flex:1;padding:9px 0;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--rose-btn);color:var(--rose-dark)">Plán</button>
-        <button id="tabStats" onclick="switchPlanTab('stats')" style="flex:1;padding:9px 0;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-3)">Statistiky</button>
+        <button id="tabStats" onclick="switchPlanTab('stats')" style="flex:1;padding:9px 0;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--rose-btn);color:var(--rose-dark)">Přehledy</button>
+        <button id="tabPlan" onclick="switchPlanTab('plan')" style="flex:1;padding:9px 0;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-3)">Deník</button>
+        
       </div>
       <!-- Plán controls -->
       <div id="calControls">
@@ -538,6 +539,9 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <!-- statistiky -->
       <div id="statsView" style="display:none">
         <div id="statsContent" style="padding:0 16px 16px"></div>
+      </div>
+      <div id="archiveView" style="display:none;padding:16px">
+        <div id="archiveContent"></div>
       </div>
       <div style="height:8px"></div>
     </div>
@@ -667,19 +671,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
         </div>
       </div>
       <div class="set-sec">
-        <div class="set-title">Váhový deník</div>
-        <div class="set-card">
-          <div id="weightSparkWrap" style="padding:10px 12px 6px">
-            <canvas id="weightChart" height="60" style="width:100%;display:block"></canvas>
-          </div>
-          <div id="weightList" style="padding:0 12px 8px"></div>
-          <div class="set-row" onclick="openAddWeightModal()" style="border-top:.5px solid var(--rose-mid)">
-            <div class="si si-r">➕</div>
-            <div class="set-lbl"><div class="set-lbl-t">Přidat vážení</div></div>
-          </div>
-        </div>
-      </div>
-      <div class="set-sec">
         <div class="set-title">Já jsem</div>
         <div class="set-card">
           <div class="set-row" onclick="resetIdentity()"><div class="si si-p">👤</div><div class="set-lbl"><div class="set-lbl-t">Identita</div><div class="set-lbl-s">kdo zadává záznamy</div></div><span class="set-val" id="identityVal">—</span><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
@@ -701,13 +692,13 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.24 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.26 · real-time sync ✓</div>
     </div>
   </div>
 
   <div class="tabbar">
     <div class="ti active" id="ti-today" onclick="showScreen('today')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tl">Dnes</span></div>
-    <div class="ti" id="ti-plan" onclick="showScreen('plan')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tl">Plán</span></div>
+    <div class="ti" id="ti-plan" onclick="showScreen('plan')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tl">Deník</span></div>
     <div class="ti" id="ti-food" onclick="showScreen('food')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="tl">Potraviny</span></div>
     <div class="ti" id="ti-freezer" onclick="showScreen('freezer')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="14" x2="12" y2="20"/></svg><span class="tl">Mrazák</span></div>
     <div class="ti" id="ti-settings" onclick="showScreen('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="tl">Nastavení</span></div>
@@ -715,7 +706,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
-
 <div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
@@ -723,7 +713,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN ADD MENU -->
-
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle" style="margin-bottom:12px">Přidat záznam</div>
@@ -738,7 +727,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- PLAN SIMPLE ADD MODAL -->
-
 <div class="modal-wrap" id="mPlanSimple"><div class="movl" onclick="closeModal('mPlanSimple')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
@@ -941,7 +929,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- STORY MODAL -->
-
 <div id="storyModal" class="story-modal" style="display:none">
   <div class="story-modal-bg" onclick="closeStoryModal()"></div>
   <div class="story-modal-card" id="storyModalCard">
@@ -963,16 +950,20 @@ body[data-theme="neutral"]{background:#d0d0d0}
 
 <div class="modal-wrap" id="mStatDetail"><div class="movl" onclick="closeModal('mStatDetail')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
   <div class="mhandle"></div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+  <div id="sdNavRow" style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <button onclick="navStatDetail(-1)" style="width:28px;height:28px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);font-size:14px;cursor:pointer;flex-shrink:0">‹</button>
     <div class="mtitle" id="sdTitle" style="margin:0;flex:1;font-size:15px;text-align:center"></div>
     <button onclick="navStatDetail(1)" style="width:28px;height:28px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);font-size:14px;cursor:pointer;flex-shrink:0">›</button>
   </div>
-  <div class="view-toggle" style="margin:0 0 14px">
+  <div id="sdViewToggle" class="view-toggle" style="margin:0 0 14px">
     <button class="vt" id="sdW" onclick="setStatDetailView('week',this)">Týden</button>
     <button class="vt" id="sdM" onclick="setStatDetailView('month',this)">Měsíc</button>
     <button class="vt" id="sdY" onclick="setStatDetailView('year',this)">Rok</button>
   </div>
+  <!-- Váha — vlastní obsah -->
+  <div id="sdBody" style="display:none"></div>
+  <!-- Ostatní metriky — canvas + summary -->
+  <div id="sdChartWrap">
   <canvas id="sdCanvas" style="width:100%;display:block;margin-bottom:8px"></canvas>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px">
     <div style="background:#faf5f4;border-radius:10px;padding:9px 10px;border:.5px solid #ecddd9">
@@ -988,6 +979,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <div style="font-size:15px;font-weight:600;color:#b89390" id="sdMin">—</div>
     </div>
   </div>
+  </div><!-- end sdChartWrap -->
 </div></div></div>
 
 <!-- MODAL přezkum statusu potraviny -->
@@ -1584,7 +1576,8 @@ function showScreen(n){
       const pd=document.getElementById('planDetail');
       if(pd)pd.style.display='none';
       syncTodayToCalData();
-      renderCal();
+      // Výchozí tab = Statistiky
+      switchPlanTab('stats');
     }
     if(n==='food')renderFoods();
     if(n==='freezer')renderFreezer();
@@ -2250,17 +2243,19 @@ function openEditEntryModal(e){
   if(e.type==='food'){
     const typeNames=['🥣 Snídaně','🍽 Oběd','🍎 Svačina','🍲 Večeře'];
     html+=`<div class="mrow"><label>Typ</label><div class="type-btns">${typeNames.map(n=>`<button class="type-btn${e.name===n?' sel':''}" onclick="selType(this)">${n}</button>`).join('')}</div></div>`;
-    // sub může být "🏪 Značka · složka1, složka2" nebo jen "složka1, složka2"
-    let foodSubPart=e.sub||'';
-    if(foodSubPart.includes('🏪')&&foodSubPart.includes('·')){
-      foodSubPart=foodSubPart.split('·').slice(1).join('·').trim();
-    }
-    // Parsuj existující váhu a poznámku ze sub
-    const subParts2=(e.sub||'').split('·').map(s=>s.trim()).filter(s=>s&&!s.startsWith('🏪'));
-    const gramsMatch=subParts2.find(s=>/^\d+g$/.test(s));
+    // Parsuj sub: může být "potraviny · Xg · poznámka" nebo "🏪 Značka · potraviny · Xg · poznámka"
+    const subRaw=e.sub||'';
+    const subParts2=subRaw.split('·').map(s=>s.trim()).filter(Boolean);
+    const brandPart=subParts2.find(s=>s.startsWith('🏪'))||'';
+    const nonBrand=subParts2.filter(s=>!s.startsWith('🏪'));
+    const gramsMatch=nonBrand.find(s=>/^\d+g$/.test(s));
     const existingGrams=gramsMatch?gramsMatch.replace('g',''):'';
-    const existingNote2=subParts2.filter(s=>!/^\d+g$/.test(s)&&s!==foodSubPart.split('·')[0]?.trim()).join(' · ');
-    foodSubPart.split(',').map(s=>s.trim()).filter(s=>s&&!s.startsWith('🏪')&&!/^\d+g$/.test(s)).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
+    // Potraviny = první non-brand část (před gramáží)
+    const foodsPart=nonBrand.find(s=>!/^\d+g$/.test(s))||'';
+    const noteParts=nonBrand.filter(s=>!/^\d+g$/.test(s)&&s!==foodsPart);
+    const existingNote2=noteParts.join(' · ');
+    editSelFoods=[];
+    foodsPart.split(',').map(s=>s.trim()).filter(Boolean).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
     html+=`<div class="mrow"><label>Složky</label>
       <input type="text" id="editIngInput" placeholder="začni psát..." oninput="showEditSuggest(this.value)" autocomplete="off"/>
       <div class="fsug" id="editFoodSug" style="display:none"></div>
@@ -2336,6 +2331,12 @@ function openEditEntryModal(e){
   }
   document.getElementById('editEntryBody').innerHTML=html;
   renderEditSelFoods();
+  // Načti brand pokud existuje
+  if(e.type==='food'){
+    const brandVal=(subParts2||[]).find?.(s=>s.startsWith('🏪'))||'';
+    const brandInput=document.getElementById('editIngBrand');
+    if(brandInput&&brandVal)brandInput.value=brandVal.replace('🏪','').trim();
+  }
   openModal('mEditEntry');
 }
 
@@ -3196,23 +3197,6 @@ function openPlanEntryDetailWithEdit(dayKey,idx){
 function openPlanAddMenu(dayKey){
   document.getElementById('planAddDayKey').value=dayKey;
   openModal('mPlanAdd');
-}
-
-function planAddEntry(type){
-  const dayKey=document.getElementById('planAddDayKey').value;
-  closeModal('mPlanAdd');
-  if(!dayKey)return;
-  if(type==='food'){
-    _planAddTargetDay=dayKey;openModal('mFood');
-  } else if(type==='breast'){
-    _planAddTargetDay=dayKey;openModal('mBreast');
-  } else if(type==='sleep'){
-    _planAddSimple(dayKey,'sleep','Spánek','');
-  } else if(type==='wakeup'){
-    _planAddSimple(dayKey,'wakeup','Probudila se','vstávání');
-  } else if(type==='nightsleep'){
-    _planAddNightSleepDirect(dayKey);
-  }
 }
 
 let _planAddDayKey=null;
@@ -4406,19 +4390,26 @@ function openCalReactionEdit(e){
 // STATISTIKY
 // ============================================================
 let statsMode=false;
+let archiveMode=false;
 let statsView='week';
-let statsOffset=0; // 0=aktuální, -1=předchozí...
+let statsOffset=0;
 
 function switchPlanTab(tab){
   statsMode=(tab==='stats');
+  archiveMode=(tab==='archive');
   const tPlan=document.getElementById('tabPlan');
   const tStats=document.getElementById('tabStats');
-  if(tPlan){tPlan.style.borderBottomColor=statsMode?'transparent':'var(--rose-btn)';tPlan.style.color=statsMode?'var(--text-3)':'var(--rose-dark)';}
-  if(tStats){tStats.style.borderBottomColor=statsMode?'var(--rose-btn)':'transparent';tStats.style.color=statsMode?'var(--rose-dark)':'var(--text-3)';}
-  document.getElementById('calView').style.display=statsMode?'none':'block';
+  const tArchive=document.getElementById('tabArchive');
+  const active='var(--rose-btn)',inactive='transparent';
+  if(tStats){tStats.style.borderBottomColor=statsMode?active:inactive;tStats.style.color=statsMode?'var(--rose-dark)':'var(--text-3)';}
+  if(tPlan){tPlan.style.borderBottomColor=(!statsMode&&!archiveMode)?active:inactive;tPlan.style.color=(!statsMode&&!archiveMode)?'var(--rose-dark)':'var(--text-3)';}
+  if(tArchive){tArchive.style.borderBottomColor=archiveMode?active:inactive;tArchive.style.color=archiveMode?'var(--rose-dark)':'var(--text-3)';}
+  document.getElementById('calView').style.display=(!statsMode&&!archiveMode)?'block':'none';
   document.getElementById('statsView').style.display=statsMode?'block':'none';
-  document.getElementById('calControls').style.display=statsMode?'none':'block';
+  document.getElementById('calControls').style.display=(!statsMode&&!archiveMode)?'block':'none';
   document.getElementById('statsControls').style.display=statsMode?'block':'none';
+  const archiveEl=document.getElementById('archiveView');
+  if(archiveEl)archiveEl.style.display=archiveMode?'block':'none';
   if(statsMode){
     const isMonth=calView==='month';
     statsView=isMonth?'month':'week';
@@ -4431,6 +4422,8 @@ function switchPlanTab(tab){
       statsOffset=Math.round((curWeekStart.getTime()-getMonday(TODAY).getTime())/msPerWeek);
     }
     renderStats();
+  } else if(archiveMode){
+    renderArchive();
   } else {
     renderCal();
   }
@@ -4438,34 +4431,42 @@ function switchPlanTab(tab){
 
 function togglePlanStats(){switchPlanTab(statsMode?'plan':'stats');}
 
-function togglePlanStats_old(){
-  statsMode=!statsMode;
-  const btn=document.getElementById('statsBtn');
-  if(btn)btn.textContent=statsMode?'← Plán':'📊 Statistiky';
-  document.getElementById('calView').style.display=statsMode?'none':'block';
-  document.getElementById('statsView').style.display=statsMode?'block':'none';
-  document.getElementById('calControls').style.display=statsMode?'none':'block';
-  document.getElementById('statsControls').style.display=statsMode?'block':'none';
-  const psbtn=document.getElementById('planSelectBtn');if(psbtn)psbtn.style.display=statsMode?'none':'block';
-  if(statsMode){
-    // Synchronizuj view s plánem
-    const isMonth=calView==='month';
-    statsView=isMonth?'month':'week';
-    document.getElementById('vsW').classList.toggle('active',!isMonth);
-    document.getElementById('vsM').classList.toggle('active',isMonth);
-    // Synchronizuj offset — stejný týden/měsíc jako v plánu
-    if(isMonth){
-      statsOffset=curMonth-TODAY.getMonth()+(curYear-TODAY.getFullYear())*12;
-    } else {
-      // Počet týdnů od aktuálního
-      const msPerWeek=7*24*3600000;
-      const curMondayTs=curWeekStart.getTime();
-      const todayMondayTs=getMonday(TODAY).getTime();
-      statsOffset=Math.round((curMondayTs-todayMondayTs)/msPerWeek);
-    }
-    renderStats();
-  }
+function renderArchive(){
+  const el=document.getElementById('archiveContent');
+  if(!el)return;
+  // Zobraz všechny dny se záznamy, seřazené od nejnovějšího
+  const allKeys=Object.keys(state.calData)
+    .filter(k=>{const d=state.calData[k];return(d.entries&&d.entries.length>0)||(d.foods&&d.foods.length>0);})
+    .sort((a,b)=>b.localeCompare(a));
+  if(!allKeys.length){el.innerHTML='<div style="text-align:center;color:var(--text-3);padding:32px">Žádné záznamy</div>';return;}
+  const MONTHS_AR=['ledna','února','března','dubna','května','června','července','srpna','září','října','listopadu','prosince'];
+  el.innerHTML=allKeys.map(k=>{
+    const d=new Date(k+'T12:00:00');
+    const dd=state.calData[k];
+    const entries=(dd.entries||[]);
+    const ns=findNightSleepEntry(entries);
+    const sleeps=entries.filter(e=>e.type==='sleep');
+    const foods=entries.filter(e=>e.type==='food');
+    const breast=entries.filter(e=>e.type==='breast');
+    const totalSleepMs=sleeps.reduce((s,e)=>{const dur=getSleepEndTs(e)-e.ts;return s+(dur>0?dur:0);},0);
+    const nsDur=ns?getSleepEndTs(ns)-ns.ts:0;
+    const sh=Math.floor(totalSleepMs/3600000),sm=Math.floor((totalSleepMs%3600000)/60000);
+    const nh=Math.floor(nsDur/3600000),nm=Math.floor((nsDur%3600000)/60000);
+    const tags=[];
+    if(breast.length)tags.push(`${breast.length}× kojení`);
+    if(nsDur>0)tags.push(`🌙 ${nh}h ${nm}min`);
+    if(totalSleepMs>0)tags.push(`😴 ${sh}h ${sm}min`);
+    if(foods.length){const ff=[...new Set(foods.flatMap(e=>(e.sub||'').split('·')[0].split(',').map(s=>s.trim()).filter(Boolean)))].slice(0,4);tags.push(ff.join(', '));}
+    return `<div onclick="selDay(${d.getFullYear()},${d.getMonth()},${d.getDate()});switchPlanTab('plan')" style="padding:10px 12px;border-radius:12px;border:.5px solid var(--rose-mid);background:var(--card);margin-bottom:8px;cursor:pointer">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-weight:600;color:var(--text)">${d.getDate()}. ${MONTHS_AR[d.getMonth()]} ${d.getFullYear()}</div>
+        <div style="font-size:10px;color:var(--text-3)">${['Ne','Po','Út','St','Čt','Pá','So'][d.getDay()]}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-2);margin-top:3px">${tags.join(' · ')||'prázdný'}</div>
+    </div>`;
+  }).join('');
 }
+
 
 function setStatsView(v){
   statsView=v;statsOffset=0;
@@ -4623,21 +4624,23 @@ function renderStats(){
   const allWeight=state.weightLog||[];
   let weightBlock='';
   {
-    // nejnovější vážení celkově (nebo v tomto období)
     const latestW=allWeight.length?allWeight[allWeight.length-1]:null;
     const prevW=allWeight.length>1?allWeight[allWeight.length-2]:null;
     if(latestW){
       const gain=prevW?(latestW.kg-prevW.kg)*1000:null;
       weightBlock=`
-      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;margin-bottom:10px;cursor:pointer" onclick="switchPlanTab('plan');showScreen('settings')">
-        <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">⚖️ Aktuální váha</div>
+      <div style="background:var(--card);border-radius:13px;border:.5px solid var(--rose-mid);padding:12px;cursor:pointer" onclick="openStatDetail('weight')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em">⚖️ Aktuální váha</div>
+          <span style="font-size:10px;color:var(--text-3)">klikni pro vývoj ›</span>
+        </div>
         <div style="display:flex;align-items:baseline;gap:8px">
           <span style="font-size:26px;font-weight:600">${latestW.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})}</span>
           <span style="font-size:13px;color:var(--text-2)">kg</span>
           ${gain!==null?`<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:${gain>0?'#eaf3de':'#fcebeb'};color:${gain>0?'#27500a':'#a32d2d'}">${gain>0?'+':''}${Math.round(gain)}g</span>`:''}
           ${latestW.cm?`<span style="font-size:11px;color:var(--text-3)">${latestW.cm} cm</span>`:''}
         </div>
-        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Váženo ${new Date(latestW.date+' 12:00').getDate()}.${new Date(latestW.date+' 12:00').getMonth()+1}. · klikni pro deník</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Váženo ${new Date(latestW.date+' 12:00').getDate()}.${new Date(latestW.date+' 12:00').getMonth()+1}.</div>
       </div>`;
     }
   }
@@ -4669,7 +4672,6 @@ function renderStats(){
   const avgNightSleep=nightSleepDays?nightSleepMs/nightSleepDays:0;
 
   document.getElementById('statsContent').innerHTML=`
-    ${weightBlock}
     <div style="display:flex;gap:5px;margin-bottom:6px">
       ${statCard('😴','Průměrný spánek/den',fmtDur(avgSleep),delta(avgSleep/3600000,pAvgSleep/3600000),'sleep')}      ${statCard('🌙','Průměrná noc',avgNightSleep?fmtDur(avgNightSleep):'—','','nightsleep')}
       ${(()=>{
@@ -4700,6 +4702,13 @@ function renderStats(){
     </div>
     <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:4px">
       ▲▼ = porovnání s předchozím ${statsView==='week'?'týdnem':'měsícem'} · klikni na kartu pro vývoj
+    </div>
+    <div style="margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">⚖️ Váha</div>
+        <button onclick="openModal('mWeight')" style="width:26px;height:26px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer">+</button>
+      </div>
+      ${weightBlock||'<div style="text-align:center;color:var(--text-3);font-size:13px;padding:12px 0">Zatím žádné záznamy váhy</div>'}
     </div>`;
 }
 
@@ -5365,6 +5374,7 @@ const STAT_META={
   breast:     {icon:'🤱',label:'Kojení / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
   wakeuptime: {icon:'🌅',label:'Průměrné vstávání',color:'#e8a050',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   bedtimetime:{icon:'🌙',label:'Průměrný začátek noci',color:'#6050a8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
+  weight:     {icon:'⚖️',label:'Váha',color:'#5a8a5a',unit:'kg',fmt:(v)=>v},
 };
 
 function openStatDetail(metric){
@@ -5379,6 +5389,15 @@ function openStatDetail(metric){
   document.getElementById('sdM').classList.remove('active');
   document.getElementById('sdY').classList.remove('active');
   openModal('mStatDetail');
+  // Reset visibility
+  const navRow=document.getElementById('sdNavRow');
+  const viewToggle=document.getElementById('sdViewToggle');
+  const chartWrap=document.getElementById('sdChartWrap');
+  const sdBody=document.getElementById('sdBody');
+  if(navRow)navRow.style.display='flex';
+  if(viewToggle)viewToggle.style.display='flex';
+  if(chartWrap)chartWrap.style.display='block';
+  if(sdBody)sdBody.style.display='none';
   setTimeout(()=>renderStatDetail(),50);
 }
 
@@ -5406,10 +5425,144 @@ function setStatDetailView(v,btn){
   renderStatDetail();
 }
 
+// WHO percentile data pro dívky 0-24 měsíců (p3, p15, p50, p85, p97)
+const WHO_GIRLS_KG={
+  0:[2.4,2.8,3.2,3.7,4.2], 1:[3.2,3.6,4.2,4.8,5.5], 2:[4.0,4.5,5.1,5.8,6.6],
+  3:[4.6,5.2,5.8,6.6,7.5], 4:[5.1,5.7,6.4,7.3,8.2], 5:[5.5,6.1,6.9,7.8,8.8],
+  6:[5.7,6.5,7.3,8.2,9.3], 7:[6.0,6.7,7.6,8.6,9.7], 8:[6.2,7.0,7.9,8.9,10.0],
+  9:[6.4,7.2,8.2,9.2,10.4], 10:[6.6,7.5,8.5,9.5,10.7], 11:[6.8,7.7,8.7,9.8,11.0],
+  12:[7.0,7.9,9.0,10.1,11.3], 14:[7.4,8.3,9.4,10.6,11.9], 16:[7.7,8.7,9.8,11.1,12.5],
+  18:[8.1,9.1,10.2,11.6,13.0], 20:[8.4,9.4,10.6,12.0,13.5], 22:[8.7,9.7,11.0,12.4,14.0],
+  24:[9.0,10.1,11.5,12.9,14.5]
+};
+
+function renderWeightStatDetail(){
+  // Skryj nav/toggle, ukáž sdBody
+  const navRow=document.getElementById('sdNavRow');
+  const viewToggle=document.getElementById('sdViewToggle');
+  const chartWrap=document.getElementById('sdChartWrap');
+  const sdBody=document.getElementById('sdBody');
+  if(navRow)navRow.style.display='none';
+  if(viewToggle)viewToggle.style.display='none';
+  if(chartWrap)chartWrap.style.display='none';
+  if(sdBody)sdBody.style.display='block';
+  else return;
+  const sdTitle=document.getElementById('sdTitle');
+  if(sdTitle)sdTitle.textContent='⚖️ Váha';
+
+  const wl=(state.weightLog||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const birthDate=state.settings.birthDate;
+
+  // Váhový deník — sestav HTML bez vnořených template literals
+  const canvasId='weightCanvas';
+  const diaryItems=wl.slice().reverse().map(w=>{
+    const d=new Date(w.date+' 12:00');
+    const idx2=wl.indexOf(w);
+    const gain=idx2>0?(w.kg-wl[idx2-1].kg)*1000:null;
+    const gainBadge=gain!==null
+      ? '<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:'+(gain>0?'#eaf3de':'#fcebeb')+';color:'+(gain>0?'#27500a':'#a32d2d')+'">'+(gain>0?'+':'')+Math.round(gain)+'g</span>'
+      : '';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--card);border-radius:10px;border:.5px solid var(--rose-mid)">'
+      +'<div>'
+      +'<div style="font-size:13px;font-weight:600">'+w.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})+' kg'+(w.cm?' · '+w.cm+' cm':'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text-3)">'+d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()+(w.note?' · '+w.note:'')+'</div>'
+      +'</div>'+gainBadge+'</div>';
+  }).join('') || '<div style="text-align:center;color:var(--text-3);padding:16px">Žádná vážení</div>';
+
+  sdBody.innerHTML='<canvas id="'+canvasId+'" style="width:100%;height:180px;border-radius:10px;background:#f9f7f5"></canvas>'
+    +'<div style="display:flex;justify-content:flex-end;gap:8px;margin:6px 0 12px">'
+    +'<button onclick="openModal(\'mWeight\')" style="padding:5px 14px;border-radius:8px;border:.5px solid var(--rose-mid);background:var(--rose-btn);color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Přidat vážení</button>'
+    +'</div>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Váhový deník</div>'
+    +'<div id="weightDiary" style="display:flex;flex-direction:column;gap:6px">'+diaryItems+'</div>';
+
+  // Draw WHO chart
+  setTimeout(()=>{
+    const canvas=document.getElementById(canvasId);
+    if(!canvas)return;
+    const dpr=window.devicePixelRatio||1;
+    const W=canvas.offsetWidth,H=180;
+    canvas.width=W*dpr;canvas.height=H*dpr;
+    canvas.style.height=H+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+
+    if(!birthDate||!wl.length){
+      ctx.fillStyle='#c0a8a4';ctx.font='12px -apple-system,sans-serif';ctx.textAlign='center';
+      ctx.fillText(birthDate?'Zatím žádná vážení':'Nastav datum narození v nastavení',W/2,H/2);
+      return;
+    }
+
+    const birth=new Date(birthDate+' 12:00');
+    const ML=36,MR=10,MT=10,MB=20;
+    const chartW=W-ML-MR,chartH=H-MT-MB;
+
+    // Rozsah: 0-24 měsíců
+    const maxMonth=24;
+    const months=Object.keys(WHO_GIRLS_KG).map(Number);
+    const minKg=1.5,maxKg=16;
+    const xP=m=>ML+m/maxMonth*chartW;
+    const yP=kg=>MT+(1-(kg-minKg)/(maxKg-minKg))*chartH;
+
+    // WHO pásma
+    const bands=[[0,1],[1,2],[2,3],[3,4]]; // index pairs in p array
+    const colors=['rgba(180,220,140,.35)','rgba(140,200,140,.35)','rgba(140,200,140,.35)','rgba(180,220,140,.35)'];
+    const pLabels=['p3','p15','p50','p85','p97'];
+    const pColors=['#c0d0b0','#a0c090','#5a8a5a','#a0c090','#c0d0b0'];
+
+    // Draw WHO percentile lines
+    [0,1,2,3,4].forEach(pi=>{
+      ctx.beginPath();ctx.strokeStyle=pColors[pi];ctx.lineWidth=pi===2?2:1;ctx.setLineDash(pi===2?[]:[3,3]);
+      months.forEach((m,i)=>{
+        const kg=WHO_GIRLS_KG[m][pi];
+        i===0?ctx.moveTo(xP(m),yP(kg)):ctx.lineTo(xP(m),yP(kg));
+      });
+      ctx.stroke();ctx.setLineDash([]);
+    });
+
+    // Y axis labels
+    ctx.fillStyle='#c0a8a4';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='right';
+    [2,4,6,8,10,12,14,16].forEach(kg=>{
+      if(kg>=minKg&&kg<=maxKg){ctx.fillText(kg+'kg',ML-3,yP(kg)+3);}
+    });
+
+    // X axis labels
+    ctx.textAlign='center';
+    [0,3,6,9,12,18,24].forEach(m=>{
+      ctx.fillText(m+'m',xP(m),H-4);
+    });
+
+    // Plot actual weight
+    if(wl.length){
+      ctx.beginPath();ctx.strokeStyle='#d4748a';ctx.lineWidth=2.5;ctx.setLineDash([]);
+      wl.forEach((w,i)=>{
+        const ageMs=new Date(w.date+' 12:00')-birth;
+        const ageMonths=ageMs/(30.44*86400000);
+        if(ageMonths<0||ageMonths>maxMonth)return;
+        i===0?ctx.moveTo(xP(ageMonths),yP(w.kg)):ctx.lineTo(xP(ageMonths),yP(w.kg));
+      });
+      ctx.stroke();
+      wl.forEach(w=>{
+        const ageMs=new Date(w.date+' 12:00')-birth;
+        const ageMonths=ageMs/(30.44*86400000);
+        if(ageMonths<0||ageMonths>maxMonth)return;
+        ctx.beginPath();ctx.fillStyle='#d4748a';ctx.arc(xP(ageMonths),yP(w.kg),3.5,0,Math.PI*2);ctx.fill();
+      });
+    }
+  },100);
+}
+
+
 function renderStatDetail(){
   const metric=statDetailMetric;
   const meta=STAT_META[metric];
   if(!meta)return;
+
+  // Speciální případ — váha
+  if(metric==='weight'){
+    renderWeightStatDetail();
+    return;
+  }
 
   const periods=[];
   const now=new Date(TODAY);
