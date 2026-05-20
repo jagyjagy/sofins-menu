@@ -692,7 +692,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.27 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.28 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1378,7 +1378,18 @@ function applyRemoteState(remote) {
     });
   }
 
-  if (remote.nightSleep!==undefined) state.nightSleep = remote.nightSleep;
+  // nightSleep — lokálně ukončený (active=false) vyhraje nad remote aktivním
+  if(remote.nightSleep!==undefined){
+    const localEnded=!state.nightSleep?.active&&state.nightSleep?.startTs===null;
+    const remoteActive=remote.nightSleep?.active;
+    if(!(localEnded&&remoteActive)){
+      state.nightSleep=remote.nightSleep;
+    }
+    // Pokud remote má active=false a my máme live záznam, odstraň ho
+    if(!remote.nightSleep?.active){
+      state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
+    }
+  }
 
   state.sleep = remote.sleep || state.sleep;
   state.freezer = remote.freezer || state.freezer;
@@ -1716,6 +1727,10 @@ function renderStatus(){
 
 
 function renderTodayList(){
+  // Pokud nightSleep není aktivní, odstraň live nightsleep záznam
+  if(!state.nightSleep?.active){
+    state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
+  }
   const sorted=[...state.todayLog].sort((a,b)=>b.ts-a.ts);
   const byMap={'mama':'who-mama','tata':'who-tata'};
   const el=document.getElementById('todayList');
