@@ -569,29 +569,26 @@ body[data-theme="neutral"]{background:#d0d0d0}
     <div class="scroll-area">
       <!-- POTRAVINY TAB -->
       <div id="foodTabPotraviny">
-        <!-- Smart box Dnes se hodí -->
-        <div id="smartBox" style="margin:10px 16px 0;background:linear-gradient(135deg,#fef3e8,#fff8f0);border-radius:12px;border:.5px solid #f5d8a8;padding:10px 12px;display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <!-- Smart box Dnes se hodí — vždy viditelný, zavíratelný -->
+        <div id="smartBox" style="margin:10px 12px 0;background:linear-gradient(135deg,#fef3e8,#fff8f0);border-radius:14px;border:.5px solid #f5d8a8;padding:10px 12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <div style="font-size:11px;font-weight:700;color:#8a5a00">✨ Dnes se hodí</div>
-            <button onclick="document.getElementById('smartBox').style.display='none'" style="border:none;background:none;font-size:14px;color:var(--text-3);cursor:pointer;padding:0">×</button>
+            <button onclick="document.getElementById('smartBox').style.display='none'" style="border:none;background:none;font-size:16px;color:#c8a060;cursor:pointer;padding:0;line-height:1">×</button>
           </div>
-          <div id="smartBoxItems" style="font-size:11px;color:#5a3a00;line-height:1.8"></div>
+          <div id="smartBoxItems" style="font-size:11px;color:#6a4a10;line-height:1.9">Načítám...</div>
         </div>
-        <!-- Search + filtry + přidat -->
-        <div style="padding:8px 16px 4px">
+        <!-- Search + přidat -->
+        <div style="padding:8px 12px 0">
           <div style="display:flex;gap:6px;align-items:center">
             <div style="position:relative;flex:1">
               <input type="text" id="foodSearch" placeholder="🔍  hledat potravinu..." oninput="filterFoodSearch(this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--text);font-size:13px;font-family:inherit;box-sizing:border-box"/>
               <span id="foodSearchClear" onclick="clearFoodSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-3);font-size:16px">×</span>
             </div>
-            <button onclick="openModal('mFoodFilters')" style="width:34px;height:34px;border-radius:10px;border:.5px solid var(--rose-mid);background:var(--card);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center" id="foodFilterBtn">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" width="16" height="16"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
-            </button>
             <button onclick="openAddFoodFlow()" style="width:34px;height:34px;border-radius:50%;background:var(--rose-btn);border:none;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">+</button>
           </div>
         </div>
         <!-- Kategorie chips -->
-        <div class="food-tabs" id="foodTabsBar" style="padding:4px 16px">
+        <div class="food-tabs" id="foodTabsBar" style="padding:8px 12px 6px">
           <button class="ftab active" onclick="filterFood('vse',this)">Vše</button>
           <button class="ftab" onclick="filterFood('zelenina',this)">Zelenina</button>
           <button class="ftab" onclick="filterFood('ovoce',this)">Ovoce</button>
@@ -605,8 +602,10 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <button class="ftab" onclick="filterFood('tuky',this)">Tuky</button>
           <button class="ftab" onclick="filterFood('ostatni',this)">Ostatní</button>
         </div>
+        <!-- Oddělovač -->
+        <div style="height:.5px;background:var(--rose-mid);margin:0 12px"></div>
         <!-- Stav chips -->
-        <div class="food-tabs" id="foodStatusBar" style="margin-top:0;border-top:.5px solid var(--rose-mid)">
+        <div class="food-tabs" id="foodStatusBar" style="padding:6px 12px 6px">
           <button class="ftab active" onclick="filterFoodStatus('vse',this)">Vše</button>
           <button class="ftab" onclick="filterFoodStatus('new',this)">🔵 Nezkoušeno</button>
           <button class="ftab" onclick="filterFoodStatus('trying',this)">🟠 Zkoušíme</button>
@@ -614,17 +613,19 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <button class="ftab" onclick="filterFoodStatus('warn',this)">🟡 Sledujeme</button>
           <button class="ftab" onclick="filterFoodStatus('no',this)">🔴 Eliminováno</button>
         </div>
+        <!-- Oddělovač pod stavem -->
+        <div style="height:.5px;background:var(--rose-mid);margin:0 12px 4px"></div>
         <!-- Řazení -->
-        <div style="padding:4px 16px 2px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;color:var(--text-3)">Řadit:</span>
-          <select id="foodSort" onchange="renderFoods()" style="font-size:11px;border:.5px solid var(--rose-mid);border-radius:8px;padding:3px 8px;background:var(--card);color:var(--text);font-family:inherit">
-            <option value="recommended">Doporučeno teď</option>
-            <option value="lastUsed">Naposledy podáno</option>
-            <option value="notUsed">Dlouho nepodáno</option>
-            <option value="month">Doporučený měsíc</option>
-            <option value="abc">Abecedně A–Z</option>
-            <option value="frequent">Nejčastěji podávané</option>
-            <option value="risky">Rizikové nahoře</option>
+        <div style="padding:2px 12px 4px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--rose-dark);font-weight:600">Řadit:</span>
+          <select id="foodSort" onchange="renderFoods()" style="font-size:11px;border:1px solid var(--rose-mid);border-radius:8px;padding:4px 8px;background:var(--rose-light);color:var(--rose-dark);font-family:inherit;font-weight:500;cursor:pointer;flex:1">
+            <option value="recommended">⭐ Doporučeno teď</option>
+            <option value="lastUsed">🕐 Naposledy podáno</option>
+            <option value="notUsed">💤 Dlouho nepodáno</option>
+            <option value="month">📅 Doporučený měsíc</option>
+            <option value="abc">🔤 Abecedně A–Z</option>
+            <option value="frequent">🔄 Nejčastěji podávané</option>
+            <option value="risky">⚠️ Rizikové nahoře</option>
           </select>
         </div>
         <div class="food-list" id="foodGrid"></div>
@@ -731,7 +732,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.44 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.46 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3510,28 +3511,53 @@ function renderSmartBox(){
   const box=document.getElementById('smartBox');
   const itemsEl=document.getElementById('smartBoxItems');
   if(!box||!itemsEl)return;
+  box.style.display='block'; // vždy viditelný dokud uživatel nezavře
   const birth=state.settings.birth;
-  if(!birth){box.style.display='none';return;}
+  if(!birth){itemsEl.textContent='Nastav datum narození v nastavení pro doporučení.';return;}
   const ageM=(Date.now()-new Date(birth+' 12:00').getTime())/(30.44*86400000);
+  const curM=Math.floor(ageM);
   const items=[];
-  const now=new Date().toISOString().slice(0,10);
-  // Doporučené pro aktuální věk
-  FDB.filter(f=>f.month===Math.round(ageM)&&f.month<=ageM+1).slice(0,3).forEach(f=>{
+  const todayStr=dateKey(TODAY);
+
+  // 1. Doporučené pro aktuální měsíc — nezkoušené
+  FDB.filter(f=>f.month===curM||f.month===curM+1).forEach(f=>{
+    const ov=getFoodOverride(f.name);
+    const st=ov.status||f.status||'new';
+    if(st==='no')return; // eliminované vynechej
+    if(st==='new'&&getFoodUseCount(f.name)===0){
+      items.push({text:f.name+' — doporučeno pro '+f.month+'. měsíc',icon:'🌟'});
+    }
+  });
+
+  // 2. Dlouho nepodané (14+ dní) — ne eliminované
+  FDB.filter(f=>f.month<=curM).forEach(f=>{
     const ov=getFoodOverride(f.name);
     const st=ov.status||f.status||'new';
     if(st==='no')return;
-    items.push(f.name+' — doporučeno pro '+f.month+'. měsíc');
-  });
-  // Dlouho nepodané
-  FDB.filter(f=>f.month<=ageM).slice(0,5).forEach(f=>{
     const lu=getFoodLastUsed(f.name);
     if(!lu)return;
     const daysAgo=Math.floor((Date.now()-new Date(lu+' 12:00').getTime())/86400000);
-    if(daysAgo>14)items.push(f.name+' — naposledy před '+daysAgo+' dny');
+    if(daysAgo>=14&&items.length<6){
+      items.push({text:f.name+' — naposledy před '+daysAgo+' dny',icon:'⏰'});
+    }
   });
-  if(!items.length){box.style.display='none';return;}
-  box.style.display='block';
-  itemsEl.innerHTML=items.slice(0,4).map(i=>'• '+i).join('<br>');
+
+  // 3. Nové v tomto měsíci — zavedené ale ještě málo podané
+  FDB.filter(f=>f.month===curM).forEach(f=>{
+    const ov=getFoodOverride(f.name);
+    const st=ov.status||f.status||'new';
+    if(st==='no')return;
+    const cnt=getFoodUseCount(f.name);
+    if(cnt>0&&cnt<3&&items.length<7){
+      items.push({text:f.name+' — nové v tomto měsíci ('+cnt+'×)',icon:'🆕'});
+    }
+  });
+
+  if(!items.length){
+    itemsEl.innerHTML='<span style="color:#8a7060">Všechno vypadá dobře! 🎉</span>';
+    return;
+  }
+  itemsEl.innerHTML=items.slice(0,5).map(i=>'<div>'+i.icon+' '+i.text+'</div>').join('');
 }
 
 function openAddFoodFlow(){openModal('mAddFood');}
@@ -3599,8 +3625,7 @@ function renderFoods(){
   }
 
   // Řazení
-  const sort=document.getElementById('foodSort')?.value||'recommended';
-  const now2=Date.now();
+  const sort=document.getElementById('foodSort')?.value||'recommended';  const now2=Date.now();
   fullList.sort((a,b)=>{
     const soa=getFoodOverride(a.name).status||a.status||'new';
     const sob=getFoodOverride(b.name).status||b.status||'new';
