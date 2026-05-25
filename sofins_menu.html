@@ -732,7 +732,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.48 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.49 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1631,16 +1631,20 @@ function findNightSleepEntry(entries){
 function getSleepEndTs(entry){  const sub=entry.sub||'';
   // ignoruj live záznamy a "probíhá"
   if(entry.live||sub.includes('probíhá')) return 0;
-  // Formát 1: "14:15 – 15:50" nebo "14:15–15:50"
+  // Formát 1: "14:15 – 15:50" nebo "14:15–15:50" — konec z textu
   const rangeMatch=sub.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
   if(rangeMatch){
+    const startD=new Date(entry.ts);
+    // Vezmi start čas z textu (ne z ts který může mít sekundy)
+    const startFromText=new Date(entry.ts);
+    startFromText.setHours(parseInt(rangeMatch[1]),parseInt(rangeMatch[2]),0,0);
     const endD=new Date(entry.ts);
     endD.setHours(parseInt(rangeMatch[3]),parseInt(rangeMatch[4]),0,0);
-    if(endD.getTime()<=entry.ts) endD.setDate(endD.getDate()+1);
+    if(endD.getTime()<=startFromText.getTime()) endD.setDate(endD.getDate()+1);
     return endD.getTime();
   }
-  // Formát 2: "<1min" → 1 minuta
-  if(sub.includes('<1min')) return entry.ts+60000;
+  // Formát 2: "<1min" → 30 sekund
+  if(sub.includes('<1min')) return entry.ts+30000;
   // Formát 3: "1h 35min" nebo "45min"
   let totalMins=0;
   const hMatch=sub.match(/(\d+)\s*h/);
@@ -1955,7 +1959,8 @@ function toggleSleep(){
   } else {
     const dur=Date.now()-state.sleep.startTs;
     const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-    const ds=dur<60000?'<1min':(h>0?h+'h'+(m>0?' '+m+'min':''):m+'min');
+    const fmtMs=ms=>ms<60000?'<1min':(Math.floor(ms/3600000)>0?Math.floor(ms/3600000)+'h'+(Math.floor((ms%3600000)/60000)>0?' '+Math.floor((ms%3600000)/60000)+'min':''):Math.floor(ms/60000)+'min');
+    const ds=fmtMs(dur);
     state.todayLog=state.todayLog.filter(e=>!e.live);
     state.todayLog.push({id:'sleep-'+Date.now(),type:'sleep',ts:state.sleep.startTs,name:'Spánek',sub:fmtTime(state.sleep.startTs)+' – '+fmtTime(Date.now())+' · '+ds,live:false,reaction:false,by:whoAmI()});
     state.sleep={active:false,startTs:null};
@@ -2591,7 +2596,8 @@ function saveEditEntry(){
         const [eh,em]=end.split(':').map(Number);
         const mins=(eh*60+em)-(sh*60+sm);
         const h=Math.floor(mins/60),m=mins%60;
-        const durStr=(h>0?h+'h ':'')+m+'min';
+        const durH=Math.floor(dur/3600000),durM=Math.floor((dur%3600000)/60000);
+        const durStr=dur<60000?'<1min':(durH>0?durH+'h'+(durM>0?' '+durM+'min':''):durM+'min');
         e.sub=start+' – '+end+' · '+durStr+(note?' · '+note:'');
       } else {
         e.sub=start+(note?' · '+note:'');
