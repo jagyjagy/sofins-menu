@@ -732,7 +732,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.47 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.48 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1785,9 +1785,9 @@ function renderStatus(){
   }
 
   // Naspala dnes
-  const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('<1min')&&!(e.sub||'').includes('probíhá'));
+  const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
   let totalMs=0;
-  sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>60000&&dur<12*3600000)totalMs+=dur;});
+  sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>30000&&dur<12*3600000)totalMs+=dur;});
   if(state.sleep.active&&state.sleep.startTs)totalMs+=now-state.sleep.startTs;
   const sleepVal=document.getElementById('sd-sleep-val');
   if(sleepVal)sleepVal.textContent=totalMs>=60000?mStr(totalMs):'—';
@@ -1955,7 +1955,7 @@ function toggleSleep(){
   } else {
     const dur=Date.now()-state.sleep.startTs;
     const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-    const ds=(h>0?h+'h ':'')+(m>0?m+'min':'<1min');
+    const ds=dur<60000?'<1min':(h>0?h+'h'+(m>0?' '+m+'min':''):m+'min');
     state.todayLog=state.todayLog.filter(e=>!e.live);
     state.todayLog.push({id:'sleep-'+Date.now(),type:'sleep',ts:state.sleep.startTs,name:'Spánek',sub:fmtTime(state.sleep.startTs)+' – '+fmtTime(Date.now())+' · '+ds,live:false,reaction:false,by:whoAmI()});
     state.sleep={active:false,startTs:null};
