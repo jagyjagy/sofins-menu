@@ -732,7 +732,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.49 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.50 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1791,7 +1791,19 @@ function renderStatus(){
   // Naspala dnes
   const sleepsDone=allToday.filter(e=>e.type==='sleep'&&!e.live&&!(e.sub||'').includes('probíhá'));
   let totalMs=0;
-  sleepsDone.forEach(e=>{const dur=getSleepEndTs(e)-e.ts;if(dur>30000&&dur<12*3600000)totalMs+=dur;});
+  sleepsDone.forEach(e=>{
+    // Počítej z textu záznamu, ne z ts (který má sekundy)
+    const rm=e.sub.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+    if(rm){
+      const sd=new Date(e.ts);sd.setHours(+rm[1],+rm[2],0,0);
+      const ed=new Date(e.ts);ed.setHours(+rm[3],+rm[4],0,0);
+      if(ed<=sd)ed.setDate(ed.getDate()+1);
+      const d=ed-sd;if(d>0&&d<12*3600000)totalMs+=d;
+    } else {
+      const d=getSleepEndTs(e)-Math.floor(e.ts/60000)*60000;
+      if(d>0&&d<12*3600000)totalMs+=d;
+    }
+  });
   if(state.sleep.active&&state.sleep.startTs)totalMs+=now-state.sleep.startTs;
   const sleepVal=document.getElementById('sd-sleep-val');
   if(sleepVal)sleepVal.textContent=totalMs>=60000?mStr(totalMs):'—';
@@ -1959,8 +1971,11 @@ function toggleSleep(){
   } else {
     const dur=Date.now()-state.sleep.startTs;
     const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-    const fmtMs=ms=>ms<60000?'<1min':(Math.floor(ms/3600000)>0?Math.floor(ms/3600000)+'h'+(Math.floor((ms%3600000)/60000)>0?' '+Math.floor((ms%3600000)/60000)+'min':''):Math.floor(ms/60000)+'min');
-    const ds=fmtMs(dur);
+    const startMin=Math.floor(state.sleep.startTs/60000)*60000;
+    const endMin=Math.floor(Date.now()/60000)*60000;
+    const durRounded=endMin-startMin;
+    const dh=Math.floor(durRounded/3600000),dm=Math.floor((durRounded%3600000)/60000);
+    const ds=durRounded<60000?'<1min':(dh>0?dh+'h'+(dm>0?' '+dm+'min':''):dm+'min');
     state.todayLog=state.todayLog.filter(e=>!e.live);
     state.todayLog.push({id:'sleep-'+Date.now(),type:'sleep',ts:state.sleep.startTs,name:'Spánek',sub:fmtTime(state.sleep.startTs)+' – '+fmtTime(Date.now())+' · '+ds,live:false,reaction:false,by:whoAmI()});
     state.sleep={active:false,startTs:null};
