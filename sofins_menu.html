@@ -734,7 +734,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.66 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.67 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -2128,9 +2128,13 @@ function saveFood(){
 
 function getFoodsFromSub(sub){
   let s=sub||'';
-  // ignoruj brand prefix "🏪 Název · "
-  if(s.includes('·'))s=s.split('·').slice(1).join('·');
-  return s.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+  // Odstraň brand prefix "🏪 Název · "
+  if(s.startsWith('🏪')){s=s.split('·').slice(1).join('·').trim();}
+  // Vezmi jen první sekci (před prvním ·) = složky
+  const foodsPart=s.split('·')[0].trim();
+  return foodsPart.split(',')
+    .map(x=>x.trim())
+    .filter(x=>x&&!/^\d+g$/i.test(x)&&x.length>0);
 }
 
 function countFoodUsage(foodName){
