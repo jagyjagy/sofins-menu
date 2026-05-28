@@ -735,7 +735,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.73 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.74 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1692,7 +1692,7 @@ function findNightSleepEntry(entries){
       // Vytvoř syntetický nightsleep záznam
       const dur=wake.ts-bed.ts;
       const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
-      return {type:'nightsleep',ts:bed.ts,name:'Noční spánek',
+      return {id:'ns-'+bed.ts,type:'nightsleep',ts:bed.ts,name:'Noční spánek',
         sub:fmtTime(bed.ts)+'–'+fmtTime(wake.ts)+'\ncelkem '+(h>0?h+'h ':'')+m+'min',
         reaction:false,_synthetic:true};
     }
@@ -3036,7 +3036,7 @@ function migrateOldNightSleepData(){
     const dur=wake?wake.ts-bed.ts:0;
     const h=Math.floor(dur/3600000),m=Math.floor((dur%3600000)/60000);
     const sub=wake?(fmtTime(bed.ts)+'–'+fmtTime(wake.ts)+'\ncelkem '+(h>0?h+'h ':'')+m+'min'):('od '+fmtTime(bed.ts));
-    state.calData[k].entries.push({type:'nightsleep',ts:bed.ts,name:'Noční spánek',sub,reaction:false});
+    state.calData[k].entries.push({id:'ns-'+bed.ts,type:'nightsleep',ts:bed.ts,name:'Noční spánek',sub,reaction:false});
     state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
     migrated++;
   });
@@ -6199,6 +6199,7 @@ function endNightSleep(){
   if(!state.calData[startDay])state.calData[startDay]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
   state.calData[startDay].entries=state.calData[startDay].entries.filter(e=>e.type!=='nightsleep');
   state.calData[startDay].entries.push({
+    id:'ns-'+ns.startTs,
     type:'nightsleep',ts:ns.startTs,
     name:'Noční spánek',
     sub:fmtTime(ns.startTs)+'–'+fmtTime(now)+'\n'+durStr,
