@@ -734,7 +734,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.59 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.65 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -821,7 +821,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 
 <!-- MODALS -->
 <!-- ULOŽIT JAKO RECEPT -->
-<div class="modal-wrap" id="mSaveRecipe"><div class="movl" onclick="closeModal('mSaveRecipe')"><div class="msheet" onclick="event.stopPropagation()">
+<div class="modal-wrap" id="mSaveRecipe" style="z-index:300"><div class="movl" onclick="closeModal('mSaveRecipe')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle">🥘 Uložit jako recept</div>
   <div class="mrow"><label>Emoji</label>
@@ -880,13 +880,21 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <div class="sel-foods" id="selFoods"></div>
     </div>
     <div id="fzSugBox" class="fz-sug-box"><p>❄️ Dostupné v mrazáku — použít?</p><div id="fzSugItems"></div></div>
+    <!-- Banner: shoda s receptem -->
+    <div id="recipeMatchBanner" style="display:none;background:#e8f0fe;border-radius:10px;padding:8px 12px;margin-bottom:6px;align-items:center;justify-content:space-between;border:0.5px solid #b5d4f4">
+      <div style="font-size:11px;color:#185fa5">🥘 Odpovídá receptu <b id="recipeMatchName"></b></div>
+      <div style="display:flex;gap:5px">
+        <button onpointerdown="useMatchedRecipe()" style="font-size:11px;padding:4px 10px;background:#185fa5;color:white;border:none;border-radius:7px;cursor:pointer;font-weight:600">Použít</button>
+        <button onpointerdown="document.getElementById('recipeMatchBanner').style.display='none'" style="font-size:11px;padding:4px 8px;background:transparent;color:#185fa5;border:.5px solid #b5d4f4;border-radius:7px;cursor:pointer">×</button>
+      </div>
+    </div>
     <!-- Banner "Uložit jako recept" — zobrazí se od 2 složek -->
     <div id="saveRecipeBanner" style="display:none;background:#eaf3de;border-radius:10px;padding:8px 12px;margin-bottom:8px;align-items:center;justify-content:space-between;border:0.5px solid #c0dd97">
       <div>
         <div style="font-size:11px;font-weight:600;color:#27500a">Uložit jako recept?</div>
         <div style="font-size:10px;color:#3b6d11">Najdeš ho příště v Produkty & recepty</div>
       </div>
-      <button onclick="saveCurrentAsRecipe()" style="font-size:11px;padding:4px 11px;background:#639922;color:white;border:none;border-radius:7px;cursor:pointer;font-weight:600">Uložit</button>
+      <button onpointerdown="saveCurrentAsRecipe()" style="font-size:11px;padding:5px 12px;background:#639922;color:white;border:none;border-radius:7px;cursor:pointer;font-weight:600;-webkit-tap-highlight-color:transparent">Uložit recept</button>
     </div>
   </div>
   <!-- TAB: Produkty & recepty -->
@@ -2307,24 +2315,19 @@ function normMatch(text,query){
 function showSuggest(val){
   const sg=document.getElementById('foodSug');
   if(!val){sg.style.display='none';checkFzSug();return;}
-  const brands=(state.brands||[]).filter(b=>normMatch(b.name,val)&&!b.ingredients.every(i=>selFoods.includes(i)));
+  // V záložce Vlastní zobrazujeme jen jednotlivé potraviny (ne produkty/recepty)
   const foods=allFoods().filter(f=>normMatch(f.name,val)&&!selFoods.includes(f.name));
-  // Zobraz suggest i když nic nenajdeme — nabídneme přidání nové
-  sg.style.display='block';
-  let html='';
-  brands.slice(0,3).forEach(b=>{
-    html+=`<div class="fsug-item" onpointerdown="event.preventDefault();addBrandToFood('${b.name}')" style="border-left:3px solid var(--rose-btn);display:flex;align-items:center;gap:6px"><span style="font-size:14px">${b.emoji||'🥣'}</span><span><strong>${b.name}</strong><span style="font-size:10px;color:var(--text-3);margin-left:4px">${b.ingredients.join(', ')}</span></span></div>`;
-  });
-  foods.slice(0,5).forEach(f=>{
-    html+=`<div class="fsug-item" onpointerdown="event.preventDefault();addFoodItem('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||'nezařazeno'}</span></div>`;
-  });
-  // Přidat jako novou potravinu — vždy dole pokud hledaný výraz není přesná shoda
   const exactMatch=foods.some(f=>f.name.toLowerCase()===val.toLowerCase());
+  let html='';
+  foods.slice(0,6).forEach(f=>{
+    html+=`<div class="fsug-item" onpointerdown="event.preventDefault();addFoodItem('${f.name.replace(/'/g,"&#39;")}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||'nezařazeno'}</span></div>`;
+  });
   if(!exactMatch){
     const safeVal=val.replace(/'/g,'&#39;');
-    html+=`<div class="fsug-item" onpointerdown="event.preventDefault();quickAddNewFood('${safeVal}')" style="border-top:.5px solid var(--rose-mid);color:var(--rose-dark);font-weight:600;display:flex;align-items:center;gap:6px"><span style="font-size:15px">＋</span><span>Přidat „${safeVal}" jako novou potravinu</span></div>`;
+    html+=`<div class="fsug-item" onpointerdown="event.preventDefault();quickAddNewFood('${safeVal}')" style="border-top:.5px solid var(--rose-mid);color:var(--rose-dark);font-weight:600;display:flex;align-items:center;gap:6px"><span style="font-size:15px">＋</span><span>Přidat „${val}" jako novou potravinu</span></div>`;
   }
   if(!html){sg.style.display='none';return;}
+  sg.style.display='block';
   sg.innerHTML=html;
 }
 
@@ -2354,7 +2357,43 @@ function renderSelFoodsEl(){
   const el=document.getElementById('selFoods');
   if(el)el.innerHTML=selFoods.map(n=>`<span class="sfp" onpointerdown="event.preventDefault();removeFoodItem('${n.replace(/'/g,"&#39;")}')">${n} ×</span>`).join('');
   updateSaveRecipeBanner();
+  checkRecipeMatch();
   checkFzSug();
+}
+
+function useMatchedRecipe(){
+  const banner=document.getElementById('recipeMatchBanner');
+  const idx=banner?banner._matchIdx:-1;
+  if(idx<0)return;
+  banner.style.display='none';
+  setFoodSrcTab('bought');
+  setTimeout(()=>selectBrandForFood(idx),50);
+}
+
+function checkRecipeMatch(){
+  const banner=document.getElementById('recipeMatchBanner');
+  const nameEl=document.getElementById('recipeMatchName');
+  const saveBanner=document.getElementById('saveRecipeBanner');
+  if(!banner||!nameEl||selFoods.length<2){
+    if(banner)banner.style.display='none';
+    return;
+  }
+  const match=(state.brands||[]).find(b=>{
+    if(b.ingredients.length<selFoods.length)return false;
+    return selFoods.every(f=>b.ingredients.includes(f));
+  });
+  if(match){
+    const isExact=match.ingredients.length===selFoods.length;
+    nameEl.innerHTML=`<b>${match.name}</b> <span style="font-weight:400;color:#378add">(${match.ingredients.join(', ')})</span>`;
+    banner._matchIdx=state.brands.indexOf(match);
+    banner.style.display='flex';
+    // Přesná shoda → skryj "Uložit jako recept" (duplicita)
+    // Částečná shoda → nech oba
+    if(saveBanner)saveBanner.style.display=isExact?'none':(selFoods.length>=2?'flex':'none');
+  } else {
+    banner.style.display='none';
+    if(saveBanner)saveBanner.style.display=selFoods.length>=2?'flex':'none';
+  }
 }
 function checkFzSug(){
   const box=document.getElementById('fzSugBox');
@@ -4306,9 +4345,19 @@ function confirmSaveRecipe(){
   if(!state.brands)state.brands=[];
   state.brands.unshift({name,ingredients:[..._recipeSelFoods],emoji,isRecipe:true,fav:false,note:'',lastUsed:null});
   saveAll();
+  renderBrands();
   closeModal('mSaveRecipe');
+  // Skryj banner
   const b=document.getElementById('saveRecipeBanner');
   if(b)b.style.display='none';
+  // Pokud jsme v food modalu — přepni na záložku Produkty a vyber nový recept
+  const foodModal=document.getElementById('mFood');
+  if(foodModal&&foodModal.classList.contains('open')){
+    setFoodSrcTab('bought');
+    // Auto-vyber nově uložený recept (je první v state.brands)
+    setTimeout(()=>selectBrandForFood(0),50);
+  }
+  // Toast
   const fb=document.createElement('div');
   fb.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#27500a;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none';
   fb.textContent='✅ Recept "'+name+'" uložen';
@@ -4662,8 +4711,6 @@ function saveBrand(){
 
 function renderBrands(){
   const brands=(state.brands||[]).filter(b=>{
-    if(brandSubTab==='recipe'&&!b.isRecipe)return false;
-    if(brandSubTab==='product'&&b.isRecipe)return false;
     if(brandSearchQuery&&!b.name.toLowerCase().includes(brandSearchQuery.toLowerCase()))return false;
     if(brandQuickFilter==='fav'&&!b.fav)return false;
     if(brandQuickFilter==='recent'&&!b.lastUsed)return false;
