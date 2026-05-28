@@ -735,7 +735,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.74 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.75 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -2827,14 +2827,24 @@ function saveEditEntry(){
       const wu=state.todayLog.find(x=>x.type==='wakeup');
       if(wu){wu.ts=endTs;}
       else{state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});}
-      // Aktualizuj v calData — použij currentEditingCalEntry nebo currentCalEntry
-      const dk=(currentEditingCalEntry?.dayKey)||(currentCalEntry?.dayKey);
-      if(dk){
-        const calNS=findNightSleepEntry((state.calData[dk]||{}).entries||[]);
-        if(calNS&&!calNS._synthetic){calNS.ts=newStartTs;calNS.sub=e.sub;}
-      }
+      // Vždy ulož/aktualizuj v calData — nightsleep musí mít id
+      const nsDay=dateKey(new Date(newStartTs));
+      if(!state.calData[nsDay])state.calData[nsDay]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+      state.calData[nsDay].entries=state.calData[nsDay].entries.filter(x=>x.type!=='nightsleep');
+      state.calData[nsDay].entries.push({
+        id:'ns-'+newStartTs,
+        type:'nightsleep',ts:newStartTs,
+        name:'Noční spánek',sub:e.sub,reaction:false
+      });
+      state.calData[nsDay].entries.sort((a,b)=>a.ts-b.ts);
+      // Odstraň live nightsleep z todayLog — je uložen v calData
+      state.todayLog=state.todayLog.filter(x=>!(x.type==='nightsleep'));
+      state.nightSleep={active:false,startTs:null};
     } else {
+      // Stále probíhá — jen aktualizuj čas startu
       e.sub='od '+start+' · probíhá';
+      const liveNS=state.todayLog.find(x=>x.type==='nightsleep'&&x.live);
+      if(liveNS)liveNS.ts=newStartTs;
     }
   }
   closeModal('mEditEntry');renderTodayList();renderStatus();renderNightSleepCard();
