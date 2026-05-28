@@ -734,7 +734,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.65 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.66 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -3686,8 +3686,16 @@ function setFoodMainTab(tab){
   document.getElementById('ftabProdukty').style.color=tab==='produkty'?'var(--rose-dark)':'var(--text-3)';
   document.getElementById('foodTabPotraviny').style.display=tab==='potraviny'?'block':'none';
   document.getElementById('foodTabProdukty').style.display=tab==='produkty'?'block':'none';
-  if(tab==='produkty')renderBrands();
-  else{renderFoods();renderSmartBox();}
+  if(tab==='produkty'){
+    brandQuickFilter='vse'; // vždy zobraz vše při přepnutí na záložku
+    // Reset quick filter buttons
+    document.querySelectorAll('[onclick^="filterBrandQuick"]').forEach(b=>b.classList.remove('active'));
+    const allBtn=document.querySelector('[onclick="filterBrandQuick(\'vse\',this)"]');
+    if(allBtn)allBtn.classList.add('active');
+    renderBrands();
+  } else {
+    renderFoods();renderSmartBox();
+  }
 }
 
 function setBrandSubTab(sub){
@@ -4719,7 +4727,7 @@ function renderBrands(){
   const grid=document.getElementById('brandsGrid');
   if(!grid)return;
   if(!brands.length){
-    grid.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">${brandSubTab==='recipe'?'Zatím žádné recepty.':'Zatím žádné produkty.'}<br>Přidej pomocí + tlačítka nahoře.</div>`;
+    grid.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Žádné produkty ani recepty.<br>Přidej pomocí + tlačítka nahoře.</div>';
     return;
   }
   grid.innerHTML=brands.map((b,i)=>{
