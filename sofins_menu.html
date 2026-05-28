@@ -734,7 +734,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.67 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.68 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1513,20 +1513,23 @@ function applyRemoteState(remote) {
     state.todayLog.push(localNSLive);
   }
 
-  // calData — vezmi remote (je autoritativní pro historii)
+  // calData — merge: remote je základ, ale lokální záznamy s ID které remote nemá se zachovají
   if (remote.calData) {
-    // Zachovej lokální nightsleep záznamy které remote nemá
-    const localNS={};
-    Object.keys(state.calData).forEach(k=>{
-      const ns=(state.calData[k].entries||[]).filter(e=>e.type==='nightsleep');
-      if(ns.length)localNS[k]=ns;
-    });
+    const localCalData=state.calData;
     state.calData = remote.calData;
-    Object.keys(localNS).forEach(k=>{
-      if(!state.calData[k])return;
-      const hasNS=(state.calData[k].entries||[]).some(e=>e.type==='nightsleep');
-      if(!hasNS){
-        state.calData[k].entries=(state.calData[k].entries||[]).concat(localNS[k]);
+    // Pro každý den zkontroluj zda lokální záznamy s ID jsou v remote
+    Object.keys(localCalData).forEach(k=>{
+      const localEntries=(localCalData[k]?.entries||[]).filter(e=>e.id);
+      if(!localEntries.length)return;
+      if(!state.calData[k]){
+        // Celý den chybí v remote — obnov
+        state.calData[k]=localCalData[k];
+        return;
+      }
+      const remoteIds=new Set((state.calData[k].entries||[]).map(e=>e.id).filter(Boolean));
+      const missing=localEntries.filter(e=>!remoteIds.has(e.id));
+      if(missing.length){
+        state.calData[k].entries=(state.calData[k].entries||[]).concat(missing);
         state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
       }
     });
@@ -1552,8 +1555,11 @@ function applyRemoteState(remote) {
   if(remote.customFoods&&remote.customFoods.length>=((state.customFoods||[]).length)){
     state.customFoods = remote.customFoods;
   }
-  if(remote.brands&&remote.brands.length>=((state.brands||[]).length)){
-    state.brands = remote.brands;
+  if(remote.brands){
+    // Merge: zachovej lokální brandy které remote nemá (přidané od posledního syncu)
+    const remoteNames=new Set((remote.brands||[]).map(b=>b.name));
+    const localOnly=(state.brands||[]).filter(b=>!remoteNames.has(b.name));
+    state.brands=[...remote.brands,...localOnly];
   }
   if(remote.weightLog){
     const localWLTs=parseInt(localStorage.getItem('sofin:weightLogTs')||'0');
