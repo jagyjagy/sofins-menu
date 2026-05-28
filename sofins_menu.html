@@ -362,6 +362,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 .story-modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.3);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 /* Night sleep tile */
 .quick-tile.sleeping{background:#dde5f0!important;border-color:#a8bdd4!important}
+.quick-tile.night-disabled{background:#f0f0f0!important;border-color:#d0d0d0!important;opacity:0.45;filter:grayscale(0.7);pointer-events:none}
 .onboard p{font-size:14px;color:var(--text-2);margin-bottom:32px;line-height:1.5}
 .ob-btns{display:flex;gap:12px;width:100%;max-width:280px}
 .ob-btn{flex:1;padding:16px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer}
@@ -734,7 +735,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.68 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.73 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1781,6 +1782,9 @@ function renderAll(){
   try{renderStatus();}catch(e){_showErr('status',e);}
   try{renderTodayList();}catch(e){_showErr('todayList',e);}
   try{updateSleepUI();updateWakeSleepBtn();}catch(e){_showErr('sleepUI',e);}
+  // Sleep tile šedý když běží noční spánek
+  const st=document.getElementById('sleepTile');
+  if(st)st.classList.toggle('night-disabled',!!state.nightSleep?.active&&!state.sleep?.active);
   try{renderStories();}catch(e){_showErr('stories',e);}
   try{renderNightSleepCard();checkAndPublishStories();}catch(e){_showErr('night',e);}
   try{
@@ -2035,8 +2039,15 @@ function updateSleepUI(){
     if(tileSub)tileSub.textContent='';
     if(sleepTimerInterval){clearInterval(sleepTimerInterval);sleepTimerInterval=null;}
   }
+  // Šedý stav pokud běží noční spánek
+  if(tile){
+    const nsActive=!!state.nightSleep?.active&&!active;
+    tile.classList.toggle('night-disabled',nsActive);
+  }
 }
 function toggleSleep(){
+  // Pokud běží noční spánek — nic nedělej
+  if(state.nightSleep?.active)return;
   if(!state.sleep.active){
     state.sleep={active:true,startTs:Date.now()};
     state.todayLog=state.todayLog.filter(e=>!e.live);
@@ -6170,7 +6181,7 @@ function startNightSleep(){
       if(card)publishStory('evening',card);
     }
   },20*60*1000);
-  renderNightSleepCard();renderTodayList();renderStatus();saveAll();
+  renderNightSleepCard();renderTodayList();renderStatus();updateSleepUI();saveAll();
 }
 
 function endNightSleep(){
@@ -6204,7 +6215,7 @@ function endNightSleep(){
   // Ranní story ihned
   const card=pickStoryCard('morning');
   if(card)publishStory('morning',card);
-  renderNightSleepCard();renderTodayList();renderStatus();saveAll();
+  renderNightSleepCard();renderTodayList();renderStatus();updateSleepUI();saveAll();
 }
 
 function renderNightSleepCard(){
