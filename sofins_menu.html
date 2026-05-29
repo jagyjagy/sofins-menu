@@ -735,7 +735,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.79 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.82 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1277,9 +1277,14 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <button class="food-status-btn" id="fsBtn-no" onclick="setFoodDetailStatus('no')"><span style="font-size:16px">🔴</span>Eliminováno</button>
     </div>
   </div>
-  <div class="mrow" id="fdLastUsedRow"><label>Naposledy použito</label>
-    <input type="date" id="fdLastUsed"/>
+  <div class="mrow" id="fdLastUsedRow" style="cursor:pointer" onpointerdown="toggleFoodHistory()">
+    <label style="pointer-events:none">Naposledy použito</label>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span id="fdLastUsedLabel" style="font-size:13px;color:var(--text)">—</span>
+      <span id="fdHistoryArrow" style="font-size:12px;color:var(--text-3)">▼</span>
+    </div>
   </div>
+  <div id="fdHistoryList" style="display:none;margin:-8px 0 10px;padding:8px 12px;background:var(--rose-light);border-radius:10px;max-height:180px;overflow-y:auto"></div>
   <div class="mrow"><label>Poznámka</label><input type="text" id="fdNote" placeholder="např. reakce, oblíbená..."/></div>
   <button class="msave" onclick="saveFoodDetail()">Uložit</button>
   <button class="mcancel" onclick="closeModal('mFoodDetail')">Zrušit</button>
@@ -2584,30 +2589,60 @@ function openEditEntryModal(e){
   const timeVal=fmtTime(e.ts);
   let html='';
   if(e.type==='food'){
-    const typeNames=['🥣 Snídaně','🍽 Oběd','🍎 Svačina','🍲 Večeře'];
-    html+=`<div class="mrow"><label>Typ</label><div class="type-btns">${typeNames.map(n=>`<button class="type-btn${e.name===n?' sel':''}" onclick="selType(this)">${n}</button>`).join('')}</div></div>`;
-    // Parsuj sub: může být "potraviny · Xg · poznámka" nebo "🏪 Značka · potraviny · Xg · poznámka"
+    // Jídlo — použij stejný modal jako přidání, předvyplněný
     const subRaw=e.sub||'';
     const subParts2=subRaw.split('·').map(s=>s.trim()).filter(Boolean);
     const brandPart=subParts2.find(s=>s.startsWith('🏪'))||'';
     const nonBrand=subParts2.filter(s=>!s.startsWith('🏪'));
     const gramsMatch=nonBrand.find(s=>/^\d+g$/.test(s));
     const existingGrams=gramsMatch?gramsMatch.replace('g',''):'';
-    // Potraviny = první non-brand část (před gramáží)
     const foodsPart=nonBrand.find(s=>!/^\d+g$/.test(s))||'';
     const noteParts=nonBrand.filter(s=>!/^\d+g$/.test(s)&&s!==foodsPart);
     const existingNote2=noteParts.join(' · ');
-    editSelFoods=[];
-    foodsPart.split(',').map(s=>s.trim()).filter(Boolean).forEach(f=>{if(!editSelFoods.includes(f))editSelFoods.push(f);});
-    html+=`<div class="mrow"><label>Složky</label>
-      <input type="text" id="editIngInput" placeholder="začni psát..." oninput="showEditSuggest(this.value)" autocomplete="off"/>
-      <div class="fsug" id="editFoodSug" style="display:none"></div>
-      <div class="sel-foods" id="editSelFoods"></div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <div class="mrow" style="flex:1;margin:0"><label>Váha (g)</label><input type="number" id="editFoodGrams" value="${existingGrams}" placeholder="volitelně" min="1" max="999" step="1"/></div>
-      <div class="mrow" style="flex:1;margin:0"><label>Poznámka</label><input type="text" id="editFoodNote" value="${existingNote2}" placeholder="volitelně..."/></div>
-    </div>`;
+    const existingBrand=brandPart.replace('🏪','').trim();
+
+    // Nastav state pro mFood modal
+    selFoods=foodsPart.split(',').map(s=>s.trim()).filter(Boolean);
+    selFoods2=[];
+    _selectedBrandIdx=-1;
+    _foodSrcTab='own';
+
+    // Otevři mFood s "Upravit jídlo" titulem
+    window._editingFoodEntry=e;
+    window._editingFoodCalKey=currentEditingCalEntry?.dayKey||null;
+    openModal('mFood');
+    setTimeout(()=>{
+      // Nastav titulek
+      const title=document.querySelector('#mFood .mtitle');
+      if(title)title.textContent='Upravit jídlo';
+      // Typ
+      document.querySelectorAll('#mFood .type-btn').forEach(btn=>{
+        btn.classList.toggle('sel',btn.textContent.includes(e.name));
+      });
+      // Čas
+      const ft=document.getElementById('foodTime');
+      if(ft)ft.value=fmtTime(e.ts);
+      // Gramáž a poznámka
+      const fg=document.getElementById('foodGrams');if(fg)fg.value=existingGrams;
+      const fn=document.getElementById('foodNote');if(fn)fn.value=existingNote2;
+      // Brand
+      if(existingBrand){
+        setFoodSrcTab('bought');
+        const bi=document.getElementById('brandInput');if(bi)bi.value=existingBrand;
+        selFoods2=[...selFoods];selFoods=[];
+        // Najdi brand index
+        const bi2=state.brands.findIndex(b=>b.name===existingBrand);
+        if(bi2>=0){_selectedBrandIdx=bi2;renderSelFoods2();document.getElementById('brandSelFoodsWrap').style.display='block';}
+        else{renderSelFoods2();document.getElementById('brandSelFoodsWrap').style.display='block';}
+      } else {
+        setFoodSrcTab('own');
+        renderSelFoodsEl();
+      }
+      // Přepis save tlačítka
+      const saveBtn=document.querySelector('#mFood .msave');
+      if(saveBtn){saveBtn.textContent='Uložit změny';saveBtn.onclick=saveFoodEdit;}
+    },50);
+    return; // neotevírej mEditEntry
   } else if(e.type==='breast'){
     const sides=['Levá','Pravá','Obě'];
     const curSide=(e.sub||'').split('·')[0].trim();
@@ -2693,7 +2728,8 @@ function showEditSuggest(val){
   if(!sg)return;
   if(!val||!val.trim()){sg.style.display='none';return;}
   const allF=[...FDB,...(state.customFoods||[])];
-  const matches=allF.filter(f=>normMatch(f.name,val)&&!editSelFoods.includes(f.name)).slice(0,6);
+  const taken=editSelFoods.map(s=>s.toLowerCase());
+  const matches=allF.filter(f=>normMatch(f.name,val)&&!taken.includes(f.name.toLowerCase())).slice(0,6);
   const exactMatch=matches.some(f=>f.name.toLowerCase()===val.toLowerCase());
   let html=matches.map(f=>{
     const safe=f.name.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
@@ -2705,6 +2741,9 @@ function showEditSuggest(val){
   }
   if(!html){sg.style.display='none';return;}
   sg.style.display='block';
+  sg.style.zIndex='9999';
+  sg.style.position='absolute';
+  sg.style.left='0';sg.style.right='0';
   sg.innerHTML=html;
 }
 function quickAddNewFoodEdit(name){
@@ -3994,23 +4033,69 @@ function openFoodDetail(name){
   if(!f)return;
   const ov=getFoodOverride(name);
   const status=ov.status||f.status;
-  const stL={ok:'bez reakce',new:'nezkoušeno',warn:'sledujeme',no:'eliminováno'};
   document.getElementById('fdTitle').textContent=name;
-  // find last use from todayLog + calData
-  let lastUseTs=null;
-  Object.values(state.calData||{}).forEach(day=>{(day.entries||[]).forEach(e=>{if(e.sub&&e.sub.toLowerCase().includes(name.toLowerCase())){if(!lastUseTs||e.ts>lastUseTs)lastUseTs=e.ts;}});});
-  state.todayLog.forEach(e=>{if(e.sub&&e.sub.toLowerCase().includes(name.toLowerCase())){if(!lastUseTs||e.ts>lastUseTs)lastUseTs=e.ts;}});
-  const ovLastUsed=ov.lastUsed;
-  const displayTs=ovLastUsed?new Date(ovLastUsed).getTime():lastUseTs;
-  document.getElementById('fdMeta').textContent=`${f.cat} · doporučeno od ${f.month}. měsíce${displayTs?' · naposledy '+fmtDateShort(displayTs):''}`;
-  // set status buttons
+  document.getElementById('fdNote').value=ov.note||'';
+  document.getElementById('fdMeta').textContent=`${f.cat||''} · od ${f.month}. měsíce`+(f.allergen?' · ⚠ alergen':'');
+
+  // Sesbírej historii použití ze záznamů
+  const lu=getFoodLastUsed(name);
+  const luLabel=document.getElementById('fdLastUsedLabel');
+  if(luLabel)luLabel.textContent=lu?(()=>{const d=new Date(lu+' 12:00');const t=dateKey(TODAY);const y=dateKey(new Date(TODAY.getTime()-86400000));return lu===t?'dnes':lu===y?'včera':d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();})():'Nikdy';
+
+  // Sesbírej všechna podání
+  const norm=s=>s.toLowerCase().trim();
+  const entries=[];
+  Object.keys(state.calData).sort((a,b)=>b.localeCompare(a)).forEach(k=>{
+    (state.calData[k].entries||[]).filter(e=>e.type==='food').forEach(e=>{
+      const foods=getFoodsFromSub(e.sub||'');
+      if(foods.some(fd=>norm(fd)===norm(name))){
+        entries.push({date:k,time:fmtTime(e.ts),name:e.name,sub:e.sub,ts:e.ts});
+      }
+    });
+  });
+  state.todayLog.filter(e=>e.type==='food').forEach(e=>{
+    const foods=getFoodsFromSub(e.sub||'');
+    if(foods.some(fd=>norm(fd)===norm(name))){
+      const k=dateKey(TODAY);
+      entries.push({date:k,time:fmtTime(e.ts),name:e.name,sub:e.sub,ts:e.ts});
+    }
+  });
+  entries.sort((a,b)=>b.ts-a.ts);
+
+  const histEl=document.getElementById('fdHistoryList');
+  if(histEl){
+    if(entries.length){
+      histEl.innerHTML=entries.map(e=>{
+        const d=new Date(e.date+' 12:00');
+        return `<div style="padding:5px 0;border-bottom:.5px solid var(--rose-mid);font-size:12px">
+          <span style="color:var(--text-2);font-weight:500">${d.getDate()}.${d.getMonth()+1}. ${e.time}</span>
+          <span style="color:var(--text-3);margin-left:6px">${e.name}</span>
+          <span style="color:var(--text-3);margin-left:4px">${getFoodsFromSub(e.sub).filter(f=>norm(f)!==norm(name)).join(', ')}</span>
+        </div>`;
+      }).join('');
+    } else {
+      histEl.innerHTML='<div style="font-size:12px;color:var(--text-3);text-align:center;padding:8px">Zatím žádné záznamy</div>';
+    }
+    histEl.style.display='none';
+  }
+
+  // Status buttons
   ['new','ok','warn','no'].forEach(s=>{
     const btn=document.getElementById('fsBtn-'+s);
-    btn.className='food-status-btn'+(status===s?' active-'+s:'');
+    if(btn)btn.className='food-status-btn'+(status===s?' active-'+s:'');
   });
-  document.getElementById('fdLastUsed').value=ovLastUsed||'';
-  document.getElementById('fdNote').value=ov.note||'';
+  const arr=document.getElementById('fdHistoryArrow');
+  if(arr)arr.textContent='▼';
   openModal('mFoodDetail');
+}
+
+function toggleFoodHistory(){
+  const list=document.getElementById('fdHistoryList');
+  const arr=document.getElementById('fdHistoryArrow');
+  if(!list)return;
+  const open=list.style.display==='block';
+  list.style.display=open?'none':'block';
+  if(arr)arr.textContent=open?'▼':'▲';
 }
 
 function setFoodDetailStatus(s){
@@ -4027,7 +4112,6 @@ function saveFoodDetail(){
   const prevStatus=(state.foodOverrides[currentFoodDetail]||{}).status;
   state.foodOverrides[currentFoodDetail]={
     status:newStatus,
-    lastUsed:document.getElementById('fdLastUsed').value||null,
     note:document.getElementById('fdNote').value
   };
   // Auto-sync do alergií — eliminováno = přidat, odebráno z eliminováno = odebrat
@@ -4475,12 +4559,66 @@ function _completeSaveFood(activeFoods,brandName,note,grams,name,ts){
   _finalizeSaveFood(name,ts,sub,activeFoods);
 }
 
+function saveFoodEdit(){
+  // Stejná logika jako saveFood ale ukládá zpět do existujícího záznamu
+  const e=window._editingFoodEntry;
+  if(!e){saveFood();return;}
+  window._editingFoodEntry=null;
+
+  const activeFoods=_foodSrcTab==='bought'?selFoods2:selFoods;
+  const brandName=_foodSrcTab==='bought'?(document.getElementById('brandInput')?.value.trim()||''):'';
+  if(!activeFoods.length){closeModal('mFood');return;}
+
+  const typeBtn=document.querySelector('#mFood .type-btn.sel');
+  const rawName=typeBtn?typeBtn.textContent.trim():'Jídlo';
+  const name=rawName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}]\s*/u,'').trim()||rawName;
+  const note=document.getElementById('foodNote')?.value.trim()||'';
+  const grams=document.getElementById('foodGrams')?.value.trim()||'';
+  const sub=[brandName?'🏪 '+brandName:'',activeFoods.join(', '),grams?grams+'g':'',note].filter(Boolean).join(' · ');
+  const newTs=parseTimeToTs(document.getElementById('foodTime').value);
+
+  // Extra složky k produktu?
+  if(_foodSrcTab==='bought'&&_selectedBrandIdx>=0){
+    const orig=state.brands[_selectedBrandIdx];
+    const origSet=new Set(orig?.ingredients||[]);
+    const newExtra=activeFoods.filter(f=>!origSet.has(f));
+    if(newExtra.length>0&&orig){
+      window._extraFoodChoice={activeFoods,orig,origIdx:_selectedBrandIdx,brandName,note,grams,name,ts:newTs};
+      showExtraIngredientModal(orig.name,newExtra);
+      // Po výběru zavolá _completeSaveFood → _finalizeSaveFood ale my potřebujeme upravit e
+      window._editFoodApply=(finalSub)=>{
+        e.name=name;e.ts=newTs;e.sub=finalSub;
+        _applyFoodEdit(e);
+      };
+      return;
+    }
+  }
+  e.name=name;e.ts=newTs;e.sub=sub;
+  _applyFoodEdit(e);
+}
+
+function _applyFoodEdit(e){
+  const calKey=window._editingFoodCalKey;
+  window._editingFoodCalKey=null;
+  if(calKey&&state.calData[calKey]){
+    state.calData[calKey].entries.sort((a,b)=>a.ts-b.ts);
+    if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
+  } else {
+    renderTodayList();renderStatus();
+  }
+  selFoods=[];selFoods2=[];_selectedBrandIdx=-1;renderSelFoodsEl();
+  // Reset save button
+  const saveBtn=document.querySelector('#mFood .msave');
+  if(saveBtn){saveBtn.textContent='Uložit jídlo';saveBtn.onclick=saveFood;}
+  closeModal('mFood');saveAll();
+}
+
+
 function updateSaveRecipeBanner(){
   const banner=document.getElementById('saveRecipeBanner');
   if(!banner)return;
   banner.style.display=selFoods.length>=2?'flex':'none';
 }
-
 function saveCurrentAsRecipe(){
   if(selFoods.length<2)return;
   // Otevři recipe modal (zůstane food modal otevřený pod ním)
@@ -4658,7 +4796,6 @@ function openCustomFoodDetail(name){
   ['new','ok','warn','no'].forEach(s=>{
     document.getElementById('fsBtn-'+s).className='food-status-btn'+(status===s?' active-'+s:'');
   });
-  document.getElementById('fdLastUsed').value=ov.lastUsed||'';
   document.getElementById('fdNote').value=ov.note||'';
   openModal('mFoodDetail');
 }
