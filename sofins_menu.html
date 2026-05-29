@@ -735,7 +735,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.75 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.79 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -766,6 +766,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
     <button onclick="planAddEntry('sleep')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #c5d2e0;background:#eef3fa;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">😴</span>Spánek</button>
     <button onclick="planAddEntry('wakeup')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid var(--rose-mid);background:var(--rose-light);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">☀️</span>Probudila se</button>
     <button onclick="planAddEntry('nightsleep')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #c5c0e8;background:#f0ecff;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">🌙</span>Noční spánek</button>
+    <button onclick="planAddEntry('reaction')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:.5px solid #f5c5c5;background:#fff0f0;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:inherit"><span style="font-size:22px">⚠️</span>Reakce</button>
   </div>
 </div></div></div>
 
@@ -817,6 +818,19 @@ body[data-theme="neutral"]{background:#d0d0d0}
   <div style="display:flex;gap:8px;margin-top:4px">
     <button onclick="resetFoodFilters()" class="mcancel" style="flex:1">Resetovat</button>
     <button onclick="applyFoodFilters()" class="msave" style="flex:1">Použít</button>
+  </div>
+</div></div></div>
+
+<!-- EXTRA INGREDIENT CHOICE MODAL -->
+<div class="modal-wrap" id="mExtraIngredient" style="z-index:300"><div class="movl" onclick="closeModal('mExtraIngredient')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div class="mtitle">Extra složky</div>
+  <div id="extraIngText" style="font-size:13px;color:var(--text-2);margin-bottom:14px"></div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <button onpointerdown="extraIngChoice('combo')" style="padding:11px 14px;border-radius:11px;border:.5px solid var(--rose-mid);background:#f5f0ff;cursor:pointer;font-size:13px;text-align:left;font-family:inherit"><b>📋 Uložit jako kombinaci</b><div style="font-size:11px;color:var(--text-3);margin-top:2px">Recept + extra složka v záznamu</div></button>
+    <button onpointerdown="extraIngChoice('update')" style="padding:11px 14px;border-radius:11px;border:.5px solid var(--rose-mid);background:#eaf3de;cursor:pointer;font-size:13px;text-align:left;font-family:inherit"><b>✏️ Aktualizovat recept</b><div style="font-size:11px;color:var(--text-3);margin-top:2px">Přidá extra složky do receptu natrvalo</div></button>
+    <button onpointerdown="extraIngChoice('new')" style="padding:11px 14px;border-radius:11px;border:.5px solid var(--rose-mid);background:#e8f0fe;cursor:pointer;font-size:13px;text-align:left;font-family:inherit"><b>🆕 Uložit jako nový recept</b><div style="font-size:11px;color:var(--text-3);margin-top:2px">Vytvoří nový recept s touto kombinací</div></button>
+    <button onpointerdown="closeModal('mExtraIngredient')" style="padding:9px;border-radius:11px;border:.5px solid var(--rose-mid);background:transparent;cursor:pointer;font-size:13px;color:var(--text-3);font-family:inherit">Zrušit</button>
   </div>
 </div></div></div>
 
@@ -1536,15 +1550,23 @@ function applyRemoteState(remote) {
     });
   }
 
-  // nightSleep — lokálně ukončený (active=false) vyhraje nad remote aktivním
+  // nightSleep merge — přesná pravidla:
+  // - lokálně aktivní + remote neaktivní → IGNORUJ remote (my jsme spánek spustili)
+  // - lokálně ukončený + remote aktivní → IGNORUJ remote (my jsme spánek ukončili)
+  // - oba stejní → vezmi remote (novější data)
   if(remote.nightSleep!==undefined){
-    const localEnded=!state.nightSleep?.active&&state.nightSleep?.startTs===null;
-    const remoteActive=remote.nightSleep?.active;
-    if(!(localEnded&&remoteActive)){
+    const localActive=!!state.nightSleep?.active;
+    const remoteActive=!!remote.nightSleep?.active;
+    const localEnded=!localActive&&state.nightSleep?.startTs===null;
+    const shouldApply=
+      (localActive&&remoteActive) ||   // oba aktivní → vezmi remote (novější startTs)
+      (localEnded&&!remoteActive) ||   // oba ukončení → vezmi remote
+      (!localActive&&!localEnded&&!remoteActive); // oba neaktivní → vezmi remote
+    if(shouldApply){
       state.nightSleep=remote.nightSleep;
     }
-    // Pokud remote má active=false a my máme live záznam, odstraň ho
-    if(!remote.nightSleep?.active){
+    // Odstraň live záznam POUZE pokud je remote neaktivní A my jsme taky neaktivní
+    if(!remoteActive&&!localActive){
       state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
     }
   }
@@ -2079,48 +2101,45 @@ function saveFood(){
   if(!activeFoods.length){closeModal('mFood');return;}
 
   // Pokud záložka Produkty — ptej se na update pokud přibyly složky
-  if(_foodSrcTab==='bought'&&_selectedBrandIdx>=0){
-    const orig=state.brands[_selectedBrandIdx];
-    const origSet=new Set(orig?.ingredients||[]);
-    const newExtra=activeFoods.filter(f=>!origSet.has(f));
-    if(newExtra.length>0&&orig){
-      const choice=confirm(`Přidal jsi nové složky (${newExtra.join(', ')}).\n\nOK = aktualizovat recept "${orig.name}"\nZrušit = uložit jako nový recept`);
-      if(choice){
-        state.brands[_selectedBrandIdx].ingredients=[...activeFoods];
-        saveAll();
-      } else {
-        const newName=prompt('Název nového receptu:',orig.name+' 2');
-        if(newName){
-          state.brands.push({name:newName,ingredients:[...activeFoods],emoji:orig.emoji||'🥘',isRecipe:true,fav:false,note:''});
-          saveAll();
-        }
-      }
-    }
-  }
-
   const typeBtn=document.querySelector('#mFood .type-btn.sel');
   const rawName=typeBtn?typeBtn.textContent.trim():'Jídlo';
   const name=rawName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}]\s*/u,'').trim()||rawName;
   const ts=parseTimeToTs(document.getElementById('foodTime').value);
   const note=document.getElementById('foodNote')?.value.trim()||'';
   const grams=document.getElementById('foodGrams')?.value.trim()||'';
+
+  if(_foodSrcTab==='bought'&&_selectedBrandIdx>=0){
+    const orig=state.brands[_selectedBrandIdx];
+    const origSet=new Set(orig?.ingredients||[]);
+    const newExtra=activeFoods.filter(f=>!origSet.has(f));
+    if(newExtra.length>0&&orig){
+      // Zobraz 4-option modal
+      window._extraFoodChoice={activeFoods,orig,origIdx:_selectedBrandIdx,brandName,note,grams,name,ts};
+      showExtraIngredientModal(orig.name,newExtra);
+      return;
+    }
+  }
   const sub=[brandName?'🏪 '+brandName:'',activeFoods.join(', '),grams?grams+'g':'',note].filter(Boolean).join(' · ');
+  _finalizeSaveFood(name,ts,sub,activeFoods);
+}
+
+function _finalizeSaveFood(name,ts,sub,activeFoods){
   // Přidat do minulého dne z plánu?
   if(_planAddTargetDay){
     const k=_planAddTargetDay;_planAddTargetDay=null;
     if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
-    // Použij správné datum cílového dne
     const[yr,mo,dy]=k.split('-').map(Number);
-    const timeVal=document.getElementById('foodTime').value||'12:00';
+    const timeVal=document.getElementById('foodTime')?.value||'12:00';
     const[hh,mm]=timeVal.split(':').map(Number);
     const tsFixed=new Date(yr,mo-1,dy,hh,mm,0,0).getTime();
-    state.calData[k].entries.push({type:'food',ts:tsFixed,name,sub,brand:brandName||null,reaction:false});
+    const brandName2=(sub.match(/🏪 ([^·]+)/)||[])[1]?.trim()||null;
+    state.calData[k].entries.push({id:'f'+tsFixed,type:'food',ts:tsFixed,name,sub,brand:brandName2,reaction:false});
     state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
     selFoods=[];selFoods2=[];_selectedBrandIdx=-1;renderSelFoodsEl();closeModal('mFood');saveAll();
     selDay(yr,mo-1,dy);
     return;
   }
-  state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub,brand:brandName||null,reaction:false,by:whoAmI()});
+  state.todayLog.push({id:'f'+Date.now(),type:'food',ts,name,sub,reaction:false,by:whoAmI()});
   const savedFoods=[...activeFoods];
   activeFoods.forEach(food=>{
     const fz=state.freezer.find(f=>f.foods.includes(food)&&f.amount>0);
@@ -2277,7 +2296,8 @@ function saveBreast(){
   renderTodayList();renderStatus();closeModal('mBreast');saveAll();
 }
 function saveReaction(){
-  const ts=parseTimeToTs(document.getElementById('reactionTime').value);
+  const timeVal=document.getElementById('reactionTime').value;
+  const ts=parseTimeToTs(timeVal);
   const note=document.getElementById('reactionNote').value;
   const suspect=document.getElementById('suspectFood').value;
   const types=[...document.querySelectorAll('#mReaction .type-btn.sel')].map(b=>b.textContent).filter(Boolean);
@@ -2286,15 +2306,30 @@ function saveReaction(){
   if(currentEditingCalEntry){
     const day=state.calData[currentEditingCalEntry.dayKey];
     if(day&&day.entries){
-      const newTs=parseTimeToTs(document.getElementById('reactionTime').value)||currentEditingCalEntry.ts;
+      const newTs=parseTimeToTs(timeVal)||currentEditingCalEntry.ts;
       const idx=day.entries.findIndex(x=>x.ts===currentEditingCalEntry.ts&&x.type==='reaction');
       if(idx>=0)day.entries[idx]={...day.entries[idx],ts:newTs,sub:sub||'Reakce'};
-      else day.entries.push({type:'reaction',ts:newTs,name:'Reakce',sub:sub||'Reakce',reaction:true});
+      else day.entries.push({id:'r'+newTs,type:'reaction',ts:newTs,name:'Reakce',sub:sub||'Reakce',reaction:true});
       day.reaction=true;
     }
     currentEditingCalEntry=null;
     closeModal('mReaction');
     if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
+    saveAll();
+    return;
+  }
+  // Přidání z deníku (minulý den)
+  if(_planAddTargetDay){
+    const k=_planAddTargetDay;_planAddTargetDay=null;
+    const[yr,mo,dy]=k.split('-').map(Number);
+    const[hh,mm]=(timeVal||'12:00').split(':').map(Number);
+    const tsFixed=new Date(yr,mo-1,dy,hh,mm,0,0).getTime();
+    if(!state.calData[k])state.calData[k]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+    state.calData[k].entries.push({id:'r'+tsFixed,type:'reaction',ts:tsFixed,name:'Reakce',sub:sub||'Reakce',reaction:true});
+    state.calData[k].reaction=true;
+    state.calData[k].entries.sort((a,b)=>a.ts-b.ts);
+    closeModal('mReaction');
+    selDay(yr,mo-1,dy);
     saveAll();
     return;
   }
@@ -3550,8 +3585,7 @@ function planAddEntry(type){
   if(!dayKey)return;
   _planAddDayKey=dayKey;
   _planAddTargetDay=dayKey;
-  if(type==='food'){
-    _planAddTargetDay=dayKey;
+  if(type==='food'){    _planAddTargetDay=dayKey;
     // Nastav čas na typický pro daný den
     const[yr,mo,dy]=dayKey.split('-').map(Number);
     const d=new Date(yr,mo-1,dy,9,0,0);
@@ -3562,6 +3596,8 @@ function planAddEntry(type){
     openModal('mBreast');
   } else if(type==='sleep'||type==='wakeup'||type==='nightsleep'){
     _openPlanSimpleModal(dayKey,type);
+  } else if(type==='reaction'){
+    openModal('mReaction');
   }
 }
 
@@ -4363,9 +4399,12 @@ function removeRecipeFood(name){_recipeSelFoods=_recipeSelFoods.filter(f=>f!==na
 
 function showRecipeSuggest(val){
   const sg=document.getElementById('recipeIngSug');if(!sg)return;
-  if(!val){sg.style.display='none';return;}
-  const all=[...FDB,...(state.customFoods||[])].filter(f=>normMatch(f.name,val)&&!_recipeSelFoods.includes(f.name)).slice(0,6);
-  sg.style.display=all.length?'block':'none';
+  if(!val||!val.trim()){sg.style.display='none';return;}
+  const taken=_recipeSelFoods.map(s=>s.toLowerCase());
+  const all=[...FDB,...(state.customFoods||[])].filter(f=>normMatch(f.name,val)&&!taken.includes(f.name.toLowerCase())).slice(0,6);
+  if(!all.length){sg.style.display='none';return;}
+  sg.style.display='block';
+  sg.style.zIndex='400';
   sg.innerHTML=all.map(f=>`<div class="fsug-item" onpointerdown="event.preventDefault();addRecipeFood('${f.name.replace(/'/g,"&#39;")}')">${f.name}</div>`).join('');
 }
 
@@ -4403,6 +4442,38 @@ function confirmSaveRecipe(){
   document.body.appendChild(fb);setTimeout(()=>fb.remove(),2500);
 }
 
+
+function showExtraIngredientModal(origName,newExtra){
+  const el=document.getElementById('extraIngText');
+  if(el)el.textContent='K receptu "'+origName+'" jsi přidal: '+newExtra.join(', ')+'. Co chceš udělat?';
+  openModal('mExtraIngredient');
+}
+
+function extraIngChoice(choice){
+  closeModal('mExtraIngredient');
+  const ctx=window._extraFoodChoice;
+  if(!ctx)return;
+  window._extraFoodChoice=null;
+  const{activeFoods,orig,origIdx,brandName,note,grams,name,ts}=ctx;
+  if(choice==='update'){
+    state.brands[origIdx].ingredients=[...activeFoods];
+    saveAll();
+    // Pokračuj v uložení jídla
+    _completeSaveFood(activeFoods,brandName,note,grams,name,ts);
+  } else if(choice==='new'){
+    openSaveRecipeModal(activeFoods, orig.name+' 2');
+    // Po uložení receptu ulož jídlo
+    window._afterRecipeSave=()=>_completeSaveFood(activeFoods,brandName,note,grams,name,ts);
+  } else {
+    // combo — ulož tak jak je
+    _completeSaveFood(activeFoods,brandName,note,grams,name,ts);
+  }
+}
+
+function _completeSaveFood(activeFoods,brandName,note,grams,name,ts){
+  const sub=[brandName?'🏪 '+brandName:'',activeFoods.join(', '),grams?grams+'g':'',note].filter(Boolean).join(' · ');
+  _finalizeSaveFood(name,ts,sub,activeFoods);
+}
 
 function updateSaveRecipeBanner(){
   const banner=document.getElementById('saveRecipeBanner');
