@@ -595,15 +595,9 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <button class="ftab active" onclick="filterFood('vse',this)">Vše</button>
           <button class="ftab" onclick="filterFood('zelenina',this)">Zelenina</button>
           <button class="ftab" onclick="filterFood('ovoce',this)">Ovoce</button>
-          <button class="ftab" onclick="filterFood('maso',this)">Maso</button>
-          <button class="ftab" onclick="filterFood('ryby',this)">Ryby</button>
           <button class="ftab" onclick="filterFood('obiloviny',this)">Obiloviny</button>
-          <button class="ftab" onclick="filterFood('mlecne',this)">Mléčné</button>
-          <button class="ftab" onclick="filterFood('lusteniny',this)">Luštěniny</button>
-          <button class="ftab" onclick="filterFood('vejce',this)">Vejce</button>
-          <button class="ftab" onclick="filterFood('orechy',this)">Ořechy</button>
-          <button class="ftab" onclick="filterFood('tuky',this)">Tuky</button>
-          <button class="ftab" onclick="filterFood('ostatni',this)">Ostatní</button>
+          <button class="ftab" onclick="filterFood('bilkoviny',this)">Bílkoviny</button>
+          <button class="ftab" onclick="filterFood('tuky',this)">Tuky & jiné</button>
         </div>
         <!-- Oddělovač -->
         <div style="height:.5px;background:var(--rose-mid);margin:0 12px"></div>
@@ -735,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.82 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.86 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1555,22 +1549,25 @@ function applyRemoteState(remote) {
     });
   }
 
-  // nightSleep merge — přesná pravidla:
-  // - lokálně aktivní + remote neaktivní → IGNORUJ remote (my jsme spánek spustili)
-  // - lokálně ukončený + remote aktivní → IGNORUJ remote (my jsme spánek ukončili)
-  // - oba stejní → vezmi remote (novější data)
+  // nightSleep merge
   if(remote.nightSleep!==undefined){
     const localActive=!!state.nightSleep?.active;
     const remoteActive=!!remote.nightSleep?.active;
     const localEnded=!localActive&&state.nightSleep?.startTs===null;
+    const sameStartTs=state.nightSleep?.startTs===remote.nightSleep?.startTs;
     const shouldApply=
-      (localActive&&remoteActive) ||   // oba aktivní → vezmi remote (novější startTs)
-      (localEnded&&!remoteActive) ||   // oba ukončení → vezmi remote
-      (!localActive&&!localEnded&&!remoteActive); // oba neaktivní → vezmi remote
+      (localActive&&remoteActive) ||         // oba aktivní → vezmi remote
+      (localEnded&&!remoteActive) ||         // oba ukončení → vezmi remote
+      (!localActive&&!localEnded&&!remoteActive) || // oba neaktivní → vezmi remote
+      (localActive&&!remoteActive&&sameStartTs);    // lokálně běží ale remote ukončil STEJNÝ → přijmi ukončení
     if(shouldApply){
       state.nightSleep=remote.nightSleep;
+      // Pokud remote ukončil stejný spánek, odstraň live záznam a přidej ukončený
+      if(localActive&&!remoteActive&&sameStartTs){
+        state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
+      }
     }
-    // Odstraň live záznam POUZE pokud je remote neaktivní A my jsme taky neaktivní
+    // Odstraň live záznam pokud oba neaktivní
     if(!remoteActive&&!localActive){
       state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
     }
@@ -1948,7 +1945,7 @@ function renderTodayList(){
     const isNightSleep=e.type==='nightsleep';
     const cc=e.type==='breast'?' breast':e.type==='sleep'?' sleep-c'+(e.live?' live':''):isNightSleep?' sleep-c'+(e.live?' live':''):isReaction?' reaction-card':'';
     const ic=e.type==='breast'?'i-breast':(e.type==='sleep'||isNightSleep)?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-    const em=e.type==='breast'?'🤱':isNightSleep?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name);
+    const em=e.type==='breast'?'🤱':isNightSleep?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name,e.sub);
     const nightStyle=isNightSleep?'background:#f0ecff;border-color:#c5c0e8;border-left:3px solid #7a6fbf':'';
     const who=e.by?`<span class="who ${byMap[e.by]||'who-tata'}">${e.by}</span>`:'';
     const rd=e.reaction&&!isReaction?`<div class="rdot">⚠</div>`:'';
@@ -2350,13 +2347,19 @@ function saveReaction(){
 }
 
 // food suggest
-function getMealEmoji(name){
+function getMealEmoji(name,sub){
+  // Pokud záznam má brand, vezmi emoji receptu/produktu
+  if(sub&&sub.includes('🏪')){
+    const brandName=sub.split('·')[0].replace('🏪','').trim();
+    const brand=(state.brands||[]).find(b=>b.name===brandName);
+    if(brand&&brand.emoji&&brand.emoji!=='🥣')return brand.emoji;
+  }
   if(!name)return'🍽';
   const n=name.toLowerCase();
   if(n.includes('snídaně')||n.includes('snidane'))return'🥣';
   if(n.includes('svačina')||n.includes('svacina'))return'🍎';
   if(n.includes('večeře')||n.includes('vecere'))return'🍲';
-  return'🍽'; // oběd + ostatní
+  return'🍽';
 }
 
 function allFoods(){
@@ -2957,7 +2960,7 @@ function openEntryDetail(id){
   const recipeBtn=document.getElementById('edRecipeBtn');
   if(recipeBtn)recipeBtn.style.display=e.type==='food'?'':'none';
   const isWakeup=e.type==='wakeup',isBedtime=e.type==='bedtime',isNS=e.type==='nightsleep';
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isNS?'🌙':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name);
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':isNS?'🌙':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name,e.sub);
   const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',wakeup:'#fef3b0',bedtime:'#e4e0f7',nightsleep:'#e8e4f5'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
@@ -3187,7 +3190,7 @@ function syncTodayToCalData(){
 function openPlanEntryDetail(e, dayKey){
   currentEntryId=null;
   currentCalEntry=dayKey?{dayKey,ts:e.ts,type:e.type}:null;
-  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':e.type==='reaction'?'⚠️':getMealEmoji(e.name);
+  const em=e.type==='breast'?'🤱':e.type==='sleep'?'😴':e.type==='reaction'?'⚠️':getMealEmoji(e.name,e.sub);
   const bgMap={breast:'#ede4f7',sleep:'#dde5f0',food:'var(--rose-light)',reaction:'var(--red-bg)'};
   document.getElementById('edIcon').style.background=bgMap[e.type]||'var(--rose-light)';
   document.getElementById('edIcon').textContent=em;
@@ -3488,7 +3491,7 @@ function selDay(y,m,day){
         const isNS=e.type==='nightsleep';
         const cc=e.type==='breast'?' breast':(e.type==='sleep'||isNS)?' sleep-c':isReaction?' reaction-card':'';
         const ic=e.type==='breast'?'i-breast':(e.type==='sleep'||isNS)?'i-sleep':isWakeup?'i-wakeup':isBedtime?'i-bedtime':'i-food';
-        const em=e.type==='breast'?'🤱':isNS?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name);
+        const em=e.type==='breast'?'🤱':isNS?'🌙':e.type==='sleep'?'😴':isReaction?'⚠️':isWakeup?'☀️':isBedtime?'🌙':getMealEmoji(e.name,e.sub);
         const origTs=e.ts;const origType=e.type;
         const nsStyle=isNS?'style="background:#f0ecff;border-color:#c5c0e8"':'';
         const nsIconStyle=isNS?'style="background:#e8e4f5"':'';
@@ -3884,14 +3887,19 @@ function renderFoods(){
   const ageM=birth?(Date.now()-new Date(birth+' 12:00').getTime())/(30.44*86400000):8;
 
   let list=FDB.filter(f=>f.month<=Math.ceil(ageM)+1);
-  // Kategorie
+  // Kategorie — mapa filtr→FDB cat hodnoty
   if(foodCat!=='vse'){
-    const catMap={maso:'bilkoviny',ryby:'bilkoviny',vejce:'bilkoviny',mlecne:'mlecne',lusteniny:'lusteniny',orechy:'tuky',ostatni:'ostatni'};
-    list=list.filter(f=>f.cat===foodCat||(catMap[foodCat]&&f.cat===catMap[foodCat]));
+    const catGroups={bilkoviny:['maso','ryby','vejce','lusteniny','bilkoviny'],zelenina:['zelenina'],ovoce:['ovoce'],obiloviny:['obiloviny'],tuky:['tuky','mlecne','orechy','ostatni'],ostatni:['ostatni','nezařazeno']};
+    const allowed=catGroups[foodCat]||[foodCat];
+    list=list.filter(f=>allowed.includes(f.cat));
   }
-  // Custom potraviny
+  // Custom potraviny — zobraz vše bez ohledu na month
   const custom=state.customFoods||[];
-  const customF=foodCat==='vse'?custom:custom.filter(f=>f.cat===foodCat||f.cat==='nezařazeno');
+  const customF=foodCat==='vse'?custom:custom.filter(f=>{
+    const catGroups={bilkoviny:['maso','ryby','vejce','lusteniny','bilkoviny'],zelenina:['zelenina'],ovoce:['ovoce'],obiloviny:['obiloviny'],tuky:['tuky','mlecne','orechy','ostatni'],ostatni:['ostatni','nezařazeno']};
+    const allowed=catGroups[foodCat]||[foodCat];
+    return allowed.includes(f.cat)||f.cat==='nezařazeno';
+  });
   let fullList=[...list,...customF];
 
   // Vyhledávání
@@ -3991,7 +3999,7 @@ function renderFoods(){
     const reactions=ov.reactions||[];
     const lastReaction=reactions.length?reactions[reactions.length-1]:null;
     // Sub info
-    const catLabel={zelenina:'Zelenina',ovoce:'Ovoce',bilkoviny:'Maso & bílkoviny',obiloviny:'Obiloviny',tuky:'Tuky',mlecne:'Mléčné',lusteniny:'Luštěniny',custom:'Vlastní'}[f.cat]||f.cat||'';
+    const catLabel={zelenina:'Zelenina',ovoce:'Ovoce',bilkoviny:'Bílkoviny',obiloviny:'Obiloviny',tuky:'Tuky',mlecne:'Mléčné',lusteniny:'Luštěniny',custom:'Vlastní'}[f.cat]||f.cat||'';
     let subParts=[catLabel];
     if(f.month&&f.month<=12)subParts.push('od '+f.month+'. měsíce');
     if(lu){
@@ -5073,8 +5081,12 @@ function editBrand(idx){
 }
 
 function deleteBrand(idx){
-  if(!confirm('Smazat značku?'))return;
-  state.brands.splice(idx,1);renderBrands();saveAll();
+  const b=state.brands[idx];
+  if(!b)return;
+  if(!confirm('Smazat "'+(b.name||'tento recept')+'"?'))return;
+  state.brands.splice(idx,1);
+  renderBrands();
+  saveAll();
 }
 
 // ============================================================
@@ -5690,7 +5702,7 @@ function renderStats(){
   function barGraph(vals,color,refH,refLabel){
     const nonZero=vals.filter(v=>v>0);
     const avg=nonZero.length?nonZero.reduce((a,b)=>a+b,0)/nonZero.length:0;
-    const mx=Math.max(...vals.filter(v=>v>0),refH||1,avg||0,0.1);
+    const mx=Math.max(...vals.filter(v=>v>0),refH||1,0.1);
     const CH=60;
     const refPct=refH?Math.round((refH/mx)*CH):null;
     const avgPct=avg?Math.round((avg/mx)*CH):null;
