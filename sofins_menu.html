@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.92 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.93 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -4424,12 +4424,24 @@ function showBrandList(query){
         <div style="font-size:12px;font-weight:600;color:${isSel?'var(--rose-dark)':'var(--text)'}">${b.name}</div>
         <div style="font-size:10px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.ingredients.join(', ')}</div>
       </div>
-      <span style="font-size:9px;padding:2px 6px;border-radius:6px;background:${b.isRecipe?'#eaf3de':'#f5e8e5'};color:${b.isRecipe?'#27500a':'#a0524a'}">${b.isRecipe?'recept':'produkt'}</span>
+
     </div>`;
   }).join('');
 }
 
 function selectBrandForFood(idx){
+  // Pokud klikneš na již vybraný → odznač
+  if(_selectedBrandIdx===idx){
+    _selectedBrandIdx=-1;
+    selFoods2=[];
+    renderSelFoods2();
+    const wrap=document.getElementById('brandSelFoodsWrap');
+    if(wrap)wrap.style.display='none';
+    const bi=document.getElementById('brandInput');
+    if(bi)bi.value='';
+    showBrandList('');
+    return;
+  }
   _selectedBrandIdx=idx;
   const b=state.brands[idx];
   if(!b)return;
