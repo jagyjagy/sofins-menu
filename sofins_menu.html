@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.93 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.94 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1933,9 +1933,13 @@ function renderStatus(){
 
 
 function renderTodayList(){
-  // Pokud nightSleep není aktivní, odstraň live nightsleep záznam
+  // Pokud nightSleep není aktivní, odstraň live nightsleep záznamy
   if(!state.nightSleep?.active){
     state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
+  }
+  // Pokud spánek není aktivní, odstraň live sleep záznamy
+  if(!state.sleep?.active){
+    state.todayLog=state.todayLog.filter(e=>!(e.type==='sleep'&&e.live));
   }
   const sorted=[...state.todayLog].sort((a,b)=>b.ts-a.ts);
   const byMap={'mama':'who-mama','tata':'who-tata'};
