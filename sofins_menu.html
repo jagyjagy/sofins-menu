@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.87 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.92 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1214,8 +1214,10 @@ body[data-theme="neutral"]{background:#d0d0d0}
     </div>
   </div>
   <div class="mrow"><label>Složky</label>
-    <input type="text" id="abIngInput" placeholder="začni psát..." oninput="showBrandSuggest(this.value)" autocomplete="off"/>
-    <div class="fsug" id="brandIngSug" style="display:none"></div>
+    <div style="position:relative">
+      <input type="text" id="abIngInput" placeholder="začni psát..." oninput="showBrandSuggest(this.value)" autocomplete="off"/>
+      <div class="fsug" id="brandIngSug" style="display:none;position:absolute;left:0;right:0;z-index:9999"></div>
+    </div>
     <div class="sel-foods" id="abSelFoods"></div>
   </div>
   <div class="mrow"><label>Poznámka</label><input type="text" id="abNote" placeholder="výrobce, ml, gramáž..."/></div>
@@ -1966,7 +1968,14 @@ function renderTodayList(){
       const gramsP=parts.find(p=>/^\d+g$/.test(p));
       const otherParts=parts.filter(p=>!/^\d+g$/.test(p)&&!p.startsWith('🏪'));
       const brandP=parts.find(p=>p.startsWith('🏪'));
-      const foodsNote=[brandP,...otherParts].filter(Boolean).join(' · ');
+      let brandHtml='';
+      if(brandP){
+        const brandName=brandP.replace('🏪','').trim();
+        const brand=(state.brands||[]).find(b=>b.name===brandName);
+        const brandEmoji=brand?.emoji||'🏪';
+        brandHtml=`<span style="font-size:11px">${brandEmoji}</span> ${brandName}`;
+      }
+      const foodsNote=[brandHtml,...otherParts].filter(Boolean).join(' · ');
       subText=foodsNote+(gramsP?` <span style="display:inline-block;background:#f0ece8;border-radius:6px;padding:0 5px;font-size:10px;color:var(--text-2);font-weight:500">${gramsP}</span>`:'');
     }
     // Noční spánek — speciální zobrazení
@@ -2348,12 +2357,6 @@ function saveReaction(){
 
 // food suggest
 function getMealEmoji(name,sub){
-  // Pokud záznam má brand, vezmi emoji receptu/produktu
-  if(sub&&sub.includes('🏪')){
-    const brandName=sub.split('·')[0].replace('🏪','').trim();
-    const brand=(state.brands||[]).find(b=>b.name===brandName);
-    if(brand&&brand.emoji&&brand.emoji!=='🥣')return brand.emoji;
-  }
   if(!name)return'🍽';
   const n=name.toLowerCase();
   if(n.includes('snídaně')||n.includes('snidane'))return'🥣';
@@ -4935,32 +4938,34 @@ function selectBrandEmoji(el,emoji){
 }
 
 function showBrandSuggest(val){
-  const sg=document.getElementById('brandIngSug');
+  const sg=document.getElementById('brandIngSug');if(!sg)return;
   if(!val){sg.style.display='none';return;}
-  const m=allFoods().filter(f=>normMatch(f.name,val)&&!abSelFoods.includes(f.name)).slice(0,6);
-  if(!m.length){sg.style.display='none';return;}
+  const taken=abSelFoods.map(s=>s.toLowerCase());
+  const all=[...FDB,...(state.customFoods||[])].filter(f=>normMatch(f.name,val)&&!taken.includes(f.name.toLowerCase())).slice(0,8);
+  if(!all.length){sg.style.display='none';return;}
   sg.style.display='block';
-  sg.innerHTML=m.map(f=>`<div class="fsug-item" onclick="addBrandIng('${f.name}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||''}</span></div>`).join('');
+  sg.style.zIndex='400';
+  sg.innerHTML=all.map(f=>`<div class="fsug-item" onpointerdown="event.preventDefault();addBrandIng('${f.name.replace(/'/g,"&#39;")}')">${f.name} <span style="font-size:10px;color:var(--text-3)">${f.cat||''}</span></div>`).join('');
 }
 
 function addBrandIng(name){
   if(!abSelFoods.includes(name))abSelFoods.push(name);
   document.getElementById('abIngInput').value='';
   document.getElementById('brandIngSug').style.display='none';
-  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onclick="removeBrandIng('${n}')">${n} ×</span>`).join('');
+  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onpointerdown="event.preventDefault();removeBrandIng('${n.replace(/'/g,"&#39;")}')">${n} ×</span>`).join('');
 }
 function removeBrandIng(name){
   abSelFoods=abSelFoods.filter(f=>f!==name);
-  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onclick="removeBrandIng('${n}')">${n} ×</span>`).join('');
+  document.getElementById('abSelFoods').innerHTML=abSelFoods.map(n=>`<span class="sfp" onpointerdown="event.preventDefault();removeBrandIng('${n.replace(/'/g,"&#39;")}')">${n} ×</span>`).join('');
 }
 
 function saveBrand(){
   const name=document.getElementById('abName').value.trim();
-  if(!name||!abSelFoods.length){closeModal('mAddBrand');return;}
+  if(!name){alert('Zadej název.');return;}
   if(!state.brands)state.brands=[];
-  const brand={name,emoji:abSelectedEmoji,ingredients:[...abSelFoods],note:document.getElementById('abNote').value};
+  const brand={name,emoji:abSelectedEmoji,ingredients:[...abSelFoods],note:document.getElementById('abNote').value,isRecipe:abSelFoods.length>0,fav:false,lastUsed:null};
   if(editingBrandIdx>=0){state.brands[editingBrandIdx]=brand;editingBrandIdx=-1;}
-  else{state.brands.push(brand);}
+  else{state.brands.unshift(brand);}
   abSelFoods=[];closeModal('mAddBrand');renderBrands();saveAll();
 }
 
