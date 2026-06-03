@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.99 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.100 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -6566,13 +6566,13 @@ function renderNightSleepCard(){
   if(bedtime){
     const[bh,bm]=bedtime.split(':').map(Number);
     const bt=new Date();bt.setHours(bh,bm,0,0);
-    const midnight=new Date();midnight.setHours(23,59,59,999);
     const diffMs=bt.getTime()-now;
     const warnH=state.settings.bedtimeWarn||3.5;
     if(diffMs>0&&diffMs<=warnH*3600000){
       if(lbl)lbl.textContent='Noční spánek';
       if(sub)sub.innerHTML='do večerky <span id="nightCardTimer">—</span>';
-    } else if(diffMs<=0&&now<=midnight.getTime()){
+    } else if(diffMs<=0){
+      // Po večerce — zobraz vždy (do rána = nový wakeup skryje kartu)
       if(lbl)lbl.textContent='Noční spánek';
       const afterMs=now-bt.getTime();
       const ah=Math.floor(afterMs/3600000),am=Math.floor((afterMs%3600000)/60000);
