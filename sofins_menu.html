@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.101 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.102 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -6554,12 +6554,6 @@ function renderNightSleepCard(){
     if(sub)sub.innerHTML='spí <span id="nightCardTimer">—</span>';
     return;
   }
-
-  // Probuzení dnes — skryj kartu (jen pokud ts je skutečně dnes)
-  const todayStr=dateKey(TODAY);
-  const wakeupToday=state.todayLog.find(e=>e.type==='wakeup'&&dateKey(new Date(e.ts))===todayStr);
-  const wakeupCalToday=(state.calData[todayStr]?.entries||[]).find(e=>e.type==='wakeup');
-  if(wakeupToday||wakeupCalToday){card.style.display='none';return;}
 
   // Vždy zobraz kartu pro spuštění nočního spánku
   card.style.display='block';
