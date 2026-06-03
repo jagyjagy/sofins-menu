@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.98 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.99 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -6545,40 +6545,45 @@ function renderNightSleepCard(){
   const lbl=document.getElementById('nightCardLabel');
   const ico=document.getElementById('nightCardIcon');
   const sub=document.getElementById('nightCardSub');
+
   if(ns.active){
+    // Spánek běží — zobraz "Probudila se"
     card.style.display='block';
-    if(lbl)lbl.textContent='☀️ Probudila se';
+    if(lbl)lbl.textContent='Probudila se';
     if(ico)ico.textContent='☀️';
-    if(sub)sub.innerHTML='už spí <span id="nightCardTimer">—</span>';
-  } else if(bedtime){
-    // Pokud dnes bylo probuzení — neskrývej kartu s probuzením, ale skryj bedtime info
-    const wakeupToday=state.todayLog.find(e=>e.type==='wakeup');
-    if(wakeupToday){card.style.display='none';return;}
+    if(sub)sub.innerHTML='spí <span id="nightCardTimer">—</span>';
+    return;
+  }
+
+  // Probuzení dnes — skryj kartu
+  const wakeupToday=state.todayLog.find(e=>e.type==='wakeup');
+  if(wakeupToday){card.style.display='none';return;}
+
+  // Vždy zobraz kartu pro spuštění nočního spánku
+  card.style.display='block';
+  if(ico)ico.textContent='🌙';
+
+  if(bedtime){
     const[bh,bm]=bedtime.split(':').map(Number);
     const bt=new Date();bt.setHours(bh,bm,0,0);
     const midnight=new Date();midnight.setHours(23,59,59,999);
     const diffMs=bt.getTime()-now;
     const warnH=state.settings.bedtimeWarn||3.5;
-    const afterBedtime=diffMs<=0&&now<=midnight.getTime();
     if(diffMs>0&&diffMs<=warnH*3600000){
-      // Před večerkou — countdown
-      card.style.display='block';
-      if(lbl)lbl.textContent='🌙 Noční spánek';
-      if(ico)ico.textContent='🌙';
+      if(lbl)lbl.textContent='Noční spánek';
       if(sub)sub.innerHTML='do večerky <span id="nightCardTimer">—</span>';
-    } else if(afterBedtime){
-      // Po večerce do půlnoci — zobraz jak dlouho po večerce
-      card.style.display='block';
-      if(lbl)lbl.textContent='🌙 Noční spánek';
-      if(ico)ico.textContent='🌙';
+    } else if(diffMs<=0&&now<=midnight.getTime()){
+      if(lbl)lbl.textContent='Noční spánek';
       const afterMs=now-bt.getTime();
       const ah=Math.floor(afterMs/3600000),am=Math.floor((afterMs%3600000)/60000);
-      if(sub)sub.innerHTML=`po večerce <span id="nightCardTimer">${ah>0?ah+'h ':''} ${String(am).padStart(2,'0')}min</span>`;
+      if(sub)sub.innerHTML=`po večerce ${ah>0?ah+'h ':''}<span id="nightCardTimer">${String(am).padStart(2,'0')}min</span>`;
     } else {
-      card.style.display='none';
+      if(lbl)lbl.textContent='Noční spánek';
+      if(sub)sub.textContent='klepni pro zahájení';
     }
   } else {
-    card.style.display='none';
+    if(lbl)lbl.textContent='Noční spánek';
+    if(sub)sub.textContent='klepni pro zahájení';
   }
 }
 
