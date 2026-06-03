@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.94 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.97 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -839,16 +839,37 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥘')">🥘</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍲')">🍲</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥗')">🥗</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍳')">🍳</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🫕')">🫕</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍱')">🍱</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥙')">🥙</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍛')">🍛</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥦')">🥦</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🐟')">🐟</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🐠')">🐠</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍣')">🍣</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥩')">🥩</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍗')">🍗</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥚')">🥚</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍳')">🍳</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥣')">🫐</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥦')">🥦</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥕')">🥕</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍠')">🍠</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🌽')">🌽</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍅')">🍅</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥑')">🥑</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍌')">🍌</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍎')">🍎</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍐')">🍐</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🫐')">🫐</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍓')">🍓</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥛')">🥛</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🧀')">🧀</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍚')">🍚</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍜')">🍜</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥞')">🥞</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🫘')">🫘</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🧆')">🧆</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥜')">🥜</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🌾')">🌾</span>
     </div>
     <input type="hidden" id="recipeEmoji" value="🥘"/>
   </div>
@@ -1457,6 +1478,7 @@ const DEFAULT_STATE = {
   foodOverrides: {},
   customFoods: [],
   brands: [],
+  brandsTs: 0,
   weightLog: [],
   ts: 0
 };
@@ -1582,11 +1604,15 @@ function applyRemoteState(remote) {
   if(remote.customFoods&&remote.customFoods.length>=((state.customFoods||[]).length)){
     state.customFoods = remote.customFoods;
   }
-  if(remote.brands){
-    // Merge: zachovej lokální brandy které remote nemá (přidané od posledního syncu)
-    const remoteNames=new Set((remote.brands||[]).map(b=>b.name));
-    const localOnly=(state.brands||[]).filter(b=>!remoteNames.has(b.name));
-    state.brands=[...remote.brands,...localOnly];
+  if(remote.brands!==undefined){
+    // Přijmi remote brands jen pokud jsou novější (brandsTs)
+    const remoteBrandsTs=remote.brandsTs||0;
+    const localBrandsTs=state.brandsTs||0;
+    if(remoteBrandsTs>=localBrandsTs){
+      state.brands=remote.brands;
+      state.brandsTs=remoteBrandsTs;
+    }
+    // Jinak lokální verze je novější — ignoruj remote brands
   }
   if(remote.weightLog){
     const localWLTs=parseInt(localStorage.getItem('sofin:weightLogTs')||'0');
@@ -4533,7 +4559,7 @@ function confirmSaveRecipe(){
   const emoji=document.getElementById('recipeEmoji').value||'🥘';
   if(!state.brands)state.brands=[];
   state.brands.unshift({name,ingredients:[..._recipeSelFoods],emoji,isRecipe:true,fav:false,note:'',lastUsed:null});
-  saveAll();
+  state.brandsTs=Date.now();saveAll();
   renderBrands();
   closeModal('mSaveRecipe');
   // Skryj banner
@@ -4979,10 +5005,19 @@ function saveBrand(){
   const name=document.getElementById('abName').value.trim();
   if(!name){alert('Zadej název.');return;}
   if(!state.brands)state.brands=[];
-  const brand={name,emoji:abSelectedEmoji,ingredients:[...abSelFoods],note:document.getElementById('abNote').value,isRecipe:abSelFoods.length>0,fav:false,lastUsed:null};
+  const existing=editingBrandIdx>=0?state.brands[editingBrandIdx]:{};
+  const brand={
+    name,
+    emoji:abSelectedEmoji,
+    ingredients:[...abSelFoods],
+    note:document.getElementById('abNote').value,
+    isRecipe:abSelFoods.length>0,
+    fav:existing.fav||false,
+    lastUsed:existing.lastUsed||null
+  };
   if(editingBrandIdx>=0){state.brands[editingBrandIdx]=brand;editingBrandIdx=-1;}
   else{state.brands.unshift(brand);}
-  abSelFoods=[];closeModal('mAddBrand');renderBrands();saveAll();
+  state.brandsTs=Date.now();abSelFoods=[];closeModal('mAddBrand');renderBrands();saveAll();
 }
 
 function renderBrands(){
@@ -5106,6 +5141,7 @@ function deleteBrand(idx){
   if(!b)return;
   if(!confirm('Smazat "'+(b.name||'tento recept')+'"?'))return;
   state.brands.splice(idx,1);
+  state.brandsTs=Date.now();
   renderBrands();
   saveAll();
 }
@@ -6486,6 +6522,9 @@ function renderNightSleepCard(){
     if(ico)ico.textContent='☀️';
     if(sub)sub.innerHTML='už spí <span id="nightCardTimer">—</span>';
   } else if(bedtime){
+    // Pokud dnes bylo probuzení — neskrývej kartu s probuzením, ale skryj bedtime info
+    const wakeupToday=state.todayLog.find(e=>e.type==='wakeup');
+    if(wakeupToday){card.style.display='none';return;}
     const[bh,bm]=bedtime.split(':').map(Number);
     const bt=new Date();bt.setHours(bh,bm,0,0);
     const midnight=new Date();midnight.setHours(23,59,59,999);
