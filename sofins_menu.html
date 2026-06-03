@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.97 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.98 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1225,13 +1225,42 @@ body[data-theme="neutral"]{background:#d0d0d0}
   <div class="mhandle"></div><div class="mtitle" id="mAddBrandTitle">Přidat produkt / recept</div>
   <div class="mrow"><label>Název značky nebo receptu</label><input type="text" id="abName" placeholder="např. Mrkvová kaše, HiPP Bio..."/></div>
   <div class="mrow"><label>Emoji ikona</label>
-    <div style="display:flex;gap:6px;flex-wrap:wrap" id="abEmojiPicker">
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🥣')">🥣</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🍼')">🍼</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🥕')">🥕</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🍎')">🍎</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🐔')">🐔</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onclick="selectBrandEmoji(this,'🏪')">🏪</span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap" id="abEmojiPicker">
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥣')">🥣</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥘')">🥘</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍲')">🍲</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥗')">🥗</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍳')">🍳</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🫕')">🫕</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍱')">🍱</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥙')">🥙</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍛')">🍛</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🐟')">🐟</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🐠')">🐠</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍣')">🍣</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥩')">🥩</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍗')">🍗</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥚')">🥚</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥦')">🥦</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥕')">🥕</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍠')">🍠</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🌽')">🌽</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍅')">🍅</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥑')">🥑</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍌')">🍌</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍎')">🍎</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍐')">🍐</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🫐')">🫐</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍓')">🍓</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥛')">🥛</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🧀')">🧀</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍚')">🍚</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍜')">🍜</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥞')">🥞</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🫘')">🫘</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🧆')">🧆</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥜')">🥜</span>
+      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🌾')">🌾</span>
     </div>
   </div>
   <div class="mrow"><label>Složky</label>
