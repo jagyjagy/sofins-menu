@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.106 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.107 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -743,11 +743,6 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div>
 
 <!-- EMOJI PICKER MODAL -->
-<div class="modal-wrap" id="mEmojiPicker"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()" style="max-height:70vh;overflow-y:auto">
-  <div class="mhandle"></div>
-  <div class="mtitle" style="margin-bottom:12px">Vyber ikonu dítěte</div>
-  <div id="emojiGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding-bottom:16px"></div>
-</div></div></div>
 
 <!-- PLAN ADD MENU -->
 <div class="modal-wrap" id="mPlanAdd"><div class="movl" onclick="closeModal('mPlanAdd')"><div class="msheet" onclick="event.stopPropagation()">
@@ -5120,20 +5115,16 @@ function addBrandToDay(idx){
   if(!b)return;
   state.brands[idx].lastUsed=new Date().toISOString().slice(0,10);
   state.brandsTs=Date.now();
-  // Přepni obrazovku na home BEZ renderAll
-  document.querySelectorAll('.screen').forEach(s=>s.style.display='none');
-  const home=document.getElementById('scr-home');
-  if(home)home.style.display='block';
-  curScreen='home';
-  document.querySelectorAll('.ti').forEach(t=>t.classList.remove('active'));
-  document.getElementById('ti-home')?.classList.add('active');
-  openModal('mFood');
+  showScreen('today');
   setTimeout(()=>{
-    setFoodSrcTab('bought');
-    setTimeout(()=>selectBrandForFood(idx),80);
-    const ft=document.getElementById('foodTime');
-    if(ft){const n=new Date();ft.value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
-  },60);
+    openModal('mFood');
+    setTimeout(()=>{
+      setFoodSrcTab('bought');
+      setTimeout(()=>selectBrandForFood(idx),80);
+      const ft=document.getElementById('foodTime');
+      if(ft){const n=new Date();ft.value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+    },60);
+  },100);
   saveAll();
 }
 
