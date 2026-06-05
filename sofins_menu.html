@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.102 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.104 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -828,48 +828,28 @@ body[data-theme="neutral"]{background:#d0d0d0}
   </div>
 </div></div></div>
 
+<!-- EMOJI PICKER POPUP -->
+<div class="modal-wrap" id="mEmojiPicker" style="z-index:500"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()">
+  <div class="mhandle"></div>
+  <div class="mtitle">Vyber ikonu</div>
+  <div id="emojiPickerGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:4px 0;max-height:65vh;overflow-y:auto"></div>
+</div></div></div>
+
 <!-- MODALS -->
 <!-- ULOŽIT JAKO RECEPT -->
 <div class="modal-wrap" id="mSaveRecipe" style="z-index:300"><div class="movl" onclick="closeModal('mSaveRecipe')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle">🥘 Uložit jako recept</div>
   <div class="mrow"><label>Emoji</label>
-    <div id="recipeEmojiPicker" style="display:flex;flex-wrap:wrap;gap:4px">
+    <div id="recipeEmojiPicker" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+      <span class="recipe-emoji-opt sel" onpointerdown="selectRecipeEmoji('🥘')">🥘</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥣')">🥣</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥘')">🥘</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍲')">🍲</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥗')">🥗</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍳')">🍳</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🫕')">🫕</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍱')">🍱</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥙')">🥙</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍛')">🍛</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🐟')">🐟</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🐠')">🐠</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍣')">🍣</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥩')">🥩</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍗')">🍗</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥚')">🥚</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥦')">🥦</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥕')">🥕</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍠')">🍠</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🌽')">🌽</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍅')">🍅</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥑')">🥑</span>
       <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍌')">🍌</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍎')">🍎</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍐')">🍐</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🫐')">🫐</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍓')">🍓</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥛')">🥛</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🧀')">🧀</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍚')">🍚</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍜')">🍜</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥞')">🥞</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🫘')">🫘</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🧆')">🧆</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🥜')">🥜</span>
-      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🌾')">🌾</span>
+      <span class="recipe-emoji-opt" onpointerdown="selectRecipeEmoji('🍳')">🍳</span>
+      <button onpointerdown="openEmojiPickerPopup('recipe')" style="font-size:11px;padding:4px 10px;border-radius:8px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);cursor:pointer;font-family:inherit">více ▾</button>
     </div>
     <input type="hidden" id="recipeEmoji" value="🥘"/>
   </div>
@@ -1225,43 +1205,16 @@ body[data-theme="neutral"]{background:#d0d0d0}
   <div class="mhandle"></div><div class="mtitle" id="mAddBrandTitle">Přidat produkt / recept</div>
   <div class="mrow"><label>Název značky nebo receptu</label><input type="text" id="abName" placeholder="např. Mrkvová kaše, HiPP Bio..."/></div>
   <div class="mrow"><label>Emoji ikona</label>
-        <div style="display:flex;gap:4px;flex-wrap:wrap" id="abEmojiPicker">
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥣')">🥣</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥘')">🥘</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍲')">🍲</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥗')">🥗</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍳')">🍳</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🫕')">🫕</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍱')">🍱</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥙')">🥙</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍛')">🍛</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🐟')">🐟</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🐠')">🐠</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍣')">🍣</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥩')">🥩</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍗')">🍗</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥚')">🥚</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥦')">🥦</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥕')">🥕</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍠')">🍠</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🌽')">🌽</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍅')">🍅</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥑')">🥑</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍌')">🍌</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍎')">🍎</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍐')">🍐</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🫐')">🫐</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍓')">🍓</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥛')">🥛</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🧀')">🧀</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍚')">🍚</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍜')">🍜</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥞')">🥞</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🫘')">🫘</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🧆')">🧆</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥜')">🥜</span>
-      <span style="cursor:pointer;font-size:20px;padding:3px 6px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🌾')">🌾</span>
-    </div>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap" id="abEmojiPicker">
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:1.5px solid var(--rose-btn);background:var(--rose-light)" onpointerdown="selectBrandEmoji(this,'🥘')">🥘</span>
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥣')">🥣</span>
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🐟')">🐟</span>
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥩')">🥩</span>
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🥦')">🥦</span>
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍌')">🍌</span>
+          <span style="cursor:pointer;font-size:20px;padding:3px 5px;border-radius:8px;border:.5px solid var(--rose-mid)" onpointerdown="selectBrandEmoji(this,'🍳')">🍳</span>
+          <button onpointerdown="openEmojiPickerPopup('brand')" style="font-size:11px;padding:4px 10px;border-radius:8px;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);cursor:pointer;font-family:inherit">více ▾</button>
+        </div>
   </div>
   <div class="mrow"><label>Složky</label>
     <div style="position:relative">
@@ -1271,7 +1224,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
     <div class="sel-foods" id="abSelFoods"></div>
   </div>
   <div class="mrow"><label>Poznámka</label><input type="text" id="abNote" placeholder="výrobce, ml, gramáž..."/></div>
-  <button class="msave" onclick="saveBrand()">Uložit značku</button>
+  <button class="msave" onclick="saveBrand()">Uložit</button>
   <button class="mcancel" onclick="closeModal('mAddBrand')">Zrušit</button>
 </div></div></div>
 
@@ -2416,6 +2369,12 @@ function saveReaction(){
 
 // food suggest
 function getMealEmoji(name,sub){
+  if(sub&&sub.includes('🏪')){
+    const brandName=sub.split('·')[0].replace(/🏪/g,'').trim();
+    const brand=(state.brands||[]).find(b=>b.name===brandName);
+    if(brand?.emoji)return brand.emoji;
+    return'🥘'; // recept bez brand záznamu
+  }
   if(!name)return'🍽';
   const n=name.toLowerCase();
   if(n.includes('snídaně')||n.includes('snidane'))return'🥣';
@@ -4477,7 +4436,7 @@ function showBrandList(query){
   el.innerHTML=brands.map(b=>{
     const idx=state.brands.indexOf(b);
     const isSel=idx===_selectedBrandIdx;
-    return `<div onpointerdown="selectBrandForFood(${idx})" style="padding:8px 10px;border-radius:9px;background:${isSel?'var(--rose-light)':'var(--card)'};border:${isSel?'1px solid var(--rose-btn)':'.5px solid var(--rose-mid)'};cursor:pointer;display:flex;align-items:center;gap:8px">
+    return `<div onclick="selectBrandForFood(${idx})" style="padding:8px 10px;border-radius:9px;background:${isSel?'var(--rose-light)':'var(--card)'};border:${isSel?'1px solid var(--rose-btn)':'.5px solid var(--rose-mid)'};cursor:pointer;display:flex;align-items:center;gap:8px">
       <span style="font-size:17px">${b.emoji||'🥣'}</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;color:${isSel?'var(--rose-dark)':'var(--text)'}">${b.name}</div>
@@ -4693,6 +4652,53 @@ function _applyFoodEdit(e){
   const saveBtn=document.querySelector('#mFood .msave');
   if(saveBtn){saveBtn.textContent='Uložit jídlo';saveBtn.onclick=saveFood;}
   closeModal('mFood');saveAll();
+}
+
+
+let _emojiPickerTarget='recipe';
+const ALL_EMOJIS=[
+  '🥣','🥘','🍲','🥗','🍳','🫕','🍱','🥙','🍛','🥞','🧇','🥜',
+  '🐟','🐠','🐡','🍣','🦐','🦑','🦞','🦀','🐙','🍤',
+  '🥩','🍗','🍖','🥓','🌭','🍔','🥚','🧀',
+  '🥦','🥕','🌽','🥑','🍅','🧅','🧄','🥔','🍠','🫑','🌶','🥒','🥬','🍆',
+  '🍌','🍎','🍐','🍊','🍋','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥝',
+  '🥛','🧈','🍦','🍰','🧁','🍩','🍪','🍫',
+  '🍚','🍜','🍝','🫔','🌮','🌯','🥙','🧆','🍘',
+  '🐄','🐔','🐟','🐷','🐑','🦃','🐰','🦆',
+  '🌾','🫘','🥜','🌿','🍃','🌱',
+  '⭐','❤️','🏆','💚','💛','🔵','🌈',
+];
+
+function openEmojiPickerPopup(target){
+  _emojiPickerTarget=target;
+  const grid=document.getElementById('emojiPickerGrid');
+  const currentEmoji=target==='recipe'?document.getElementById('recipeEmoji')?.value:(window.abSelectedEmoji||'🥘');
+  grid.innerHTML=ALL_EMOJIS.map(e=>`<span onpointerdown="pickEmojiFromPopup('${e}')" style="font-size:24px;text-align:center;padding:6px 4px;border-radius:8px;cursor:pointer;border:1.5px solid ${e===currentEmoji?'var(--rose-btn)':'transparent'};background:${e===currentEmoji?'var(--rose-light)':'transparent'}">${e}</span>`).join('');
+  openModal('mEmojiPicker');
+}
+
+function pickEmojiFromPopup(emoji){
+  closeModal('mEmojiPicker');
+  if(_emojiPickerTarget==='recipe'){
+    selectRecipeEmoji(emoji);
+  } else {
+    // brand picker
+    const spans=document.querySelectorAll('#abEmojiPicker span');
+    spans.forEach(s=>{s.style.border='.5px solid var(--rose-mid)';s.style.background='transparent';});
+    abSelectedEmoji=emoji;
+    // Aktualizuj vybranou v quick row pokud existuje
+    spans.forEach(s=>{if(s.textContent.trim()===emoji){s.style.border='1.5px solid var(--rose-btn)';s.style.background='var(--rose-light)';}});
+    // Zobraz vybraný emoji vedle quick row
+    let cur=document.getElementById('abEmojiCurrent');
+    if(!cur){
+      cur=document.createElement('span');
+      cur.id='abEmojiCurrent';
+      cur.style.cssText='font-size:22px;padding:3px 5px;border-radius:8px;border:1.5px solid var(--rose-btn);background:var(--rose-light)';
+      const picker=document.getElementById('abEmojiPicker');
+      if(picker)picker.prepend(cur);
+    }
+    cur.textContent=emoji;
+  }
 }
 
 
@@ -5112,19 +5118,19 @@ function toggleBrandFav(idx){
 function addBrandToDay(idx){
   const b=state.brands[idx];
   if(!b)return;
-  // Předvyplň food modal
-  selFoods=[...b.ingredients];
-  renderSelFoodsEl();
-  document.getElementById('foodTime').value=new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
-  // Set type button to match brand type
-  const typeBtn=document.querySelector('#mFood .type-btn');
-  if(typeBtn)typeBtn.click();
-  document.getElementById('brandInput').value=b.name;
-  document.getElementById('rowBrand').style.display='block';
-  showBrandSuggestFood('');
-  openModal('mFood');
-  // Update lastUsed
+  // Přepni na kartu Dnes a otevři food modal s předvyplněným receptem
+  showScreen('home');
+  setTimeout(()=>{
+    openModal('mFood');
+    setTimeout(()=>{
+      setFoodSrcTab('bought');
+      setTimeout(()=>selectBrandForFood(idx),80);
+      const ft=document.getElementById('foodTime');
+      if(ft){const n=new Date();ft.value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+    },60);
+  },100);
   state.brands[idx].lastUsed=new Date().toISOString().slice(0,10);
+  state.brandsTs=Date.now();
   saveAll();
 }
 
@@ -6555,9 +6561,25 @@ function renderNightSleepCard(){
     return;
   }
 
-  // Vždy zobraz kartu pro spuštění nočního spánku
-  card.style.display='block';
-  if(ico)ico.textContent='🌙';
+  // Karta jen v okně kolem večerky (nebo bez bedtime: celý den)
+  if(!bedtime){
+    // Bez nastavené večerky - zobraz stále
+    card.style.display='block';
+    if(ico)ico.textContent='🌙';
+  } else {
+    const[bh,bm]=bedtime.split(':').map(Number);
+    const bt=new Date();bt.setHours(bh,bm,0,0);
+    const diffMs=bt.getTime()-now;
+    const warnH=state.settings.bedtimeWarn||3.5;
+    // Zobraz warnH hodin před večerkou a kdykoli po ní
+    if(diffMs<=warnH*3600000){
+      card.style.display='block';
+      if(ico)ico.textContent='🌙';
+    } else {
+      card.style.display='none';
+      return;
+    }
+  }
 
   if(bedtime){
     const[bh,bm]=bedtime.split(':').map(Number);
