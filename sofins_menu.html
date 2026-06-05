@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.104 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.106 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -829,7 +829,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
 </div></div></div>
 
 <!-- EMOJI PICKER POPUP -->
-<div class="modal-wrap" id="mEmojiPicker" style="z-index:500"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()">
+<div class="modal-wrap" id="mEmojiPicker" style="z-index:600"><div class="movl" onclick="closeModal('mEmojiPicker')"><div class="msheet" onclick="event.stopPropagation()">
   <div class="mhandle"></div>
   <div class="mtitle">Vyber ikonu</div>
   <div id="emojiPickerGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:4px 0;max-height:65vh;overflow-y:auto"></div>
@@ -2535,7 +2535,7 @@ function deleteCurrentEntry(){
       if(day&&day.entries){
         day.entries=day.entries.filter(e=>!(e.ts===currentCalEntry.ts&&e.type===currentCalEntry.type));
         // přepočítej stats
-        day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+        day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>getFoodsFromSub(e.sub||'')))];
         day.breast=day.entries.filter(e=>e.type==='breast').length;
         day.sleep=day.entries.filter(e=>e.type==='sleep').length;
         day.reaction=day.entries.some(e=>e.type==='reaction');
@@ -3185,7 +3185,7 @@ function syncTodayToCalData(){
       day.breast=day.entries.filter(e=>e.type==='breast').length;
       day.sleep=day.entries.filter(e=>e.type==='sleep').length;
       day.reaction=day.entries.some(e=>e.type==='reaction');
-      day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+      day.foods=[...new Set(day.entries.filter(e=>e.type==='food').flatMap(e=>getFoodsFromSub(e.sub||'')))];
     });
     // odeber z todayLog záznamy jiných dnů (kromě live spánku a nočního spánku)
     state.todayLog=state.todayLog.filter(e=>{
@@ -3200,7 +3200,7 @@ function syncTodayToCalData(){
   if(!state.calData[todayKey])state.calData[todayKey]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[]};
   const day=state.calData[todayKey];
   const todayEntries=state.todayLog.filter(e=>!e.live&&e.type!=='nightsleep');
-  day.foods=[...new Set(todayEntries.filter(e=>e.type==='food').flatMap(e=>(e.sub||'').split(',').map(s=>s.trim()).filter(Boolean)))];
+  day.foods=[...new Set(todayEntries.filter(e=>e.type==='food').flatMap(e=>getFoodsFromSub(e.sub||'')))];
   day.breast=todayEntries.filter(e=>e.type==='breast').length;
   day.sleep=todayEntries.filter(e=>e.type==='sleep').length;
   day.reaction=todayEntries.some(e=>e.type==='reaction');
@@ -5118,19 +5118,22 @@ function toggleBrandFav(idx){
 function addBrandToDay(idx){
   const b=state.brands[idx];
   if(!b)return;
-  // Přepni na kartu Dnes a otevři food modal s předvyplněným receptem
-  showScreen('home');
-  setTimeout(()=>{
-    openModal('mFood');
-    setTimeout(()=>{
-      setFoodSrcTab('bought');
-      setTimeout(()=>selectBrandForFood(idx),80);
-      const ft=document.getElementById('foodTime');
-      if(ft){const n=new Date();ft.value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
-    },60);
-  },100);
   state.brands[idx].lastUsed=new Date().toISOString().slice(0,10);
   state.brandsTs=Date.now();
+  // Přepni obrazovku na home BEZ renderAll
+  document.querySelectorAll('.screen').forEach(s=>s.style.display='none');
+  const home=document.getElementById('scr-home');
+  if(home)home.style.display='block';
+  curScreen='home';
+  document.querySelectorAll('.ti').forEach(t=>t.classList.remove('active'));
+  document.getElementById('ti-home')?.classList.add('active');
+  openModal('mFood');
+  setTimeout(()=>{
+    setFoodSrcTab('bought');
+    setTimeout(()=>selectBrandForFood(idx),80);
+    const ft=document.getElementById('foodTime');
+    if(ft){const n=new Date();ft.value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+  },60);
   saveAll();
 }
 
