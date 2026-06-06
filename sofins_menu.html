@@ -729,7 +729,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.107 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.109 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -1557,13 +1557,13 @@ function applyRemoteState(remote) {
     const localEnded=!localActive&&state.nightSleep?.startTs===null;
     const sameStartTs=state.nightSleep?.startTs===remote.nightSleep?.startTs;
     const shouldApply=
-      (localActive&&remoteActive) ||         // oba aktivní → vezmi remote
-      (localEnded&&!remoteActive) ||         // oba ukončení → vezmi remote
+      (localActive&&remoteActive) ||              // oba aktivní → vezmi remote (novější startTs)
       (!localActive&&!localEnded&&!remoteActive) || // oba neaktivní → vezmi remote
-      (localActive&&!remoteActive&&sameStartTs);    // lokálně běží ale remote ukončil STEJNÝ → přijmi ukončení
+      (localEnded&&!remoteActive) ||              // lokálně ukončený, remote taky → vezmi remote
+      (!localActive&&remoteActive) ||             // ← OPRAVA: lokálně nic, remote spustil → přijmi
+      (localActive&&!remoteActive&&sameStartTs);  // lokálně běží ale remote ukončil STEJNÝ → přijmi
     if(shouldApply){
       state.nightSleep=remote.nightSleep;
-      // Pokud remote ukončil stejný spánek, odstraň live záznam a přidej ukončený
       if(localActive&&!remoteActive&&sameStartTs){
         state.todayLog=state.todayLog.filter(e=>!(e.type==='nightsleep'&&e.live));
       }
@@ -2559,7 +2559,14 @@ function saveEntryAsRecipe(){
 }
 
 function copyCurrentEntry(){
-  const e=state.todayLog.find(x=>x.id===currentEntryId);
+  let e=state.todayLog.find(x=>x.id===currentEntryId);
+  if(!e){
+    outer:for(const k of Object.keys(state.calData)){
+      for(const x of (state.calData[k].entries||[])){
+        if(x.id===currentEntryId){e=x;break outer;}
+      }
+    }
+  }
   if(!e||e.type!=='food')return;
   closeModal('mEntryDetail');
   copyFoodEntry(e);
@@ -5131,24 +5138,42 @@ function addBrandToDay(idx){
 // Kopírovat jídlo — předvyplní food modal záznamy ze záznamu
 function copyFoodEntry(e){
   if(!e||e.type!=='food')return;
-  selFoods=getFoodsFromSub(e.sub||'');
-  renderSelFoodsEl();
-  const parts=(e.sub||'').split('·').map(s=>s.trim());
-  const brand=parts.find(p=>p.startsWith('🏪'));
-  if(brand){
-    document.getElementById('brandInput').value=brand.replace('🏪','').trim();
-    document.getElementById('rowBrand').style.display='block';
-  } else {
-    document.getElementById('brandInput').value='';
-  }
-  // Nastav typ
-  const typeMap={'Snídaně':0,'Oběd':1,'Svačina':2,'Večeře':3};
-  const typeIdx=typeMap[e.name]??2;
-  document.querySelectorAll('#mFood .type-btn').forEach((btn,i)=>{btn.classList.toggle('sel',i===typeIdx);});
-  document.getElementById('foodTime').value=new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('foodNote').value='';
-  document.getElementById('foodGrams').value='';
+  const parts=(e.sub||'').split('·').map(s=>s.trim()).filter(Boolean);
+  const brandPart=parts.find(p=>p.startsWith('🏪'));
+  const brandName=brandPart?brandPart.replace('🏪','').trim():'';
+  const foods=getFoodsFromSub(e.sub||'');
+  const gramsP=parts.find(p=>/^\d+g$/.test(p));
+  const noteParts=parts.filter(p=>!p.startsWith('🏪')&&!/^\d+g$/.test(p)&&p!==foods.join(', '));
+
   openModal('mFood');
+  setTimeout(()=>{
+    // Typ
+    const typeMap={'Snídaně':'🥣 Snídaně','Oběd':'🍽 Oběd','Svačina':'🍎 Svačina','Večeře':'🍲 Večeře'};
+    const typeName=typeMap[e.name]||e.name;
+    document.querySelectorAll('#mFood .type-btn').forEach(btn=>btn.classList.toggle('sel',btn.textContent.trim()===typeName));
+    // Čas = teď
+    const n=new Date();
+    const ft=document.getElementById('foodTime');
+    if(ft)ft.value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+    // Gramáž a poznámka
+    const fg=document.getElementById('foodGrams');if(fg)fg.value=gramsP?gramsP.replace('g',''):'';
+    const fn=document.getElementById('foodNote');if(fn)fn.value=noteParts.join(' · ');
+    // Brand nebo vlastní složky
+    if(brandName){
+      setFoodSrcTab('bought');
+      const bi=document.getElementById('brandInput');if(bi)bi.value=brandName;
+      const brandIdx=state.brands.findIndex(b=>b.name===brandName);
+      if(brandIdx>=0){
+        setTimeout(()=>selectBrandForFood(brandIdx),80);
+      } else {
+        selFoods2=[...foods];renderSelFoods2();
+        const w=document.getElementById('brandSelFoodsWrap');if(w)w.style.display='block';
+      }
+    } else {
+      setFoodSrcTab('own');
+      selFoods=[...foods];renderSelFoodsEl();
+    }
+  },50);
 }
 
 function editBrand(idx){
