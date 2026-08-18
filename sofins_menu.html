@@ -730,7 +730,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.126 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.127 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -6881,18 +6881,20 @@ function renderNightSleepCard(){
   // Pokud bylo dnes probuzení ale bez nočního spánku — skryj kartu
   if(wakeupToday2&&!ns.active){card.style.display='none';return;}
 
-  // Karta jen v okně kolem večerky (nebo bez bedtime: celý den)
+  // Karta jen v okně kolem večerky
   if(!bedtime){
-    // Bez nastavené večerky - zobraz stále
     card.style.display='block';
     if(ico)ico.textContent='🌙';
   } else {
     const[bh,bm]=bedtime.split(':').map(Number);
-    const bt=new Date();bt.setHours(bh,bm,0,0);
-    const diffMs=bt.getTime()-now;
+    const nowDate=new Date();
+    const bt=new Date(nowDate);bt.setHours(bh,bm,0,0);
+    const midnight=new Date(nowDate);midnight.setHours(23,59,59,999);
+    const diffMs=bt.getTime()-nowDate.getTime(); // záporné = po večerce
     const warnH=state.settings.bedtimeWarn||3.5;
-    // Zobraz warnH hodin před večerkou a kdykoli po ní
-    if(diffMs<=warnH*3600000){
+    const beforeBedtime=diffMs>0&&diffMs<=warnH*3600000;
+    const afterBedtime=diffMs<=0&&nowDate<=midnight;
+    if(beforeBedtime||afterBedtime){
       card.style.display='block';
       if(ico)ico.textContent='🌙';
     } else {
