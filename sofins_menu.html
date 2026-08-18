@@ -730,7 +730,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.127 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.128 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -6868,18 +6868,22 @@ function renderNightSleepCard(){
 
   // Po půlnoci bez nočního spánku — nabídni "Probudila se"
   const nowH=new Date().getHours();
-  const afterMidnight=nowH<12; // 0:00–12:00 = ráno
+  const isMorning=nowH<12;
   const todayKey2=dateKey(new Date());
   const wakeupToday2=(state.calData[todayKey2]?.entries||[]).some(e=>e.type==='wakeup');
-  if(afterMidnight&&!wakeupToday2){
+  if(isMorning&&!wakeupToday2){
+    // Ráno bez probuzení → nabídni
     card.style.display='block';
     if(ico)ico.textContent='☀️';
     if(lbl)lbl.textContent='Probudila se';
     if(sub)sub.textContent='zadej probuzení';
     return;
   }
-  // Pokud bylo dnes probuzení ale bez nočního spánku — skryj kartu
-  if(wakeupToday2&&!ns.active){card.style.display='none';return;}
+  if(isMorning&&wakeupToday2){
+    // Ráno s probuzením → skryj
+    card.style.display='none';return;
+  }
+  // Odpoledne/večer — ignoruj ranní wakeup, ukaz podle večerky
 
   // Karta jen v okně kolem večerky
   if(!bedtime){
