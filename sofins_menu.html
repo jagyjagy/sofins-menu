@@ -422,7 +422,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="sdash-icon">🤱</div>
           <div class="sdash-text">
             <div class="sdash-val" id="sd-breast-val">—</div>
-            <div class="sdash-lbl">kojila před</div>
+            <div class="sdash-lbl">mléko před</div>
           </div>
         </div>
         <div style="width:.5px;height:24px;background:var(--rose-mid);flex-shrink:0;margin:0 4px"></div>
@@ -730,7 +730,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.125 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.126 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -6870,8 +6870,7 @@ function renderNightSleepCard(){
   const nowH=new Date().getHours();
   const afterMidnight=nowH<12; // 0:00–12:00 = ráno
   const todayKey2=dateKey(new Date());
-  const wakeupToday2=(state.calData[todayKey2]?.entries||[]).some(e=>e.type==='wakeup')||
-    state.todayLog.some(e=>e.type==='wakeup'&&dateKey(new Date(e.ts))===todayKey2);
+  const wakeupToday2=(state.calData[todayKey2]?.entries||[]).some(e=>e.type==='wakeup');
   if(afterMidnight&&!wakeupToday2){
     card.style.display='block';
     if(ico)ico.textContent='☀️';
@@ -6991,7 +6990,7 @@ const STAT_META={
   sleep:      {icon:'😴',label:'Průměrný spánek/den',color:'#7a8fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   nightsleep: {icon:'🌙',label:'Průměrná noc',color:'#4a6fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   food:       {icon:'🍽',label:'Jídla / den',color:'#d4948a',unit:'×',fmt:(n)=>+n.toFixed(2)},
-  breast:     {icon:'🤱',label:'Kojení / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
+  breast:     {icon:'🤱',label:'Mléko / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
   formula:    {icon:'🍼',label:'Umělé mléko ml/den',color:'#5a9a6a',unit:'ml',fmt:(n)=>Math.round(n)},
   wakeuptime: {icon:'🌅',label:'Průměrné vstávání',color:'#e8a050',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   bedtimetime:{icon:'🌙',label:'Průměrný začátek noci',color:'#6050a8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
