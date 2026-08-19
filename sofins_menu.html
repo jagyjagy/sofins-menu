@@ -730,7 +730,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.131 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.136 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -831,7 +831,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
   <div id="ynsAvgHint" style="font-size:12px;color:var(--text-2);padding:0 0 12px;line-height:1.5"></div>
   <div class="mrow"><label>Čas usnuti (včera)</label><input type="time" id="ynsStart"/></div>
   <div class="mrow"><label>Čas probuzení (dnes)</label><input type="time" id="ynsEnd"/></div>
-  <button class="msave" onclick="saveYesterdayNightSleep()">Uložit</button>
+  <button class="msave" onpointerdown="saveYesterdayNightSleep()">Uložit</button>
   <button class="mcancel" onclick="closeModal('mYesterdayNS')">Zrušit</button>
 </div></div></div>
 
@@ -2796,13 +2796,25 @@ function openEditEntryModal(e){
       const fn2=document.getElementById('formulaNote');if(fn2)fn2.value=fmNote;
       const bt=document.getElementById('breastTime');if(bt)bt.value=fmtTime(e.ts);
       const sb=document.querySelector('#mBreast .msave');
-      if(sb){sb.textContent='Uložit změny';sb.onclick=()=>{
-        e.ts=parseTimeToTs(document.getElementById('breastTime')?.value);
-        const v=document.getElementById('formulaVol')?.value||'100';
-        const b=document.getElementById('formulaBrand')?.value.trim()||'';
-        const n=document.getElementById('formulaNote')?.value.trim()||'';
-        e.sub=[b,v+'ml',n].filter(Boolean).join(' · ');
-        _applyFoodEdit(e);sb.textContent='Uložit';sb.onclick=saveBreast;
+      if(sb){sb.textContent='Uložit změny';sb.onclick=(ev)=>{
+        ev.stopPropagation();
+        const orig=window._editingFoodEntry;
+        if(orig){
+          orig.ts=parseTimeToTs(document.getElementById('breastTime')?.value);
+          const v=document.getElementById('formulaVol')?.value||'100';
+          const b=document.getElementById('formulaBrand')?.value.trim()||'';
+          const n=document.getElementById('formulaNote')?.value.trim()||'';
+          orig.sub=[b,v+'ml',n].filter(Boolean).join(' · ');
+          window._editingFoodEntry=null;
+          closeModal('mBreast');
+          sb.textContent='Uložit';sb.onclick=saveBreast;
+          const ck=window._editingFoodCalKey;window._editingFoodCalKey=null;
+          if(ck&&state.calData[ck]){
+            state.calData[ck].entries.sort((a,b)=>a.ts-b.ts);
+            if(planSelDate&&planDetOpen)selDay(planSelDate.getFullYear(),planSelDate.getMonth(),planSelDate.getDate());
+          } else {renderTodayList();renderStatus();}
+          saveAll();
+        }
       };}
     },60);
     return;
@@ -6116,18 +6128,19 @@ function renderStats(){
     return '<div style="font-size:16px;font-weight:700">'+lw.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})+' kg</div>'+gainHtml;
   })();
 
-  // Bdělá okna — intervaly mezi koncem spánku a začátkem dalšího
+  // Bdělá okna — mezery mezi VŠEMI spánky (noční + denní)
   let awakeWindowMs=0,awakeWindowCount=0,awakeWindowDays=0;
   keys.forEach(k=>{
     const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
-    const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
-    if(sleeps.length<2)return;
-    let dayWindows=0,dayMs=0;
-    for(let i=1;i<sleeps.length;i++){
-      const gap=sleeps[i].start-sleeps[i-1].end;
-      if(gap>5*60000&&gap<8*3600000){dayMs+=gap;dayWindows++;}
-    }
-    if(dayWindows>0){awakeWindowCount+=dayWindows;awakeWindowMs+=dayMs;awakeWindowDays++;}
+    const daySleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start);
+    const nsEntry=entries.find(e=>e.type==='nightsleep');
+    const allSleeps=[...daySleeps];
+    if(nsEntry&&getSleepEndTs(nsEntry)>nsEntry.ts)allSleeps.push({start:nsEntry.ts,end:getSleepEndTs(nsEntry)});
+    allSleeps.sort((a,b)=>a.start-b.start);
+    if(allSleeps.length<2)return;
+    let dMs=0,dN=0;
+    for(let i=1;i<allSleeps.length;i++){const g=allSleeps[i].start-allSleeps[i-1].end;if(g>2*60000&&g<12*3600000){dMs+=g;dN++;}}
+    if(dN>0){awakeWindowCount+=dN;awakeWindowMs+=dMs;awakeWindowDays++;}
   });
   const avgAwakeWindowH=awakeWindowDays?(awakeWindowMs/awakeWindowDays/3600000):0;
   const avgAwakeWindowN=awakeWindowDays?(awakeWindowCount/awakeWindowDays):0;
@@ -6202,25 +6215,30 @@ function renderStats(){
 
   // Bdělá okna sekce
   {
-    // Pro každý den: celkový čas bdění a počet oken
-    const awDayH=days.map(d=>{
-      const k=dateKey(d);
+    // Pomocná funkce: bdělá okna = mezery mezi všemi spánky (noční + denní)
+    const getAwakeWindows=(k)=>{
       const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
-      const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
-      if(sleeps.length<2)return 0;
+      // Denní spánky
+      const daySleeps=entries.filter(e=>e.type==='sleep'&&!e.live)
+        .map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start);
+      // Noční spánek (z calData nebo nightSleep state)
+      const nsEntry=entries.find(e=>e.type==='nightsleep');
+      const allSleeps=[...daySleeps];
+      if(nsEntry&&getSleepEndTs(nsEntry)>nsEntry.ts)
+        allSleeps.push({start:nsEntry.ts,end:getSleepEndTs(nsEntry)});
+      // Přidej i wakeup jako hranici dne
+      const wakeup=entries.find(e=>e.type==='wakeup');
+      allSleeps.sort((a,b)=>a.start-b.start);
+      if(allSleeps.length<2)return{totalMs:0,count:0};
       let dMs=0,dN=0;
-      for(let i=1;i<sleeps.length;i++){const g=sleeps[i].start-sleeps[i-1].end;if(g>5*60000&&g<8*3600000){dMs+=g;dN++;}}
-      return dN>0?dMs/3600000:0; // CELKOVÝ čas bdění za den (součet všech oken)
-    });
-    const awDayCount=days.map(d=>{
-      const k=dateKey(d);
-      const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
-      const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
-      if(sleeps.length<2)return 0;
-      let dN=0;
-      for(let i=1;i<sleeps.length;i++){const g=sleeps[i].start-sleeps[i-1].end;if(g>5*60000&&g<8*3600000)dN++;}
-      return dN;
-    });
+      for(let i=1;i<allSleeps.length;i++){
+        const g=allSleeps[i].start-allSleeps[i-1].end;
+        if(g>2*60000&&g<12*3600000){dMs+=g;dN++;}
+      }
+      return{totalMs:dMs,count:dN};
+    };
+    const awDayH=days.map(d=>{ const r=getAwakeWindows(dateKey(d)); return r.totalMs/3600000; });
+    const awDayCount=days.map(d=>{ return getAwakeWindows(dateKey(d)).count; });
     const awNz=awDayH.filter(v=>v>0);
     const awDays=awNz.length;
     const awAvgH=awDays?awNz.reduce((a,b)=>a+b,0)/awDays:0;
@@ -6890,23 +6908,40 @@ function openAddYesterdayNightSleep(){
 function saveYesterdayNightSleep(){
   const startStr=document.getElementById('ynsStart').value;
   const endStr=document.getElementById('ynsEnd').value;
-  if(!startStr){closeModal('mYesterdayNS');return;}
+  if(!startStr){alert('Zadej čas usnuti.');return;}
   const [sh,sm]=startStr.split(':').map(Number);
-  const [eh,em]=endStr.split(':').map(Number);
-  // Start = včera
-  const yest=new Date(TODAY.getTime()-86400000);
+  const nowDate=new Date();
+  const yest=new Date(nowDate.getTime()-86400000);
   const startD=new Date(yest.getFullYear(),yest.getMonth(),yest.getDate(),sh,sm,0,0);
-  const endD=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate(),eh,em,0,0);
+  // Konec = zadaný čas nebo aktuální čas
+  let endD;
+  if(endStr){
+    const [eh,em]=endStr.split(':').map(Number);
+    endD=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),eh,em,0,0);
+  } else {
+    endD=new Date();
+  }
   const startTs=startD.getTime();
   const endTs=endD.getTime();
-  const durMs=endTs-startTs;
+  const durMs=Math.max(0,endTs-startTs);
   const dh=Math.floor(durMs/3600000),dm=Math.floor((durMs%3600000)/60000);
   const durStr=(dh>0?dh+'h ':'')+dm+'min';
   const startDay=dateKey(startD);
   if(!state.calData[startDay])state.calData[startDay]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
   state.calData[startDay].entries=state.calData[startDay].entries.filter(e=>e.type!=='nightsleep');
-  state.calData[startDay].entries.push({id:'ns-'+startTs,type:'nightsleep',ts:startTs,name:'Noční spánek',sub:startStr+'–'+endStr+'\n'+durStr,reaction:false,by:whoAmI()});
+  state.calData[startDay].entries.push({id:'ns-'+startTs,type:'nightsleep',ts:startTs,name:'Noční spánek',sub:startStr+'–'+(endStr||fmtTime(endTs))+'\n'+durStr,reaction:false,by:whoAmI()});
   state.calData[startDay].entries.sort((a,b)=>a.ts-b.ts);
+  // Přidej probuzení do dnešního dne
+  const todayKeyYNS=dateKey(nowDate);
+  if(!state.calData[todayKeyYNS])state.calData[todayKeyYNS]={foods:[],breast:0,sleep:0,reaction:false,entries:[],planned:[],plannedItems:[]};
+  if(!state.calData[todayKeyYNS].entries.some(e=>e.type==='wakeup')){
+    state.calData[todayKeyYNS].entries.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});
+    state.calData[todayKeyYNS].entries.sort((a,b)=>a.ts-b.ts);
+    // Přidej i do todayLog aby se zobrazilo v dnešním přehledu
+    if(!state.todayLog.some(e=>e.type==='wakeup')){
+      state.todayLog.push({id:'wakeup-'+endTs,type:'wakeup',ts:endTs,name:'Probudila se',sub:'vstávání',reaction:false,by:whoAmI()});
+    }
+  }
   closeModal('mYesterdayNS');
   renderTodayList();renderNightSleepCard();saveAll();
 }
