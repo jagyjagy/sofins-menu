@@ -730,7 +730,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.128 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.131 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -959,7 +959,13 @@ body[data-theme="neutral"]{background:#d0d0d0}
   </div>
   <!-- TAB: Umělé mléko -->
   <div id="milkSrcFormula" style="display:none">
-    <div class="mrow"><label>Objem (ml)</label><input type="number" id="formulaVol" value="100" min="10" max="500" step="10"/></div>
+    <div class="mrow"><label>Objem (ml)</label>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button onpointerdown="formulaVolStep(-5)" style="width:36px;height:36px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:20px;cursor:pointer;font-family:inherit">−</button>
+      <input type="number" id="formulaVol" value="100" min="5" max="500" step="5" style="text-align:center;font-size:18px;font-weight:700;width:80px;border:.5px solid var(--rose-mid);border-radius:10px;padding:6px;background:var(--card)"/>
+      <button onpointerdown="formulaVolStep(5)" style="width:36px;height:36px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:20px;cursor:pointer;font-family:inherit">+</button>
+      <span style="font-size:13px;color:var(--text-3)">ml</span>
+    </div></div>
     <div class="mrow"><label>Značka / přípravek</label>
       <div style="position:relative">
         <input type="text" id="formulaBrand" placeholder="Aptamil, HiPP, Bébilon..." oninput="showFormulaSuggest(this.value)" onfocus="showFormulaSuggest(this.value)" autocomplete="off"/>
@@ -996,7 +1002,12 @@ body[data-theme="neutral"]{background:#d0d0d0}
       <div id="rhList" style="display:none;padding:0 10px 10px;flex-direction:column;gap:4px"></div>
     </div>
   </div>
-  <div class="mrow"><label>Podezřelá potravina</label><input type="text" id="suspectFood" placeholder="např. batát..."/></div>
+  <div class="mrow"><label>Podezřelá potravina</label>
+    <div style="position:relative">
+      <input type="text" id="suspectFood" placeholder="např. batát..." oninput="showSuspectSuggest(this.value)" autocomplete="off"/>
+      <div class="fsug" id="suspectSug" style="display:none;position:absolute;left:0;right:0;z-index:9999"></div>
+    </div>
+  </div>
   <div class="mrow"><label>Poznámka</label><textarea id="reactionNote" placeholder="Co se stalo..."></textarea></div>
   <button class="msave" onclick="saveReaction()">Uložit reakci</button>
   <button class="mcancel" onclick="closeModal('mReaction')">Zrušit</button>
@@ -2769,6 +2780,32 @@ function openEditEntryModal(e){
       if(saveBtn){saveBtn.textContent='Uložit změny';saveBtn.onclick=saveFoodEdit;}
     },50);
     return; // neotevírej mEditEntry
+  } else if(e.type==='breast'&&e.name==='Umělé mléko'){
+    // Editace umělého mléka — použij mBreast modal v formula záložce
+    const fmParts=(e.sub||'').split('·').map(s=>s.trim());
+    const fmVol=fmParts.find(p=>/^\d+ml$/.test(p))||'100ml';
+    const fmBrand=fmParts.find(p=>p&&!/^\d+ml$/.test(p))||'';
+    const fmNote=fmParts.filter(p=>p&&!/^\d+ml$/.test(p)&&p!==fmBrand).join(' · ');
+    window._editingFoodEntry=e;
+    window._editingFoodCalKey=currentEditingCalEntry?.dayKey||null;
+    openModal('mBreast');
+    setTimeout(()=>{
+      setMilkTab('formula');
+      const fv=document.getElementById('formulaVol');if(fv)fv.value=parseInt(fmVol)||100;
+      const fb=document.getElementById('formulaBrand');if(fb)fb.value=fmBrand;
+      const fn2=document.getElementById('formulaNote');if(fn2)fn2.value=fmNote;
+      const bt=document.getElementById('breastTime');if(bt)bt.value=fmtTime(e.ts);
+      const sb=document.querySelector('#mBreast .msave');
+      if(sb){sb.textContent='Uložit změny';sb.onclick=()=>{
+        e.ts=parseTimeToTs(document.getElementById('breastTime')?.value);
+        const v=document.getElementById('formulaVol')?.value||'100';
+        const b=document.getElementById('formulaBrand')?.value.trim()||'';
+        const n=document.getElementById('formulaNote')?.value.trim()||'';
+        e.sub=[b,v+'ml',n].filter(Boolean).join(' · ');
+        _applyFoodEdit(e);sb.textContent='Uložit';sb.onclick=saveBreast;
+      };}
+    },60);
+    return;
   } else if(e.type==='breast'){
     const sides=['Levá','Pravá','Obě'];
     const curSide=(e.sub||'').split('·')[0].trim();
@@ -5168,6 +5205,27 @@ function selectBrandEmoji(el,emoji){
   el.style.background='var(--rose-light)';
 }
 
+function showSuspectSuggest(val){
+  const sg=document.getElementById('suspectSug');if(!sg)return;
+  // Sesbírej dnešní potraviny + UM
+  const todayFoods=new Set();
+  [...state.todayLog,...((state.calData[dateKey(TODAY)]?.entries)||[])].forEach(e=>{
+    if(e.type==='food')getFoodsFromSub(e.sub||'').forEach(f=>todayFoods.add(f));
+    if(e.type==='breast'&&e.name==='Umělé mléko'){
+      const b=(e.sub||'').split('·')[0].trim();if(b)todayFoods.add(b+'(UM)');
+    }
+  });
+  const all=val?[...allFoods()].filter(f=>normMatch(f.name,val)):[...todayFoods].map(n=>({name:n}));
+  sg.style.display=all.length?'block':'none';
+  sg.innerHTML=[...new Set(all.map(f=>f.name))].slice(0,8).map(n=>`<div class="fsug-item" onpointerdown="event.preventDefault();document.getElementById('suspectFood').value='${n.replace(/'/g,"&#39;")}';document.getElementById('suspectSug').style.display='none'">${n}</div>`).join('');
+}
+
+function formulaVolStep(delta){
+  const inp=document.getElementById('formulaVol');
+  if(!inp)return;
+  const cur=parseInt(inp.value)||100;
+  inp.value=Math.max(5,Math.min(500,cur+delta));
+}
 function showFormulaSuggest(val){
   const sg=document.getElementById('formulaSug');if(!sg)return;
   const milks=(state.customFoods||[]).filter(f=>f.cat==='umleko');
@@ -6058,28 +6116,51 @@ function renderStats(){
     return '<div style="font-size:16px;font-weight:700">'+lw.kg.toLocaleString('cs-CZ',{minimumFractionDigits:2})+' kg</div>'+gainHtml;
   })();
 
+  // Bdělá okna — intervaly mezi koncem spánku a začátkem dalšího
+  let awakeWindowMs=0,awakeWindowCount=0,awakeWindowDays=0;
+  keys.forEach(k=>{
+    const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+    const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
+    if(sleeps.length<2)return;
+    let dayWindows=0,dayMs=0;
+    for(let i=1;i<sleeps.length;i++){
+      const gap=sleeps[i].start-sleeps[i-1].end;
+      if(gap>5*60000&&gap<8*3600000){dayMs+=gap;dayWindows++;}
+    }
+    if(dayWindows>0){awakeWindowCount+=dayWindows;awakeWindowMs+=dayMs;awakeWindowDays++;}
+  });
+  const avgAwakeWindowH=awakeWindowDays?(awakeWindowMs/awakeWindowDays/3600000):0;
+  const avgAwakeWindowN=awakeWindowDays?(awakeWindowCount/awakeWindowDays):0;
+
+  // Kojení / UM počty
+  const nursingCount=keys.reduce((s,k)=>{
+    const e=k===dateKey(TODAY)?state.todayLog.filter(x=>!x.live):(state.calData[k]||{}).entries||[];
+    return s+e.filter(x=>x.type==='breast'&&x.name!=='Umělé mléko').length;
+  },0);
+  const formulaCount=keys.reduce((s,k)=>{
+    const e=k===dateKey(TODAY)?state.todayLog.filter(x=>!x.live):(state.calData[k]||{}).entries||[];
+    return s+e.filter(x=>x.type==='breast'&&x.name==='Umělé mléko').length;
+  },0);
+  const nursingDays=keys.filter(k=>{const e=k===dateKey(TODAY)?state.todayLog.filter(x=>!x.live):(state.calData[k]||{}).entries||[];return e.some(x=>x.type==='breast'&&x.name!=='Umělé mléko');}).length;
+  const formulaDays2=keys.filter(k=>{const e=k===dateKey(TODAY)?state.todayLog.filter(x=>!x.live):(state.calData[k]||{}).entries||[];return e.some(x=>x.type==='breast'&&x.name==='Umělé mléko');}).length;
+  const avgNursing=nursingDays?nursingCount/nursingDays:0;
+  const avgFormula=formulaDays2?formulaCount/formulaDays2:0;
+
+  const tile=(icon,val,lbl,det)=>`<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail('${det}')"><div style="font-size:16px;margin-bottom:2px">${icon}</div><div style="font-size:13px;font-weight:700;line-height:1.1">${val}</div><div style="font-size:8px;color:var(--text-3);margin-top:2px">${lbl}</div></div>`;
+
   document.getElementById('statsContent').innerHTML=
+  '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:5px">'+
+  tile('🌙',fmtDur(avgNightSleep)||'—','Noční spánek','nightsleep')+
+  tile('😴',fmtDur(avgSleep)||'—','Denní spánek','sleep')+
+  tile('⏰',avgAwakeWindowH?fmtDur(avgAwakeWindowH*3600000):'—','Bdělé okno','awakewindow')+
+  tile('👁',avgAwakeWindowN?fmtNum(avgAwakeWindowN,1)+'×':'—','Počet oken','awakecount')+
+  '</div>'+
   '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:10px">'+
-  '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'nightsleep\')">'+
-    '<div style="font-size:16px;margin-bottom:2px">🌙</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(fmtDur(avgNightSleep)||'—')+'</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Noční spánek</div></div>'+
-  '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'sleep\')">'+
-    '<div style="font-size:16px;margin-bottom:2px">😴</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(fmtDur(avgSleep)||'—')+'</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Denní spánek</div></div>'+
-  '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'breast\')">'+
-    '<div style="font-size:16px;margin-bottom:2px">🤱</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(avgBreast?fmtNum(avgBreast,1)+'×':'—')+'</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Mléko / den</div></div>'+
-    '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'formula\')">'+
-    '<div style="font-size:16px;margin-bottom:2px">🍼</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(formulaMlDays?Math.round(formulaMl/formulaMlDays)+'ml':'—')+'</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">UM ml / den</div></div>'+
-  '<div style="background:var(--card);border-radius:12px;border:.5px solid var(--rose-mid);padding:8px 6px;cursor:pointer;text-align:center" onclick="openStatDetail(\'food\')">'+
-    '<div style="font-size:16px;margin-bottom:2px">🍽</div>'+
-    '<div style="font-size:13px;font-weight:700;line-height:1.1">'+(avgFood?fmtNum(avgFood,1)+'×':'—')+'</div>'+
-    '<div style="font-size:8px;color:var(--text-3);margin-top:2px">Jídla / den</div></div></div>'+
+  tile('🍽',avgFood?fmtNum(avgFood,1)+'×':'—','Jídla / den','food')+
+  tile('🤱',avgNursing?fmtNum(avgNursing,1)+'×':'—','Kojení / den','breast')+
+  tile('🍼',avgFormula?fmtNum(avgFormula,1)+'×':'—','UM / den','formula')+
+  tile('💧',formulaMlDays?Math.round(formulaMl/formulaMlDays)+'ml':'—','UM ml / den','formulaml')+
+  '</div>'+
   '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'+
   '<div style="background:var(--card);border-radius:14px;border:.5px solid var(--rose-mid);padding:10px">'+
     '<div style="font-size:9px;color:var(--text-3);margin-bottom:3px">🥣 Nové pot.</div>'+
@@ -6118,6 +6199,49 @@ function renderStats(){
     '<div style="display:flex;justify-content:space-between;margin-top:8px">'+
       '<div style="font-size:9px;color:var(--text-3)">☀️ Nejvíce spánků<br><b style="color:var(--text)">'+(maxSleepIdx>=0&&sleepDayCount[maxSleepIdx]>0?dayLabels[maxSleepIdx]:'—')+'</b> '+(maxSleepIdx>=0&&sleepDayCount[maxSleepIdx]>0?'('+sleepDayCount[maxSleepIdx]+' spánků)':'')+'</div>'+
       '<div style="font-size:9px;color:var(--text-3);text-align:right">Nejvíce času<br><b style="color:var(--text)">'+(maxSleepTimeIdx>=0&&sleepDayH[maxSleepTimeIdx]>0?dayLabels[maxSleepTimeIdx]:'—')+'</b> '+(maxSleepTimeIdx>=0&&sleepDayH[maxSleepTimeIdx]>0?'('+fmtDur(sleepDayH[maxSleepTimeIdx]*3600000)+')':'')+'</div></div></div>';
+
+  // Bdělá okna sekce
+  {
+    // Pro každý den: celkový čas bdění a počet oken
+    const awDayH=days.map(d=>{
+      const k=dateKey(d);
+      const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+      const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
+      if(sleeps.length<2)return 0;
+      let dMs=0,dN=0;
+      for(let i=1;i<sleeps.length;i++){const g=sleeps[i].start-sleeps[i-1].end;if(g>5*60000&&g<8*3600000){dMs+=g;dN++;}}
+      return dN>0?dMs/3600000:0; // CELKOVÝ čas bdění za den (součet všech oken)
+    });
+    const awDayCount=days.map(d=>{
+      const k=dateKey(d);
+      const entries=k===dateKey(TODAY)?state.todayLog.filter(e=>!e.live):(state.calData[k]||{}).entries||[];
+      const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
+      if(sleeps.length<2)return 0;
+      let dN=0;
+      for(let i=1;i<sleeps.length;i++){const g=sleeps[i].start-sleeps[i-1].end;if(g>5*60000&&g<8*3600000)dN++;}
+      return dN;
+    });
+    const awNz=awDayH.filter(v=>v>0);
+    const awDays=awNz.length;
+    const awAvgH=awDays?awNz.reduce((a,b)=>a+b,0)/awDays:0;
+    const awAvgCount=awDays?awDayCount.filter(v=>v>0).reduce((a,b)=>a+b,0)/awDays:0;
+    const maxAwH=awDayH.indexOf(Math.max(...awDayH));
+    const maxAwN=awDayCount.indexOf(Math.max(...awDayCount));
+    document.getElementById('statsContent').innerHTML+=
+    '<div style="background:var(--card);border-radius:16px;border:.5px solid var(--rose-mid);padding:14px;margin-bottom:10px">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:10px">⏰ Bdělá okna <span style="font-size:10px;color:var(--text-3);font-weight:400">(součet bdělého času)</span></div>'+
+      '<div style="display:flex;gap:20px;margin-bottom:10px">'+
+        '<div><div style="font-size:9px;color:var(--text-3)">⌀ počet oken</div>'+
+          '<div style="font-size:20px;font-weight:700">'+(awDays?fmtNum(awAvgCount,1):0)+'<span style="font-size:10px;color:var(--text-3);font-weight:400"> / den</span></div></div>'+
+        '<div><div style="font-size:9px;color:var(--text-3)">⌀ celkový čas</div>'+
+          '<div style="font-size:20px;font-weight:700">'+(awAvgH?fmtDur(awAvgH*3600000):'—')+'</div></div></div>'+
+      barGraph(awDayH,'#c8a060',0,'')+
+      '<div style="display:flex;justify-content:space-between;margin-top:8px">'+
+        '<div style="font-size:9px;color:var(--text-3)">⏰ Nejvíce oken<br><b style="color:var(--text)">'+(maxAwN>=0&&awDayCount[maxAwN]>0?dayLabels[maxAwN]:'—')+'</b> '+(maxAwN>=0&&awDayCount[maxAwN]>0?'('+awDayCount[maxAwN]+' oken)':'')+'</div>'+
+        '<div style="font-size:9px;color:var(--text-3);text-align:right">Nejvíce času<br><b style="color:var(--text)">'+(maxAwH>=0&&awDayH[maxAwH]>0?dayLabels[maxAwH]:'—')+'</b> '+(maxAwH>=0&&awDayH[maxAwH]>0?'('+fmtDur(awDayH[maxAwH]*3600000)+')':'')+'</div>'+
+      '</div></div>';
+  }
+
 
   // Váha — inline karta s grafem a záznamy
   const allWeightSorted=(state.weightLog||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
@@ -6997,7 +7121,10 @@ const STAT_META={
   nightsleep: {icon:'🌙',label:'Průměrná noc',color:'#4a6fa8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   food:       {icon:'🍽',label:'Jídla / den',color:'#d4948a',unit:'×',fmt:(n)=>+n.toFixed(2)},
   breast:     {icon:'🤱',label:'Mléko / den',color:'#9b7fbd',unit:'×',fmt:(n)=>+n.toFixed(2)},
-  formula:    {icon:'🍼',label:'Umělé mléko ml/den',color:'#5a9a6a',unit:'ml',fmt:(n)=>Math.round(n)},
+  formula:    {icon:'🍼',label:'UM / den',color:'#5a9a6a',unit:'×',fmt:(n)=>+n.toFixed(2)},
+  formulaml:  {icon:'💧',label:'UM ml / den',color:'#5a9a6a',unit:'ml',fmt:(n)=>Math.round(n)},
+  awakewindow:{icon:'⏰',label:'Bdělé okno (délka)',color:'#e8a050',unit:'h',fmt:(n)=>+n.toFixed(2)},
+  awakecount: {icon:'👁',label:'Bdělá okna (počet)',color:'#e8a050',unit:'×',fmt:(n)=>+n.toFixed(2)},
   wakeuptime: {icon:'🌅',label:'Průměrné vstávání',color:'#e8a050',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   bedtimetime:{icon:'🌙',label:'Průměrný začátek noci',color:'#6050a8',unit:'h',fmt:(ms)=>ms?+(ms/3600000).toFixed(2):0},
   weight:     {icon:'⚖️',label:'Váha',color:'#5a8a5a',unit:'kg',fmt:(v)=>v},
@@ -7254,9 +7381,17 @@ function renderStatDetail(){
         const bc=entries.filter(e=>e.type==='breast'&&e.name!=='Umělé mléko').length;
         if(bc>0){dayVal=bc;count++;}
       } else if(metric==='formula'){
+        const fc=entries.filter(e=>e.type==='breast'&&e.name==='Umělé mléko').length;
+        if(fc>0){dayVal=fc;count++;}
+      } else if(metric==='formulaml'){
         const ml=entries.filter(e=>e.type==='breast'&&e.name==='Umělé mléko')
           .reduce((s,e)=>{const m=parseInt((e.sub||'').match(/(\d+)ml/)?.[1])||0;return s+m;},0);
         if(ml>0){dayVal=ml;count++;}
+      } else if(metric==='awakewindow'||metric==='awakecount'){
+        const sleeps=entries.filter(e=>e.type==='sleep'&&!e.live).map(e=>({start:e.ts,end:getSleepEndTs(e)})).filter(e=>e.end>e.start).sort((a,b)=>a.start-b.start);
+        let dMs=0,dN=0;
+        for(let i=1;i<sleeps.length;i++){const g=sleeps[i].start-sleeps[i-1].end;if(g>5*60000&&g<8*3600000){dMs+=g;dN++;}}
+        if(dN>0){dayVal=metric==='awakewindow'?dMs/dN/3600000:dN;count++;}
       }
       total+=dayVal;
     });
