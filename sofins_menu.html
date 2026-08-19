@@ -730,7 +730,7 @@ body[data-theme="neutral"]{background:#d0d0d0}
           <div class="set-row" onclick="deleteAllData()"><div class="si si-red">🗑</div><div class="set-lbl"><div class="set-lbl-t" style="color:var(--red)">Smazat všechna data</div></div><svg class="ch" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4"/></svg></div>
         </div>
       </div>
-      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.136 · real-time sync ✓</div>
+      <div style="text-align:center;padding:10px 0 4px;font-size:11px;color:var(--text-3)">Sofin's Menu · v2.137 · real-time sync ✓</div>
     </div>
   </div>
 
@@ -961,9 +961,9 @@ body[data-theme="neutral"]{background:#d0d0d0}
   <div id="milkSrcFormula" style="display:none">
     <div class="mrow"><label>Objem (ml)</label>
     <div style="display:flex;align-items:center;gap:10px">
-      <button onpointerdown="formulaVolStep(-5)" style="width:36px;height:36px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:20px;cursor:pointer;font-family:inherit">−</button>
-      <input type="number" id="formulaVol" value="100" min="5" max="500" step="5" style="text-align:center;font-size:18px;font-weight:700;width:80px;border:.5px solid var(--rose-mid);border-radius:10px;padding:6px;background:var(--card)"/>
-      <button onpointerdown="formulaVolStep(5)" style="width:36px;height:36px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:20px;cursor:pointer;font-family:inherit">+</button>
+      <button onpointerdown="formulaVolStep(-10)" style="width:36px;height:36px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:20px;cursor:pointer;font-family:inherit">−</button>
+      <input type="number" id="formulaVol" value="100" min="5" max="500" step="10" style="text-align:center;font-size:18px;font-weight:700;width:80px;border:.5px solid var(--rose-mid);border-radius:10px;padding:6px;background:var(--card)"/>
+      <button onpointerdown="formulaVolStep(10)" style="width:36px;height:36px;border-radius:50%;border:.5px solid var(--rose-mid);background:var(--rose-light);color:var(--rose-dark);font-size:20px;cursor:pointer;font-family:inherit">+</button>
       <span style="font-size:13px;color:var(--text-3)">ml</span>
     </div></div>
     <div class="mrow"><label>Značka / přípravek</label>
@@ -2738,17 +2738,14 @@ function openEditEntryModal(e){
     const existingNote2=noteParts.join(' · ');
     const existingBrand=brandPart.replace('🏪','').trim();
 
-    // Nastav state pro mFood modal
-    selFoods=foodsPart.split(',').map(s=>s.trim()).filter(Boolean);
-    selFoods2=[];
-    _selectedBrandIdx=-1;
-    _foodSrcTab='own';
-
     // Otevři mFood s "Upravit jídlo" titulem
     window._editingFoodEntry=e;
     window._editingFoodCalKey=currentEditingCalEntry?.dayKey||null;
     openModal('mFood');
     setTimeout(()=>{
+      // Nastav složky PO resetu modalu
+      selFoods=foodsPart.split(',').map(s=>s.trim()).filter(Boolean);
+      selFoods2=[];_selectedBrandIdx=-1;
       // Nastav titulek
       const title=document.querySelector('#mFood .mtitle');
       if(title)title.textContent='Upravit jídlo';
@@ -4182,7 +4179,7 @@ function renderFoods(){
     const reactions=ov.reactions||[];
     const lastReaction=reactions.length?reactions[reactions.length-1]:null;
     // Sub info
-    const catLabel={zelenina:'Zelenina',ovoce:'Ovoce',bilkoviny:'Bílkoviny',obiloviny:'Obiloviny',tuky:'Tuky',mlecne:'Mléčné',lusteniny:'Luštěniny',custom:'Vlastní',umleko:'Umělé mléko'}[f.cat]||f.cat||'';
+    const _fov=getFoodOverride(f.name);const _fcat=_fov.cat||f.cat;const catLabel={zelenina:'Zelenina',ovoce:'Ovoce',bilkoviny:'Bílkoviny',obiloviny:'Obiloviny',tuky:'Tuky',mlecne:'Mléčné',lusteniny:'Luštěniny',custom:'Vlastní',umleko:'Umělé mléko'}[_fcat]||_fcat||'';
     let subParts=[catLabel];
     if(f.month&&f.month<=12)subParts.push('od '+f.month+'. měsíce');
     if(lu){
@@ -5236,7 +5233,7 @@ function formulaVolStep(delta){
   const inp=document.getElementById('formulaVol');
   if(!inp)return;
   const cur=parseInt(inp.value)||100;
-  inp.value=Math.max(5,Math.min(500,cur+delta));
+  inp.value=Math.max(10,Math.min(500,Math.round((cur+delta)/10)*10));
 }
 function showFormulaSuggest(val){
   const sg=document.getElementById('formulaSug');if(!sg)return;
@@ -7029,7 +7026,7 @@ function renderNightSleepCard(){
   const nowH=new Date().getHours();
   const isMorning=nowH<12;
   const todayKey2=dateKey(new Date());
-  const wakeupToday2=(state.calData[todayKey2]?.entries||[]).some(e=>e.type==='wakeup');
+  const todayStr2=dateKey(new Date());const wakeupToday2=(state.calData[todayStr2]?.entries||[]).some(e=>e.type==='wakeup')||state.todayLog.some(e=>e.type==='wakeup'&&!e.live);
   if(isMorning&&!wakeupToday2){
     // Ráno bez probuzení → nabídni
     card.style.display='block';
